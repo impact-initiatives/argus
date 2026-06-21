@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.coverage
+.ruff_cache
+.pytest_cache
+# localisation files
+*.pot
+
+# Virtual environments
+.venv
+# local dev
+*.ipynb
+logs/
+.~lock*
+
+# ide files
+*.vscode

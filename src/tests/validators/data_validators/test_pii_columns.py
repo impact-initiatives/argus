@@ -1,0 +1,170 @@
+import polars as pl
+import pytest
+
+from argus.loaders.base import DataColumnMap
+from argus.loaders.base_excel_loader import ExcelLoaderData
+from argus.loaders.excel_loader import DataSheetMap
+from argus.models.base import SchemaColumnMap, SchemaSheetMap
+from argus.models.base_dataset_schemas import BaseDatasetSchema
+from argus.validators.base import BaseValidator
+from argus.validators.data_validators.pii_validator import PiiDataCheck
+from tests.helpers import do_basic_checks, error_counter
+
+
+@pytest.fixture
+def validator(valid_schema):
+    """Create a UniqueColumn validator instance"""
+    return PiiDataCheck(schema=valid_schema)
+
+
+@pytest.fixture
+def valid_schema():
+
+    return BaseDatasetSchema(
+        dataset_type="jmmi",
+        schema_loaded_sheets=[
+            SchemaSheetMap(
+                standard_name="raw_data",
+                alternate_names=["raw_data"],
+                mandatory_columns=[
+                    SchemaColumnMap(
+                        standard_name="uuid",
+                        alternate_names=["uuidx", "X_uuid", "uuid2"],
+                        is_unique=True,
+                    )
+                ],
+            )
+        ],
+        schema_unloaded_sheets=[],
+    )
+
+
+@pytest.fixture
+def valid_excel_data():
+    """Create ExcelLoaderData with matching columns"""
+    df = pl.DataFrame(
+        {
+            "uuid": [1, 2, 3, 4, 5],
+        }
+    )
+
+    loaded_sheet = DataSheetMap(
+        schema_sheet_name="raw_data",
+        data_sheet_name="raw_data",
+        data=df,
+    )
+
+    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
+
+
+@pytest.fixture
+def invalid_excel_data():
+    """Create ExcelLoaderData with matching columns"""
+    df = pl.DataFrame(
+        {
+            "phone_number": [1, 2, 3, 4, 5],
+        }
+    )
+
+    loaded_sheet = DataSheetMap(
+        schema_sheet_name="raw_data",
+        data_sheet_name="raw_data",
+        data=df,
+    )
+
+    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
+
+
+@pytest.fixture
+def invalid_fuzzy_excel_data():
+    """Create ExcelLoaderData with matching columns"""
+    df = pl.DataFrame(
+        {
+            "phone_number1": [1, 2, 3, 4, 5],
+        }
+    )
+
+    loaded_sheet = DataSheetMap(
+        schema_sheet_name="raw_data",
+        data_sheet_name="raw_data",
+        data=df,
+    )
+
+    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
+
+
+@pytest.fixture
+def invalid_excel_data2():
+    """Create ExcelLoaderData with matching columns"""
+    df = pl.DataFrame(
+        {
+            "uuid": [1, 2, 3, 4, 5],
+            "some_column": ["a@b.com", "2", "3", "4", "5"],
+            "another_column": ["1", "2", "3", "4", "0557456783"],
+        }
+    )
+
+    loaded_sheet = DataSheetMap(
+        schema_sheet_name="raw_data",
+        data_sheet_name="raw_data",
+        data=df,
+        column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
+    )
+
+    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
+
+
+@pytest.fixture
+def invalid_excel_data3():
+    """Create ExcelLoaderData with matching columns"""
+    df = pl.DataFrame(
+        {
+            "uuid": [1, 2, 3, 4, 5],
+            "some_column": ["a@b.com", "2", "3", "4", "5"],
+            "another_column": ["1", "2", "3", "4", "0557456783"],
+        }
+    )
+
+    loaded_sheet = DataSheetMap(
+        schema_sheet_name="raw_data",
+        data_sheet_name="raw_data",
+        data=df,
+        column_map=[DataColumnMap(data_column_name="uuid", schema_column_name="uuid")],
+    )
+
+    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
+
+
+class TestPiiColumns:
+    def test_valid_data(self, validator: BaseValidator, valid_excel_data: ExcelLoaderData):
+        result = validator.validate(valid_excel_data)
+
+        do_basic_checks(result, 0)
+
+    def test_invalid_data(self, validator: BaseValidator, invalid_excel_data: ExcelLoaderData):
+        result = validator.validate(invalid_excel_data)
+
+        do_basic_checks(result, 1)
+
+    def test_invalid_fuzzy_data(
+        self, validator: BaseValidator, invalid_fuzzy_excel_data: ExcelLoaderData
+    ):
+        result = validator.validate(invalid_fuzzy_excel_data)
+
+        do_basic_checks(result, 1)
+
+    def test_invalid_data2(self, validator: BaseValidator, invalid_excel_data2: ExcelLoaderData):
+        result = validator.validate(invalid_excel_data2)
+
+        filtered_results = error_counter(result)
+        do_basic_checks(filtered_results, 1)
+        assert filtered_results[0].details is not None
+        assert len(filtered_results[0].details["uuid"]) == 2
+
+    def test_invalid_data3(self, validator: BaseValidator, invalid_excel_data3: ExcelLoaderData):
+        result = validator.validate(invalid_excel_data3)
+
+        filtered_results = error_counter(result)
+        do_basic_checks(filtered_results, 1)
+        assert filtered_results[0].details is not None
+        assert len(filtered_results[0].details["uuid"]) == 2
