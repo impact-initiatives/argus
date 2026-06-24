@@ -4,38 +4,52 @@ from typing import Any
 
 from fastexcel import CalamineCellError
 
+from argus.models.resolver import find_dataset_files
+from argus.utils.yaml_loader import download_config
 from locales.il8n import _, i18n
 
 from ..config import settings
 from ..loaders.base import DataSheetMap
 from ..loaders.base_excel_loader import ExcelLoaderData
 from ..loaders.excel_loader import ExcelLoader
+from ..models.base_dataset import BaseDataset
 from ..models.base_dataset_schemas import BaseDatasetSchema
 from ..models.dynamic_model import DynamicDataset
-from ..models.jmmi import JMMIDataset
 from ..models.preprocess import validate_schema
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
-
-FULLY_SUPPORTED_DATASETS: list[str] = ["jmmi"]
 
 
 class ValidationPipeline:
     def __init__(self):
-        self.set_errors = set([SeverityLevel.ADMIN_ERROR, SeverityLevel.ERROR])
+        self.set_errors: set[SeverityLevel] = set([SeverityLevel.ADMIN_ERROR, SeverityLevel.ERROR])
+        self.fallback_dataset: str = "other"
 
-    def _setup_schema(self, dataset_type: str):
+    def _setup_schema(self, config_directory: Path, dataset_type: str, locale: str):
         """Initialise schema and validators based on dataset type.
 
         Raises:
             ValueError: if dataset type not found.
         """
-        # validators: list[BaseValidator] = []
-        dataset = JMMIDataset() if dataset_type == "jmmi" else DynamicDataset()
-        # else:
-        #     raise ValueError(f"Unknown dataset type: {dataset_type}")
+        schema_file = "schema.yaml"
+        validator_file = "validators.yaml"
+        result = find_dataset_files(
+            config_directory, dataset_type, locale, schema_file, validator_file
+        )
 
-        # make sure all the sheet and column names in the shema are lower
-        # to make comparison easier later
+        if result:
+            if result["dataset_type"] != self.fallback_dataset:
+                dataset = BaseDataset(
+                    schema_path=result[schema_file], validator_path=result[validator_file]
+                )
+            else:
+                dataset = DynamicDataset(
+                    schema_path=result[schema_file], validator_path=result[validator_file]
+                )
+        else:
+            raise ValueError(
+                f"Unable to find files for {schema_file} and {validator_file} for "
+                f"dataset {dataset_type} and locale {locale}."
+            )
 
         return dataset
 
@@ -53,11 +67,11 @@ class ValidationPipeline:
         """
         token = i18n.set_locale(locale)
         dataset_type = dataset_type.lower()
-        results = self._run(filepath, dataset_type)
+        results = self._run(filepath, dataset_type, locale=locale)
         i18n.reset_locale(token)
         return self._compile_results(results, dataset_type)
 
-    def _run(self, filepath: Path, dataset_type: str) -> list[ValidationResult]:
+    def _run(self, filepath: Path, dataset_type: str, locale: str) -> list[ValidationResult]:
         """Orchestrator for the dataset validation pipeline.
 
         Args:
@@ -69,9 +83,35 @@ class ValidationPipeline:
         """
         all_results: list[ValidationResult] = []
 
+        try:
+            dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
+            dataset = self._setup_schema(dataset_config_dir, dataset_type, locale)
+
+            if dataset.schema.dataset_type != dataset_type:
+                all_results.append(
+                    ValidationResult(
+                        rule="GetYAMLConfig",
+                        message=f"No dataset schema for {dataset_type} was found for. "
+                        f" version {dataset_config_dir}. Falling back to default of "
+                        f"{self.fallback_dataset}.",
+                        severity=SeverityLevel.WARNING,
+                    )
+                )
+
+        except Exception as e:
+            all_results.append(
+                ValidationResult(
+                    rule="GetYAMLConfig",
+                    message=f"Error getting the YAML dataset config files: {str(e)}",
+                    severity=SeverityLevel.ADMIN_ERROR,
+                )
+            )
+            settings.logger.log_exception(e)
+            return all_results
+
         # pre-validate the schema. checks for duplicate sheet/column
         # names etc
-        dataset = self._setup_schema(dataset_type)
+
         try:
             validation_errors = validate_schema(dataset.schema)
 
@@ -95,7 +135,7 @@ class ValidationPipeline:
             loader = ExcelLoader(dataset.schema)
             dataset.data, excel_results = loader.load(
                 filepath,
-                load_all_sheets=dataset_type not in FULLY_SUPPORTED_DATASETS,
+                load_all_sheets=dataset.schema.dataset_type == self.fallback_dataset,
             )
 
             if excel_results:
@@ -133,7 +173,7 @@ class ValidationPipeline:
             settings.logger.log_exception(e)
             return all_results
 
-        if dataset_type not in FULLY_SUPPORTED_DATASETS:
+        if dataset.schema.dataset_type == self.fallback_dataset:
             results = dataset.process_data()
             if results:
                 all_results.extend(results)

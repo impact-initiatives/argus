@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .utils.logging import JIVELogger
@@ -66,6 +68,10 @@ class Settings(BaseSettings):
     LIMIT_DETAILS_THRESHOLD: int = -1
 
     logger: JIVELogger = JIVELogger()
+
+    DATASET_CONFIG_DIR: Path = Path.cwd() / "dataset_config"
+    DATASET_CONFIG_URL: str = "https://api.github.com/repos/gim-am/test/releases/latest"
+    Path(DATASET_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
 
 
 settings = Settings()
