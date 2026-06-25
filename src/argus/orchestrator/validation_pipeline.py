@@ -93,11 +93,19 @@ class ValidationPipeline:
                     ValidationResult(
                         rule="GetYAMLConfig",
                         message=f"No dataset schema for {dataset_type} was found for. "
-                        f" version {dataset_config_dir}. Falling back to default of "
+                        f" version {dataset_config_dir.name}. Falling back to default of "
                         f"{self.fallback_dataset}.",
                         severity=SeverityLevel.WARNING,
                     )
                 )
+            all_results.append(
+                ValidationResult(
+                    rule="GetYAMLConfig",
+                    message=f"Using schema version {dataset_config_dir.name} for "
+                    f"dataset {dataset.schema.dataset_type}",
+                    severity=SeverityLevel.ADMIN_INFO,
+                )
+            )
 
         except Exception as e:
             all_results.append(
