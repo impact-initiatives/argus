@@ -83,8 +83,10 @@ Most user messages (Error, Warnings, Info, Passed) support translations into oth
 
 See [translations](locales/README.md) for details on managing/expanding these.
 
+## Development and Debugging
+If testing or debugging, it is possible to run individual validation rules or use specific versions of schemas.
 ### Running Rules Individually
-If testing or debugging, it is possible to run individual validation rules. To do this, first load the data setting the appropriate filepath and then run the required rule. For datasets with specific schemas:
+ To run individual rules, first load the data setting the appropriate filepath and then run the required rule. For datasets with specific schemas:
 
 ```python
 from argus.models.base_dataset import BaseDataset
@@ -136,6 +138,9 @@ dataset.process_data()
 results = CrossSheetIdCheck(dataset.schema).validate(dataset.data)
 # review results
 ```
+
+### Specifying Schema Versions
+By default, `download_config` downloads the latest release. It is possible to change to other releases by changing the Github api url stored in `DATASET_CONFIG_URL` in `config`. See the [Github Api documentation](https://docs.github.com/en/rest/releases/releases) for details.
 ## Contributing and Reporting Issues
 If you are interested in expanding the list of supported languages for the validation messages get in touch. 
 

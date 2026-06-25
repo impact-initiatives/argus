@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     logger: JIVELogger = JIVELogger()
 
     DATASET_CONFIG_DIR: Path = Path.cwd() / "dataset_config"
-    DATASET_CONFIG_URL: str = "https://api.github.com/repos/gim-am/test/releases/latest"
+    DATASET_CONFIG_URL: str = "https://api.github.com/repos/impact-initiatives/argus_schemas/releases/latest"
     Path(DATASET_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
 
 
