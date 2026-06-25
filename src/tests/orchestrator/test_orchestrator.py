@@ -2,18 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from src.argus.models.jmmi import JMMIDataset
 from src.argus.orchestrator.validation_pipeline import ValidationPipeline
 
 
 @pytest.fixture
 def run_pipeline():
     return ValidationPipeline()
-
-
-@pytest.fixture
-def valid_schema():
-    return JMMIDataset().schema
 
 
 @pytest.fixture

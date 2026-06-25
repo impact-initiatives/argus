@@ -1,19 +1,28 @@
 import polars as pl
 import pytest
 
+from argus.config import settings
 from argus.loaders.base import (
     DataSheetMap,
 )
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.models.base import SheetClassification
 from argus.models.dynamic_model import DynamicDataset
+from argus.models.resolver import find_dataset_files
+from argus.utils.yaml_loader import download_config
 from tests.helpers import admin_error_counter, error_counter
 
 
 @pytest.fixture
 def valid_dataset():
     """Create a UniqueColumn validator instance"""
-    return DynamicDataset()
+    dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
+    result = find_dataset_files(dataset_config_dir, "jmmi", "en", "schema.yaml", "validators.yaml")
+    assert result is not None
+    dataset: DynamicDataset = DynamicDataset(
+        schema_path=result["schema.yaml"], validator_path=result["validators.yaml"]
+    )
+    return dataset
 
 
 @pytest.fixture

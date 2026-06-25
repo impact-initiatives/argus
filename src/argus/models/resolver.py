@@ -29,7 +29,7 @@ from ..validators.schema_validators import (
     UnexpectedSheetsCheck,
 )
 
-# supported rules. new rules need to be added to this list in order for them to 
+# supported rules. new rules need to be added to this list in order for them to
 # be supported in the yaml files.
 VALIDATOR_REGISTRY = {
     "CleaningLogToClean": CleaningLogToClean,
@@ -70,8 +70,7 @@ class ResolveDataset(BaseModel):
         return result
 
     def _resolve(self, item: Any, definitions: dict[str, str], path: str = "root") -> Any:
-        """recursivly parses the file and returns the mapped content
-        """
+        """recursivly parses the file and returns the mapped content"""
         if isinstance(item, list):
             return [self._resolve(x, definitions, f"{path}[i]") for x in item]
 
@@ -156,7 +155,9 @@ class ResolveDataset(BaseModel):
             error_str = "\n".join([f"{err['loc']}: {err['msg']}" for err in e.errors()])
             raise ValueError(f"Schema validation failed:\n{error_str}") from e
 
-    def resolve_validators(self, validator_path: str | Path, schema: BaseDatasetSchema) -> list[BaseValidator]:
+    def resolve_validators(
+        self, validator_path: str | Path, schema: BaseDatasetSchema
+    ) -> list[BaseValidator]:
         """Converts a list of validation rules and paramaters stored in a yaml file
         into their respective class objects
 
@@ -246,7 +247,7 @@ def find_dataset_files(
     validator_file_name: str,
 ) -> dict[str, Path | str] | None:
     """
-    Locates TWO files based on root directory, locale, and dataset type with fallback logic.
+    Locates two files based on root directory, locale, and dataset type with fallback logic.
 
     Both files must exist in the same directory for a match to be valid.
     If only one file exists in a directory, returns None without checking fallbacks.
@@ -261,8 +262,8 @@ def find_dataset_files(
         root_directory: The base directory path.
         locale: The locale code (e.g., 'en', 'fr').
         dataset_type: The dataset type (e.g., 'jmmi', 'other').
-        file_name_1: The name of the first file to find.
-        file_name_2: The name of the second file to find.
+        schema_file_name: The name of the schema file to find.
+        validator_file_name: The name of the validator file to find.
 
     Returns:
         A tuple of Path objects (schema_file_name, validator_file_name) if both exist the location,

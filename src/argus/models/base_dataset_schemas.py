@@ -1,12 +1,11 @@
 import itertools
-from dataclasses import dataclass, field
+from dataclasses import field
 
 from pydantic import BaseModel
 
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 
 
-@dataclass
 class BaseDatasetSchema(BaseModel):
     dataset_type: str = ""
     # sheets that have to be loaded and used for further validation

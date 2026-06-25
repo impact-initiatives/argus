@@ -13,10 +13,12 @@ def download_config(download_dir: str | Path = "dataset_config"):
     """
     Downloads the latest release, extracts it if necessary,
     filters only .yaml files, and preserves directory structure.
+    Also lowers all folders and file names.
     """
 
     # 1. Setup Download Directory
     base_path = Path(download_dir)
+    base_path.mkdir(parents=True, exist_ok=True)
 
     try:
         response: Response = requests.get(settings.DATASET_CONFIG_URL)
@@ -52,31 +54,48 @@ def download_config(download_dir: str | Path = "dataset_config"):
         versioned_target.mkdir(parents=True, exist_ok=True)
 
         with zipfile.ZipFile(archive_path, "r") as zip_ref:
-            for file_info in zip_ref.namelist():
-                # Check if file ends with .yaml or .yml
-                if file_info.lower().endswith(".yaml") or file_info.lower().endswith(".yml"):
-                    target_rel_path = Path(file_info)
+            namelist = zip_ref.namelist()
 
-                    # Strip the GitHub root folder (e.g., "owner-repo-hash/")
-                    if len(target_rel_path.parts) > 1:
-                        target_rel_path = Path(*target_rel_path.parts[1:])
-                    else:
+            # Optional: Pre-filter to avoid processing irrelevant files if performance matters
+            # But keeping it inside the loop allows better error handling per file
+
+            for file_info in namelist:
+                # Prevent path traversal attacks using the original path string
+                dest_original = versioned_target / file_info
+                try:
+                    _ = dest_original.resolve().relative_to(versioned_target.resolve())
+                except ValueError:
+                    # Skip paths that escape the target directory (e.g., "../../../etc/passwd")
+                    continue
+
+                target_rel_path = Path(file_info.lower())
+
+                # Strip the GitHub root folder (e.g., "owner-repo-hash/")
+                # Note: We strip from the lowercased path now
+                parts = target_rel_path.parts
+
+                # GitHub archives usually have one root folder.
+                # Check if there are parts left after stripping the first one
+                if len(parts) > 1:
+                    target_rel_path = Path(*parts[1:])
+                else:
+                    # If stripping leaves an empty path or just the file in root, handle accordingly
+                    # If the file was directly in root (rare for GitHub zips but possible), keep it
+                    # If parts == ('',) or similar, skip
+                    if not str(target_rel_path).strip():
                         continue
+                    # Otherwise, use the single part (file) directly
+                    # No need to re-construct Path here if it's just a filename
 
-                    dest_file = versioned_target / target_rel_path
+                dest_file = versioned_target / target_rel_path
+                dest_file.parent.mkdir(parents=True, exist_ok=True)
 
-                    # Security check: prevent path traversal
-                    try:
-                        _ = dest_file.resolve().relative_to(versioned_target.resolve())
-                    except ValueError:
-                        continue
-
-                    # Create parent dirs
-                    dest_file.parent.mkdir(parents=True, exist_ok=True)
-
-                    # Write file content
+                if dest_file.suffix.lower() in (".yaml", ".yml"):
+                    # Extract content
                     with zip_ref.open(file_info) as source, open(dest_file, "wb") as target:
                         _ = target.write(source.read())
+                else:
+                    pass
 
     except Exception as e:
         raise RuntimeError(f"Error extracting zip files: {e}") from None

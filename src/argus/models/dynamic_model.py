@@ -1,4 +1,5 @@
 from difflib import SequenceMatcher
+from typing import override
 
 import polars as pl
 
@@ -69,6 +70,7 @@ class DynamicDataset(BaseDataset):
         self.schema: BaseDatasetSchema = self.get_schema()
         self.sheet_matching: dict[str, DynamicSheetMatching] = {}
 
+    @override
     def process_data(self) -> list[ValidationResult]:
         """Runs all the steps."""
         all_results: list[ValidationResult] = []

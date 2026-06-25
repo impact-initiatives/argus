@@ -65,6 +65,7 @@ class ValidationPipeline:
         Returns:
             dict[str, Any]: json results
         """
+        locale = locale.lower()
         token = i18n.set_locale(locale)
         dataset_type = dataset_type.lower()
         results = self._run(filepath, dataset_type, locale=locale)
