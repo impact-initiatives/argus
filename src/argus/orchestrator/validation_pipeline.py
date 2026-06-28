@@ -22,7 +22,6 @@ from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
 class ValidationPipeline:
     def __init__(self):
         self.set_errors: set[SeverityLevel] = set([SeverityLevel.ADMIN_ERROR, SeverityLevel.ERROR])
-        self.fallback_dataset: str = "other"
 
     def _setup_schema(self, config_directory: Path, dataset_type: str, locale: str):
         """Initialise schema and validators based on dataset type.
@@ -37,7 +36,7 @@ class ValidationPipeline:
         )
 
         if result:
-            if result["dataset_type"] != self.fallback_dataset:
+            if result["dataset_type"] != settings.FALLBACK_DATASET:
                 dataset = BaseDataset(
                     schema_path=result[schema_file], validator_path=result[validator_file]
                 )
@@ -53,7 +52,13 @@ class ValidationPipeline:
 
         return dataset
 
-    def run_all(self, filepath: Path, dataset_type: str, locale: str = "en") -> dict[str, Any]:
+    def run_all(
+        self,
+        filepath: Path,
+        dataset_type: str,
+        locale: str = settings.FALLBACK_LOCALE,
+        use_local_config: bool = False,
+    ) -> dict[str, Any]:
         """_summary_
 
         Args:
@@ -68,11 +73,15 @@ class ValidationPipeline:
         locale = locale.lower()
         token = i18n.set_locale(locale)
         dataset_type = dataset_type.lower()
-        results = self._run(filepath, dataset_type, locale=locale)
+        results = self._run(
+            filepath, dataset_type, locale=locale, use_local_config=use_local_config
+        )
         i18n.reset_locale(token)
         return self._compile_results(results, dataset_type)
 
-    def _run(self, filepath: Path, dataset_type: str, locale: str) -> list[ValidationResult]:
+    def _run(
+        self, filepath: Path, dataset_type: str, locale: str, use_local_config: bool = False
+    ) -> list[ValidationResult]:
         """Orchestrator for the dataset validation pipeline.
 
         Args:
@@ -85,24 +94,27 @@ class ValidationPipeline:
         all_results: list[ValidationResult] = []
 
         try:
-            dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
+            if use_local_config:
+                dataset_config_dir = settings.DATASET_CONFIG_LOCAL_DIR
+            else:
+                dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
             dataset = self._setup_schema(dataset_config_dir, dataset_type, locale)
 
             if dataset.schema.dataset_type != dataset_type:
                 all_results.append(
                     ValidationResult(
                         rule="GetYAMLConfig",
-                        message=f"No dataset schema for {dataset_type} was found for. "
-                        f" version {dataset_config_dir.name}. Falling back to default of "
-                        f"{self.fallback_dataset}.",
+                        message=f"No dataset schema for '{dataset_type}' was found for "
+                        f" version '{dataset_config_dir.name}'. Falling back to default of "
+                        f"'{settings.FALLBACK_DATASET}'.",
                         severity=SeverityLevel.WARNING,
                     )
                 )
             all_results.append(
                 ValidationResult(
                     rule="GetYAMLConfig",
-                    message=f"Using schema version {dataset_config_dir.name} for "
-                    f"dataset {dataset.schema.dataset_type}",
+                    message=f"Using schema version '{dataset_config_dir.name}' for "
+                    f"dataset '{dataset.schema.dataset_type}'.",
                     severity=SeverityLevel.ADMIN_INFO,
                 )
             )
@@ -144,7 +156,7 @@ class ValidationPipeline:
             loader = ExcelLoader(dataset.schema)
             dataset.data, excel_results = loader.load(
                 filepath,
-                load_all_sheets=dataset.schema.dataset_type == self.fallback_dataset,
+                load_all_sheets=dataset.schema.dataset_type == settings.FALLBACK_DATASET,
             )
 
             if excel_results:
@@ -182,7 +194,7 @@ class ValidationPipeline:
             settings.logger.log_exception(e)
             return all_results
 
-        if dataset.schema.dataset_type == self.fallback_dataset:
+        if dataset.schema.dataset_type == settings.FALLBACK_DATASET:
             results = dataset.process_data()
             if results:
                 all_results.extend(results)

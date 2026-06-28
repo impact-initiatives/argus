@@ -96,8 +96,8 @@ class SurveyChoicesCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, data_loaded_columns = get_data_loaded_columns(
@@ -110,8 +110,8 @@ class SurveyChoicesCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         filtered_loaded_sheets = filter_loaded_sheets(self.check_sheets, data_loaded_sheets)

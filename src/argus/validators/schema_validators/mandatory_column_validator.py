@@ -43,23 +43,19 @@ class MandatoryColumnsCheck(BaseValidator):
         if data_loaded_sheets_optional:
             data_loaded_sheets.update(data_loaded_sheets_optional)
 
-        if result:
-            # this is done to consolidate results
-            # TODO: do this for all get_data_loaded_sheets/columns calls?
-            sheet_df = pl.DataFrame(
-                [
-                    {
-                        "sheet": item.sheet_name,
-                    }
-                    for item in result
-                ]
-            ).to_dict(as_series=False)
+        if result is not None:
+            if result.details is None:
+                result.details = {"missing_sheets": [result.sheet_name]}
+
             results.append(
                 ValidationResult(
                     rule=self.name,
-                    message=self._("mandatory_column_validator.missing_sheets", count=len(result)),
+                    message=self._(
+                        "mandatory_column_validator.missing_sheets",
+                        count=len(result.details["missing_sheets"]),
+                    ),
                     severity=SeverityLevel.ERROR,
-                    details=sheet_df,
+                    details=result.details,
                 )
             )
 
@@ -76,8 +72,8 @@ class MandatoryColumnsCheck(BaseValidator):
             # try to get all the loaded columns
             result, columns = get_data_loaded_columns(search_items, self.name)
 
-            if result:
-                results.extend(result)
+            if result is not None:
+                results.append(result)
 
         if results:
             column_df = pl.DataFrame(

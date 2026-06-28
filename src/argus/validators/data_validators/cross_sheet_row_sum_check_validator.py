@@ -70,8 +70,8 @@ class CrossSheetRowSumCheck(BaseValidator):
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data, sheet_names=sheets_to_load, rule=self.name
         )
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         # if this is a child sheet then just using the deletion log count will

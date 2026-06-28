@@ -83,8 +83,8 @@ class DataTypeCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, data_loaded_columns = get_data_loaded_columns(
@@ -95,16 +95,16 @@ class DataTypeCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, schema_loaded_sheets = get_schema_loaded_sheets(
             schema=self.schema, sheet_names=[self.survey_sheet], rule=self.name
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, schema_loaded_columns = get_schema_loaded_columns(
@@ -115,8 +115,8 @@ class DataTypeCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, schema_process_values = get_schema_process_values(

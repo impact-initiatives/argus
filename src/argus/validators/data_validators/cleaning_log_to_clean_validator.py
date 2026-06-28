@@ -98,16 +98,16 @@ class CleaningLogToCleanCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, schema_loaded_sheets = get_schema_loaded_sheets(
             schema=self.schema, sheet_names=[self.cleaning_log_sheet], rule=self.name
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, clean_log_id_columns, clean_data_id_columns = get_id_linking_columns(
@@ -133,8 +133,8 @@ class CleaningLogToCleanCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         schema_change_type_column = schema_loaded_sheets[self.cleaning_log_sheet].get_column(

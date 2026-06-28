@@ -132,6 +132,9 @@ msgstr "A column for '{column}' in schema sheet '{sheet}' is expected."
 msgid "schema_helpers.get_schema_loaded_sheet"
 msgstr "A schema sheet for '{sheet}' is expected."
 
+msgid "schema_helpers.missing_items"
+msgstr "{count} {item_source} {item_type} were expected but not found. Check the output for details."
+
 #: src/argus/validators/data_helpers.py:30
 msgid "data_helpers.get_data_loaded_sheet"
 msgstr "An excel sheet for '{sheet}' is expected."

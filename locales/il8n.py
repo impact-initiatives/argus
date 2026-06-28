@@ -3,6 +3,8 @@ import gettext
 import os
 from _contextvars import Token
 
+from src.argus.config import settings
+
 # TODO: Add unique message ids so that messages in other languages
 # can be identified?
 
@@ -13,11 +15,10 @@ _current_locale: contextvars.ContextVar[str] = contextvars.ContextVar(
 
 
 class I18nService:
-    def __init__(self, domain: str = "messages", fallback_locale: str = "en"):
+    def __init__(self, domain: str = "messages"):
         self.domain: str = domain
         self.localedir: str = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
         self._cache: dict[str, gettext.NullTranslations] = {}
-        self.fallback_locale: str = fallback_locale
 
     def set_locale(self, locale: str) -> Token[str]:
         """Set locale for current request context."""
@@ -64,8 +65,8 @@ class I18nService:
         template = trans.gettext(key)
 
         # Fallback to Fallback Locale (en))
-        if template == key and current_locale != self.fallback_locale:
-            fallback_trans = self._get_translator(self.fallback_locale)
+        if template == key and current_locale != settings.FALLBACK_LOCALE:
+            fallback_trans = self._get_translator(settings.FALLBACK_LOCALE)
             template = fallback_trans.gettext(key)
 
             #  if fallback also doesn't have it

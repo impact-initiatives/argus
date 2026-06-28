@@ -7,7 +7,7 @@ from ..common.schema_matching import get_matching_unique_columns
 from ..loaders.base import DataColumnMap, DataSheetMap
 from ..loaders.base_excel_loader import ExcelLoaderData
 from ..models.base_dataset_schemas import BaseDatasetSchema
-from ..validators.schema_helpers import get_schema_loaded_sheet
+from ..validators.schema_helpers import consolidate_messages, get_schema_loaded_sheet
 from .base import SeverityLevel, ValidationResult
 
 
@@ -44,7 +44,7 @@ def get_data_loaded_sheet(
 
 def get_data_loaded_sheets(
     data: ExcelLoaderData, sheet_names: list[str], rule: str, check_data: bool = True
-) -> tuple[list[ValidationResult], dict[str, DataSheetMap]]:
+) -> tuple[ValidationResult | None, dict[str, DataSheetMap]]:
     """Gets a list of data loaded sheets if they exist.
 
     Args:
@@ -69,7 +69,9 @@ def get_data_loaded_sheets(
         else:
             results.append(result)
 
-    return results, loaded_sheets
+    final_result = consolidate_messages(results, "sheets", "excel", rule)
+
+    return final_result, loaded_sheets
 
 
 def get_data_loaded_column(
@@ -107,7 +109,7 @@ def get_data_loaded_column(
 
 def get_data_loaded_columns(
     data: dict[str, DataSheetMap], rule: str
-) -> tuple[list[ValidationResult], dict[str, DataColumnMap]]:
+) -> tuple[ValidationResult | None, dict[str, DataColumnMap]]:
     """Gets a list of data loaded columns if found.
 
     Args:
@@ -131,7 +133,9 @@ def get_data_loaded_columns(
         else:
             results.append(result)
 
-    return results, loaded_columns
+    final_result = consolidate_messages(results, "columns", "excel", rule)
+
+    return final_result, loaded_columns
 
 
 def get_data_sheet_id(

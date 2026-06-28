@@ -9,6 +9,7 @@ from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.utils.yaml_loader import load_file
 from argus.validators.base import BaseValidator
 
+from ..config import settings
 from ..validators.data_validators import (
     CleaningLogToCleanCheck,
     ConsentCheck,
@@ -32,19 +33,19 @@ from ..validators.schema_validators import (
 # supported rules. new rules need to be added to this list in order for them to
 # be supported in the yaml files.
 VALIDATOR_REGISTRY = {
-    "CleaningLogToClean": CleaningLogToCleanCheck,
+    "CleaningLogToCleanCheck": CleaningLogToCleanCheck,
     "ConsentCheck": ConsentCheck,
     "CrossSheetIdCheck": CrossSheetIdCheck,
     "CrossSheetRowSumCheck": CrossSheetRowSumCheck,
     "DataTypeCheck": DataTypeCheck,
     "NaNDataCheck": NaNDataCheck,
     "PiiDataCheck": PiiDataCheck,
-    "RawToCleanToLog": RawToCleanToLogCheck,
+    "RawToCleanToLogCheck": RawToCleanToLogCheck,
     "SurveyChoicesCheck": SurveyChoicesCheck,
-    "UniqueColumn": UniqueColumnCheck,
+    "UniqueColumnCheck": UniqueColumnCheck,
     "ColumnNameCheck": ColumnNameCheck,
-    "DuplicateSheetMatches": DuplicateSheetMatchCheck,
-    "MandatoryColumns": MandatoryColumnsCheck,
+    "DuplicateSheetMatchCheck": DuplicateSheetMatchCheck,
+    "MandatoryColumnsCheck": MandatoryColumnsCheck,
     "MissingSheetsCheck": MissingSheetsCheck,
     "UnexpectedSheetsCheck": UnexpectedSheetsCheck,
 }
@@ -320,17 +321,17 @@ def find_dataset_files(
     checks.append((dataset_type, locale))
 
     # 2. Fallback 1: original dataset, 'en' locale (only if locale != 'en')
-    if locale.lower() != "en":
-        checks.append((dataset_type, "en"))
+    if locale.lower() != settings.FALLBACK_LOCALE:
+        checks.append((dataset_type, settings.FALLBACK_LOCALE))
 
     # 3. Fallback 2: 'other' dataset, original locale (only if dataset != 'other')
-    if dataset_type.lower() != "other":
-        checks.append(("other", locale))
+    if dataset_type.lower() != settings.FALLBACK_DATASET:
+        checks.append((settings.FALLBACK_DATASET, locale))
 
         # 4. Fallback 3: 'other' dataset, 'en' locale
         # (only if dataset != 'other' AND locale != 'en')
-        if locale.lower() != "en":
-            checks.append(("other", "en"))
+        if locale.lower() != settings.FALLBACK_LOCALE:
+            checks.append((settings.FALLBACK_DATASET, settings.FALLBACK_LOCALE))
 
     # Iterate through potential locations
     for l_dataset_type, l_locale in checks:

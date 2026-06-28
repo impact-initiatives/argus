@@ -382,7 +382,7 @@ class TestCrossSheetRowSum:
     ):
         result = valid_schema_validator.validate(missing_sheet_data)
 
-        do_basic_checks(result, 3)
+        do_basic_checks(result, 1)
 
     def test_parent_child_data(
         self, valid_schema_child_validator: BaseValidator, valid_excel_data_child: ExcelLoaderData

@@ -113,7 +113,7 @@ def get_schema_loaded_column(
 
 def get_schema_loaded_columns(
     data: dict[str, SchemaSheetMap], rule: str
-) -> tuple[list[ValidationResult], dict[str, SchemaColumnMap]]:
+) -> tuple[ValidationResult | None, dict[str, SchemaColumnMap]]:
     """Gets a list of schema columns if they exists
 
     Args:
@@ -136,7 +136,9 @@ def get_schema_loaded_columns(
         else:
             results.append(result)
 
-    return results, loaded_columns
+    final_result = consolidate_messages(results, "columns", "schema", rule)
+
+    return final_result, loaded_columns
 
 
 def get_schema_loaded_sheet(
@@ -169,7 +171,7 @@ def get_schema_loaded_sheet(
 
 def get_schema_loaded_sheets(
     schema: BaseDatasetSchema, sheet_names: list[str], rule: str
-) -> tuple[list[ValidationResult], dict[str, SchemaSheetMap]]:
+) -> tuple[ValidationResult | None, dict[str, SchemaSheetMap]]:
     """Gets a list of schema loaded sheets if it exists.
 
     Args:
@@ -193,4 +195,49 @@ def get_schema_loaded_sheets(
         else:
             results.append(result)
 
-    return results, loaded_sheets
+    final_result = consolidate_messages(results, "sheets", "schema", rule)
+
+    return final_result, loaded_sheets
+
+
+def consolidate_messages(
+    results: list[ValidationResult], item_type: str, item_source: str, rule: str
+) -> ValidationResult | None:
+    """Consolidates messages. Useful when the messages are the same except for
+    different sheets or columns. eg: get_schema_loaded_sheets
+
+    Args:
+        results (list[ValidationResult]): list of validation results
+        item_type (str): type of item being consolidated. 'sheets' or 'columns'
+        item_source (str): source of item being consolidated. 'schema' or 'excel'
+        rule (str): calling validation rule
+
+    Returns:
+        ValidationResult | None: returns a consolidated result or None if no results
+    """
+    items: list[str] = []
+
+    if len(results) > 1:
+        for result in results:
+            if result.column_name is not None and item_type == "columns":
+                items.append(result.column_name)
+
+            if result.sheet_name is not None and item_type == "sheets":
+                items.append(result.sheet_name)
+
+        result = ValidationResult(
+            rule=rule,
+            message=_(
+                "schema_helpers.missing_items",
+                item_type=item_type,
+                item_source=item_source,
+                count=len(items),
+            ),
+            severity=SeverityLevel.ERROR,
+            details={f"missing_{item_type}": items},
+        )
+        return result
+    elif len(results) == 1:
+        return results[0]
+    else:
+        return None

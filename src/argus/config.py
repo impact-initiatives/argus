@@ -69,11 +69,18 @@ class Settings(BaseSettings):
 
     logger: JIVELogger = JIVELogger()
 
+    # for local testing
+    # eg Path.cwd() / "dataset_config" / "v2026.06.25.01"
+    DATASET_CONFIG_LOCAL_DIR: Path = Path.cwd() / "dataset_config" 
+
     DATASET_CONFIG_DIR: Path = Path.cwd() / "dataset_config"
     DATASET_CONFIG_URL: str = (
         "https://api.github.com/repos/impact-initiatives/argus_schemas/releases/latest"
     )
     Path(DATASET_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
+
+    FALLBACK_DATASET: str = "other_dataset"
+    FALLBACK_LOCALE: str = "en"
 
 
 settings = Settings()

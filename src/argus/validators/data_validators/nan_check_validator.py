@@ -52,8 +52,8 @@ class NaNDataCheck(BaseValidator):
             data=data, sheet_names=self.check_sheets, rule=self.name
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, sheet_ids = get_data_sheet_ids(self.schema, data_loaded_sheets, self.name)

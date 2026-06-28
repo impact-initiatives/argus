@@ -64,8 +64,8 @@ class ConsentCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, data_loaded_columns = get_data_loaded_columns(
@@ -73,16 +73,16 @@ class ConsentCheck(BaseValidator):
             rule=self.name,
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, schema_loaded_sheets = get_schema_loaded_sheets(
             schema=self.schema, sheet_names=[self.raw_data_sheet], rule=self.name
         )
 
-        if result:
-            results.extend(result)
+        if result is not None:
+            results.append(result)
             return results
 
         result, schema_consent_column = get_schema_loaded_column(
