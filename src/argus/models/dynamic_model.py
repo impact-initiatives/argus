@@ -3,6 +3,7 @@ from typing import override
 
 import polars as pl
 
+from argus.models.preprocess import lowercase_schema_mappings
 from locales.il8n import _
 
 from ..common.list_matching import filter_list, get_set_overlap, match_list, unique_list
@@ -23,19 +24,10 @@ from ..validators.data_validators import (
     CrossSheetRowSumCheck,
     DataTypeCheck,
     NaNDataCheck,
-    PiiDataCheck,
     RawToCleanToLog,
     SurveyChoicesCheck,
-    UniqueColumn,
 )
-from ..validators.schema_validators import (
-    ColumnNameCheck,
-    DuplicateSheetMatches,
-    MandatoryColumns,
-    MissingSheetsCheck,
-    UnexpectedSheetsCheck,
-)
-from .base_dataset_schemas import BaseDatasetSchema, DynamicDatasetSchema
+from .base_dataset_schemas import BaseDatasetSchema
 from .defaults import CONSENT_COLUMN, create_cleaning_log_sheet
 
 
@@ -73,24 +65,10 @@ class DynamicDataset(BaseDataset):
 
     """
 
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self, schema_path, validator_path) -> None:
+        super().__init__(schema_path, validator_path)
         self.schema: BaseDatasetSchema = self.get_schema()
         self.sheet_matching: dict[str, DynamicSheetMatching] = {}
-
-    @override
-    def get_schema(
-        self, *args: str | int | float, **kwargs: str | int | float
-    ) -> DynamicDatasetSchema:
-        # only use for init
-        return DynamicDatasetSchema()
-
-    @override
-    def get_validators(
-        self, *args: str | int | float, **kwargs: str | int | float
-    ) -> list[BaseValidator]:
-        return super().get_validators()
 
     @override
     def process_data(self) -> list[ValidationResult]:
@@ -106,15 +84,8 @@ class DynamicDataset(BaseDataset):
             all_results.extend(results)
 
         # this must come after build_schema
-        self.validators: list[BaseValidator] = [
-            MissingSheetsCheck(schema=self.schema),
-            UnexpectedSheetsCheck(),
-            DuplicateSheetMatches(),
-            MandatoryColumns(schema=self.schema),
-            UniqueColumn(schema=self.schema),
-            PiiDataCheck(schema=self.schema),
-            ColumnNameCheck(),
-        ]
+        # to ensure the complete schema is referenced
+        self.validators: list[BaseValidator] = self.get_validators()
 
         results = self.build_validators(consent_sheet)
 
@@ -418,7 +389,7 @@ class DynamicDataset(BaseDataset):
                 if column_map:
                     self.data.set_column_map_for_loaded_sheet(sheet, column_map)
 
-            self.lower_schema(self.schema)
+            lowercase_schema_mappings(self.schema)
         return results, consent_sheet
 
     def match_data(self) -> list[ValidationResult]:

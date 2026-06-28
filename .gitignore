@@ -16,7 +16,10 @@ wheels/
 # local dev
 *.ipynb
 logs/
+dataset_config/
 .~lock*
 
 # ide files
 *.vscode
+*.code-workspace
+

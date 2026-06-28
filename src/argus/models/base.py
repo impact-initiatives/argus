@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum, auto
 
 import polars as pl
+from pydantic import BaseModel, Field
 
 from ..common.list_matching import add_to_list, unique_list
 
@@ -28,20 +29,18 @@ class DynamicSheetMatching:
     log_id_column: list[str] = field(default_factory=list)
 
 
-@dataclass
-class ProcessValueMap:
+class ProcessValueMap(BaseModel):
     """Values expected in a column required for a validation process"""
 
     process_name: str
-    values: list[str | int | float] = field(default_factory=list)
+    values: list[str | int | float] = Field(default=[])
 
 
-@dataclass
-class SchemaColumnMap:
+class SchemaColumnMap(BaseModel):
     standard_name: str
-    alternate_names: list[str] = field(default_factory=list)
+    alternate_names: list[str] = Field(default=[])
     is_unique: bool = False
-    process_values: list[ProcessValueMap] = field(default_factory=list)
+    process_values: list[ProcessValueMap] = Field(default=[])
     allow_fuzzy_matching: bool = True
 
     def combine(self) -> list[str]:
@@ -54,11 +53,10 @@ class SchemaColumnMap:
                 return item
 
 
-@dataclass
-class SchemaSheetMap:
+class SchemaSheetMap(BaseModel):
     standard_name: str
-    alternate_names: list[str] = field(default_factory=list)
-    mandatory_columns: list[SchemaColumnMap] = field(default_factory=list)
+    alternate_names: list[str] = Field(default=[])
+    mandatory_columns: list[SchemaColumnMap] = Field(default=[])
     parent_sheet: str | None = None
     parent_linking_column: str | None = None
     allow_fuzzy_matching: bool = True

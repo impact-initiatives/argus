@@ -8,12 +8,9 @@ Both the schema components and the validation components are designed to be modu
 Argus can be run as a standalone tool or incorporated into other workflows.
 
 ### Supported Datasets
-To run the process a dataset must be specidifed. The current supported datasets and their parameter values include:
+To run the process a dataset must be specidifed. The current supported datasets and their schemas and validation rules are stored in the [Argus schemas repository](https://github.com/impact-initiatives/argus_schemas)
 
-| **Dataset** | **parameter Value** |
-| --- | --- | 
-|JMMI|jmmi|
-|All other datasets| other
+When Argus is run, the latest release from the schemas repository is downloaded.
 
 ## Setup
 1. Clone the repository
@@ -86,18 +83,29 @@ Most user messages (Error, Warnings, Info, Passed) support translations into oth
 
 See [translations](locales/README.md) for details on managing/expanding these.
 
+## Development and Debugging
+If testing or debugging, it is possible to run individual validation rules or use specific versions of schemas.
 ### Running Rules Individually
-If testing or debugging, it is possible to run individual validation rules. To do this, first load the data setting the appropriate filepath and then run the required rule. For JMMI:
+ To run individual rules, first load the data setting the appropriate filepath and then run the required rule. For datasets with specific schemas:
 
 ```python
-from src.argus.models.jmmi import JMMIDataset
+from argus.models.base_dataset import BaseDataset
+from argus.models.resolver import find_dataset_files
+from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
-# use whichever rule is required
-from src.argus.validators.data_validators import RawToCleanToLog
 
-schema = JMMIDataset().schema
-loader = ExcelLoader(schema)
-data, results = loader.load("path/to/excel/file.xlsx")
+locale = 'en'
+dataset_type = 'jmmi'
+schema_file = 'schema.yaml'
+validator_file = 'validators.yaml'
+dataset_config_dir = download_config("config_directory")
+result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
+
+dataset = BaseDataset(
+                    schema_path=result[schema_file], validator_path=result[validator_file]
+                )
+loader = ExcelLoader(dataset.schema)
+dataset.data, loader_results = loader.load("path/to/excel/file.xlsx")
 
 # run the required rule setting the appropriate parameters
 results = RawToCleanToLog(schema=schema).validate(data=data)
@@ -106,21 +114,33 @@ results = RawToCleanToLog(schema=schema).validate(data=data)
 ```
 or for other datasets:
 ```python
-from src.argus.models.dynamic_model import DynamicDataset
+from argus.models.dynamic_model import DynamicDataset
+from argus.models.resolver import find_dataset_files
+from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
-# Use whichever rule is required
-from src.argus.validators.data_validators import CrossSheetIdCheck
 
-dataset = DynamicDataset()
+locale = 'en'
+dataset_type = 'jmmi'
+schema_file = 'schema.yaml'
+validator_file = 'validators.yaml'
+dataset_config_dir = download_config("config_directory")
+result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
+
+dataset = DynamicDataset(
+                    schema_path=result[schema_file], validator_path=result[validator_file]
+                )
 loader = ExcelLoader(dataset.schema)
-dataset.data, excel_results = loader.load("path/to/excel/file.xlsx",
-                                            load_all_sheets= True  )
+dataset.data, loader_results = loader.load("path/to/excel/file.xlsx")
+
 dataset.process_data()
 
 # run the required rule setting the appropriate parameters
 results = CrossSheetIdCheck(dataset.schema).validate(dataset.data)
 # review results
 ```
+
+### Specifying Schema Versions
+By default, `download_config` downloads the latest release. It is possible to change to other releases by changing the Github api url stored in `DATASET_CONFIG_URL` in `config`. See the [Github Api documentation](https://docs.github.com/en/rest/releases/releases) for details.
 ## Contributing and Reporting Issues
 If you are interested in expanding the list of supported languages for the validation messages get in touch. 
 

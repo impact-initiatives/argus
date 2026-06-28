@@ -1,20 +1,12 @@
 import itertools
-from dataclasses import dataclass, field
+from dataclasses import field
+
+from pydantic import BaseModel
 
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
-from argus.models.defaults import (
-    CHOICES_SHEET,
-    DELETION_LOG_SHEET,
-    READ_ME_SHEET,
-    SAMPLING_INFO_SHEET,
-    SURVEY_SHEET,
-    create_enumerator_performance_sheet,
-    create_variable_tracker_sheet,
-)
 
 
-@dataclass
-class BaseDatasetSchema:
+class BaseDatasetSchema(BaseModel):
     dataset_type: str = ""
     # sheets that have to be loaded and used for further validation
     schema_loaded_sheets: list[SchemaSheetMap] = field(default_factory=list)
@@ -144,22 +136,3 @@ class BaseDatasetSchema:
         if sheet is not None:
             _ = sheet.add_mandatory_column(column)
             return sheet
-
-
-@dataclass
-class DynamicDatasetSchema(BaseDatasetSchema):
-    schema_loaded_sheets: list[SchemaSheetMap] = field(
-        default_factory=lambda: [
-            DELETION_LOG_SHEET,
-            SURVEY_SHEET,
-            CHOICES_SHEET,
-            create_variable_tracker_sheet(),
-        ]
-    )
-    schema_unloaded_sheets: list[SchemaSheetMap] = field(
-        default_factory=lambda: [
-            READ_ME_SHEET,
-            SAMPLING_INFO_SHEET,
-            create_enumerator_performance_sheet(),
-        ]
-    )
