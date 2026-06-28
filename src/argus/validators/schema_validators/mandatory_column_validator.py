@@ -6,10 +6,10 @@ from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 from ..data_helpers import get_data_loaded_columns, get_data_loaded_sheets
 
 
-class MandatoryColumns(BaseValidator):
+class MandatoryColumnsCheck(BaseValidator):
     @property
     def name(self) -> str:
-        return "MandatoryColumns"
+        return "MandatoryColumnsCheck"
 
     def __init__(self, schema: BaseDatasetSchema):
         self.schema = schema

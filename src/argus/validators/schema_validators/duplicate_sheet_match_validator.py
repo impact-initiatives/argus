@@ -5,12 +5,12 @@ from ...loaders.base_excel_loader import ExcelLoaderData
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 
 
-class DuplicateSheetMatches(BaseValidator):
+class DuplicateSheetMatchCheck(BaseValidator):
     """Checks to see if a schema sheet was matched to multiple excel sheets."""
 
     @property
     def name(self) -> str:
-        return "DuplicateSheetMatches"
+        return "DuplicateSheetMatchCheck"
 
     def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
         """Checks to see if a schema sheet was matched to multiple excel sheets.

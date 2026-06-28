@@ -13,7 +13,7 @@ from ..data_helpers import (
 from ..schema_helpers import get_schema_loaded_sheets, get_schema_process_value
 
 
-class RawToCleanToLog(BaseValidator):
+class RawToCleanToLogCheck(BaseValidator):
     """This process compares the differences between the clean and raw data sheets
     and then checks that all these differences are reflected in the cleaning log
     if provided
@@ -69,7 +69,7 @@ class RawToCleanToLog(BaseValidator):
 
     @property
     def name(self) -> str:
-        return "RawToCleanToLog"
+        return "RawToCleanToLogCheck"
 
     def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
         """This process compares the differences between the clean and raw data sheets
@@ -358,7 +358,7 @@ class RawToCleanToLog(BaseValidator):
                             "raw_clean_cleaning_log_validator.diff_no_cleaning_log",
                             count=difference_raw_to_clean_df.height,
                             clean_sheet=self.clean_data_sheet,
-                            raw_sheet=self.cleaning_log_sheet,
+                            raw_sheet=self.raw_data_sheet,
                         ),
                         severity=SeverityLevel.ERROR,
                         sheet_name=self.cleaning_log_sheet,

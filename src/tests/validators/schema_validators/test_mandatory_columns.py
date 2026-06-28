@@ -10,7 +10,7 @@ from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import BaseValidator
 from argus.validators.schema_validators.mandatory_column_validator import (
-    MandatoryColumns,
+    MandatoryColumnsCheck,
 )
 from tests.helpers import do_basic_checks
 
@@ -18,25 +18,25 @@ from tests.helpers import do_basic_checks
 @pytest.fixture
 def valid_schema_validator(valid_schema):
     """Create a UniqueColumn validator instance"""
-    return MandatoryColumns(schema=valid_schema)
+    return MandatoryColumnsCheck(schema=valid_schema)
 
 
 @pytest.fixture
 def valid_schema2_validator(valid_schema2):
     """Create a UniqueColumn validator instance"""
-    return MandatoryColumns(schema=valid_schema2)
+    return MandatoryColumnsCheck(schema=valid_schema2)
 
 
 @pytest.fixture
 def valid_no_mandatory_columns_validator(valid_no_mandatory_columns):
     """Create a UniqueColumn validator instance"""
-    return MandatoryColumns(schema=valid_no_mandatory_columns)
+    return MandatoryColumnsCheck(schema=valid_no_mandatory_columns)
 
 
 @pytest.fixture
 def invalid_schema_missing_sheet_validator(invalid_schema_missing_sheet):
     """Create a UniqueColumn validator instance"""
-    return MandatoryColumns(schema=invalid_schema_missing_sheet)
+    return MandatoryColumnsCheck(schema=invalid_schema_missing_sheet)
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def invalid_schema_missing_mandatory_column_validator(
     invalid_schema_missing_mandatory_column,
 ):
     """Create a UniqueColumn validator instance"""
-    return MandatoryColumns(schema=invalid_schema_missing_mandatory_column)
+    return MandatoryColumnsCheck(schema=invalid_schema_missing_mandatory_column)
 
 
 @pytest.fixture

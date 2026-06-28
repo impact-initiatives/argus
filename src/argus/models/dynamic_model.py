@@ -18,13 +18,13 @@ from ..models.base import (
 from ..models.base_dataset import BaseDataset
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
 from ..validators.data_validators import (
-    CleaningLogToClean,
+    CleaningLogToCleanCheck,
     ConsentCheck,
     CrossSheetIdCheck,
     CrossSheetRowSumCheck,
     DataTypeCheck,
     NaNDataCheck,
-    RawToCleanToLog,
+    RawToCleanToLogCheck,
     SurveyChoicesCheck,
 )
 from .base_dataset_schemas import BaseDatasetSchema
@@ -123,7 +123,7 @@ class DynamicDataset(BaseDataset):
                         )
                     )
                     self.validators.append(
-                        CleaningLogToClean(
+                        CleaningLogToCleanCheck(
                             schema=self.schema,
                             cleaning_log_sheet=cleaning_log_sheet,
                             clean_data_sheet=sheet,
@@ -143,7 +143,7 @@ class DynamicDataset(BaseDataset):
 
                 if details.linked_raw_sheet is not None:
                     self.validators.append(
-                        RawToCleanToLog(
+                        RawToCleanToLogCheck(
                             schema=self.schema,
                             cleaning_log_sheet=cleaning_log_sheet,
                             clean_data_sheet=sheet,

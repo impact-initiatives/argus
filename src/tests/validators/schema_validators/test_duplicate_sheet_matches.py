@@ -7,7 +7,7 @@ from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import BaseValidator
 from argus.validators.schema_validators.duplicate_sheet_match_validator import (
-    DuplicateSheetMatches,
+    DuplicateSheetMatchCheck,
 )
 from tests.helpers import do_basic_checks
 
@@ -15,7 +15,7 @@ from tests.helpers import do_basic_checks
 @pytest.fixture
 def valid_schema_validator():
     """Create a UniqueColumn validator instance"""
-    return DuplicateSheetMatches()
+    return DuplicateSheetMatchCheck()
 
 
 @pytest.fixture

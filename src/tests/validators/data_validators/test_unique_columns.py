@@ -10,7 +10,7 @@ from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import BaseValidator
 from argus.validators.data_validators.unique_column_validator import (
-    UniqueColumn,
+    UniqueColumnCheck,
 )
 from tests.helpers import do_basic_checks
 
@@ -18,13 +18,13 @@ from tests.helpers import do_basic_checks
 @pytest.fixture
 def valid_schema_validator(valid_schema):
     """Create a UniqueColumn validator instance"""
-    return UniqueColumn(schema=valid_schema)
+    return UniqueColumnCheck(schema=valid_schema)
 
 
 @pytest.fixture
 def no_unique_columns_validator(no_unique_columns_schema):
     """Create a UniqueColumn validator instance"""
-    return UniqueColumn(schema=no_unique_columns_schema)
+    return UniqueColumnCheck(schema=no_unique_columns_schema)
 
 
 @pytest.fixture

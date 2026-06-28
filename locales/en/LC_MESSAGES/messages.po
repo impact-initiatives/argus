@@ -114,7 +114,7 @@ msgstr "There were {count} values found in the {data_sheet} sheet that were not 
 
 #: src/argus/validators/data_validators/unique_column_validator.py:72
 msgid "unique_column_validator.non_unique"
-msgstr "For column  '{column}' in sheet '{sheet}' {count} non unique values were found. This column should contain unique values. Check the output for details."
+msgstr "For column '{column}' in sheet '{sheet}' {count} non unique values were found. This column should contain unique values. Check the output for details."
 
 #: src/argus/validators/schema_helpers.py:25
 msgid "schema_helpers.get_schema_id_column"

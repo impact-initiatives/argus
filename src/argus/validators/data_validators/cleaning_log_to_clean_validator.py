@@ -13,7 +13,7 @@ from ..data_helpers import (
 from ..schema_helpers import get_schema_loaded_sheets, get_schema_process_value
 
 
-class CleaningLogToClean(BaseValidator):
+class CleaningLogToCleanCheck(BaseValidator):
     """This process validates the data in the cleaning log
 
     After making sure that the required sheets and columns have been loaded and matched
@@ -67,7 +67,7 @@ class CleaningLogToClean(BaseValidator):
 
     @property
     def name(self) -> str:
-        return "CleaningLogToClean"
+        return "CleaningLogToCleanCheck"
 
     def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
         """This process validates the data in the cleaning log

@@ -93,6 +93,8 @@ from argus.models.base_dataset import BaseDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
+from src.argus.validators.data_validators import RawToCleanToLogCheck
+
 
 locale = 'en'
 dataset_type = 'jmmi'
@@ -108,7 +110,7 @@ loader = ExcelLoader(dataset.schema)
 dataset.data, loader_results = loader.load("path/to/excel/file.xlsx")
 
 # run the required rule setting the appropriate parameters
-results = RawToCleanToLog(schema=schema).validate(data=data)
+results = RawToCleanToLogCheck(schema=schema).validate(data=data)
 # review results
 
 ```
@@ -118,6 +120,7 @@ from argus.models.dynamic_model import DynamicDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
+from src.argus.validators.data_validators import CrossSheetIdCheck
 
 locale = 'en'
 dataset_type = 'jmmi'

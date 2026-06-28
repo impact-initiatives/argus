@@ -10,21 +10,21 @@ from argus.utils.yaml_loader import load_file
 from argus.validators.base import BaseValidator
 
 from ..validators.data_validators import (
-    CleaningLogToClean,
+    CleaningLogToCleanCheck,
     ConsentCheck,
     CrossSheetIdCheck,
     CrossSheetRowSumCheck,
     DataTypeCheck,
     NaNDataCheck,
     PiiDataCheck,
-    RawToCleanToLog,
+    RawToCleanToLogCheck,
     SurveyChoicesCheck,
-    UniqueColumn,
+    UniqueColumnCheck,
 )
 from ..validators.schema_validators import (
     ColumnNameCheck,
-    DuplicateSheetMatches,
-    MandatoryColumns,
+    DuplicateSheetMatchCheck,
+    MandatoryColumnsCheck,
     MissingSheetsCheck,
     UnexpectedSheetsCheck,
 )
@@ -32,19 +32,19 @@ from ..validators.schema_validators import (
 # supported rules. new rules need to be added to this list in order for them to
 # be supported in the yaml files.
 VALIDATOR_REGISTRY = {
-    "CleaningLogToClean": CleaningLogToClean,
+    "CleaningLogToClean": CleaningLogToCleanCheck,
     "ConsentCheck": ConsentCheck,
     "CrossSheetIdCheck": CrossSheetIdCheck,
     "CrossSheetRowSumCheck": CrossSheetRowSumCheck,
     "DataTypeCheck": DataTypeCheck,
     "NaNDataCheck": NaNDataCheck,
     "PiiDataCheck": PiiDataCheck,
-    "RawToCleanToLog": RawToCleanToLog,
+    "RawToCleanToLog": RawToCleanToLogCheck,
     "SurveyChoicesCheck": SurveyChoicesCheck,
-    "UniqueColumn": UniqueColumn,
+    "UniqueColumn": UniqueColumnCheck,
     "ColumnNameCheck": ColumnNameCheck,
-    "DuplicateSheetMatches": DuplicateSheetMatches,
-    "MandatoryColumns": MandatoryColumns,
+    "DuplicateSheetMatches": DuplicateSheetMatchCheck,
+    "MandatoryColumns": MandatoryColumnsCheck,
     "MissingSheetsCheck": MissingSheetsCheck,
     "UnexpectedSheetsCheck": UnexpectedSheetsCheck,
 }

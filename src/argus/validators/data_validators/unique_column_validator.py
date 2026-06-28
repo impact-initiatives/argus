@@ -5,10 +5,10 @@ from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 
 
-class UniqueColumn(BaseValidator):
+class UniqueColumnCheck(BaseValidator):
     @property
     def name(self) -> str:
-        return "UniqueColumn"
+        return "UniqueColumnCheck"
 
     def __init__(self, schema: BaseDatasetSchema):
         self.schema = schema

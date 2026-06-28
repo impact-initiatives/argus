@@ -10,7 +10,7 @@ from argus.models.base import ProcessValueMap, SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import BaseValidator
 from argus.validators.data_validators.cleaning_log_to_clean_validator import (
-    CleaningLogToClean,
+    CleaningLogToCleanCheck,
 )
 from tests.helpers import do_basic_checks, error_counter
 
@@ -18,25 +18,25 @@ from tests.helpers import do_basic_checks, error_counter
 @pytest.fixture
 def valid_schema_validator(valid_schema):
     """Create a UniqueColumn validator instance"""
-    return CleaningLogToClean(schema=valid_schema)
+    return CleaningLogToCleanCheck(schema=valid_schema)
 
 
 @pytest.fixture
 def invalid_schema_validator(invalid_schema):
     """Create a UniqueColumn validator instance"""
-    return CleaningLogToClean(schema=invalid_schema)
+    return CleaningLogToCleanCheck(schema=invalid_schema)
 
 
 @pytest.fixture
 def invalid_schema2_validator(invalid_schema2):
     """Create a UniqueColumn validator instance"""
-    return CleaningLogToClean(schema=invalid_schema2)
+    return CleaningLogToCleanCheck(schema=invalid_schema2)
 
 
 @pytest.fixture
 def invalid_schema4_validator(invalid_schema4):
     """Create a UniqueColumn validator instance"""
-    return CleaningLogToClean(schema=invalid_schema4)
+    return CleaningLogToCleanCheck(schema=invalid_schema4)
 
 
 @pytest.fixture
