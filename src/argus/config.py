@@ -71,7 +71,7 @@ class Settings(BaseSettings):
 
     # for local testing
     # eg Path.cwd() / "dataset_config" / "v2026.06.25.01"
-    DATASET_CONFIG_LOCAL_DIR: Path = Path.cwd() / "dataset_config" 
+    DATASET_CONFIG_LOCAL_DIR: Path = Path.cwd() / "dataset_config"
 
     DATASET_CONFIG_DIR: Path = Path.cwd() / "dataset_config"
     DATASET_CONFIG_URL: str = (
