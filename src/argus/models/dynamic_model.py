@@ -371,12 +371,10 @@ class DynamicDataset(BaseDataset):
                     details.classification == SheetClassification.CLEANING_LOG_SHEET
                     and details.log_id_column
                 ):
-                    (
+                    for column in details.log_id_column:
                         self.schema.add_mandatory_column_to_sheet(
                             sheet, SchemaColumnMap(standard_name=column)
                         )
-                        for column in details.log_id_column
-                    )
 
                 new_sheet = self.schema.get_schema_loaded_sheet(sheet)
                 assert new_sheet is not None  # added above

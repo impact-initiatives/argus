@@ -123,7 +123,7 @@ from src.argus.loaders.excel_loader import ExcelLoader
 from src.argus.validators.data_validators import CrossSheetIdCheck
 
 locale = 'en'
-dataset_type = 'jmmi'
+dataset_type = 'other_dataset'
 schema_file = 'schema.yaml'
 validator_file = 'validators.yaml'
 dataset_config_dir = download_config("config_directory")
@@ -133,7 +133,7 @@ dataset = DynamicDataset(
                     schema_path=result[schema_file], validator_path=result[validator_file]
                 )
 loader = ExcelLoader(dataset.schema)
-dataset.data, loader_results = loader.load("path/to/excel/file.xlsx")
+dataset.data, loader_results = loader.load("path/to/excel/file.xlsx", load_all_sheets=True)
 
 dataset.process_data()
 

@@ -9,7 +9,7 @@ class JIVELogger:
         self.log_dir.mkdir(exist_ok=True)
 
         # Setup logging
-        self.logger = logging.getLogger("jive")
+        self.logger = logging.getLogger("argus")
         self.logger.setLevel(logging.INFO)
 
         # Clear existing handlers to avoid duplicates
@@ -17,7 +17,7 @@ class JIVELogger:
 
         # Timed rotating file handler - rotates at midnight
         file_handler = TimedRotatingFileHandler(
-            self.log_dir / "jive.log",
+            self.log_dir / "argus.log",
             when="midnight",  # Rotate at midnight
             interval=1,  # Every 1 day
             backupCount=30,  # Keep 30 days of old logs
