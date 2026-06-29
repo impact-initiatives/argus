@@ -183,6 +183,9 @@ msgstr "Loading of the excel file '{file}' encountered an error. Check that the 
 msgid "validation_pipeline.passed"
 msgstr "Validator '{name}' passed."
 
+msgid "validation_pipeline.limit_details"
+msgstr "(Details limited to {count} records.)"
+
 #: src/argus/loaders/base_excel_loader.py:64
 msgid "base_excel_loader.match_excel_columns_to_schema.multiple_literal_matches"
 msgstr "The schema sheet '{sheet}' column '{column}' had {count} matches to columns. There should be only 1. Check the schema."

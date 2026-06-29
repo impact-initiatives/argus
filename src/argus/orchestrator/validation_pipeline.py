@@ -246,6 +246,10 @@ class ValidationPipeline:
         counts: dict[str, int] = {level.value: 0 for level in SeverityLevel}
         error_count: int = 0
 
+        limit_details_message = _(
+            "validation_pipeline.limit_details", count=settings.LIMIT_DETAILS_THRESHOLD
+        )
+
         for result in results:
             was_truncated = False
             if result.details and settings.LIMIT_DETAILS_THRESHOLD > 0:
@@ -259,10 +263,7 @@ class ValidationPipeline:
 
                 # update message
                 if was_truncated:
-                    result.message = (
-                        f"{result.message} (Details limited to "
-                        f"{settings.LIMIT_DETAILS_THRESHOLD} records.)"
-                    )
+                    result.message = f"{result.message} {limit_details_message}"
 
             counts[result.severity.value] += 1
 
