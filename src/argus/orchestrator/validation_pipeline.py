@@ -4,9 +4,9 @@ from typing import Any
 
 from fastexcel import CalamineCellError
 
+from argus.locales.il8n import _, i18n
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
-from locales.il8n import _, i18n
 
 from ..config import settings
 from ..loaders.base import DataSheetMap

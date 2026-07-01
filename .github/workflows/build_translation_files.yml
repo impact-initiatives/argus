@@ -42,10 +42,10 @@ jobs:
         run: uv sync --locked --all-extras --dev
       
       - name: Make File Executable
-        run: chmod +x ./locales/update_files.sh
+        run: chmod +x ./src/argus/locales/update_files.sh
         
       - name: Rebuild translation Files
-        run: ./locales/update_files.sh
+        run: ./src/argus/locales/update_files.sh
       
       - uses: EndBug/add-and-commit@v10
         with:

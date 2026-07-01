@@ -3,8 +3,8 @@ from typing import override
 
 import polars as pl
 
+from argus.locales.il8n import _
 from argus.models.preprocess import lowercase_schema_mappings
-from locales.il8n import _
 
 from ..common.list_matching import filter_list, get_set_overlap, match_list, unique_list
 from ..config import settings

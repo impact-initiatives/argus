@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Any
 
-from locales.il8n import _
+from argus.locales.il8n import _
 
 
 class SeverityLevel(StrEnum):

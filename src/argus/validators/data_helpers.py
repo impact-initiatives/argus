@@ -1,6 +1,6 @@
 import polars as pl
 
-from locales.il8n import _
+from argus.locales.il8n import _
 
 from ..common.list_matching import get_set_overlap, match_sheet_columns, match_sheet_columns_ids
 from ..common.schema_matching import get_matching_unique_columns

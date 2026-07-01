@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from locales.il8n import _
+from argus.locales.il8n import _
 
 from ..common.list_matching import (
     FuzzMatch,

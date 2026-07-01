@@ -3,7 +3,7 @@ import gettext
 import os
 from _contextvars import Token
 
-from src.argus.config import settings
+from argus.config import settings
 
 # TODO: Add unique message ids so that messages in other languages
 # can be identified?

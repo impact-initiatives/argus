@@ -1,4 +1,4 @@
-from locales.il8n import _
+from argus.locales.il8n import _
 
 from ..models.base import ProcessValueMap, SchemaColumnMap, SchemaSheetMap
 from ..models.base_dataset_schemas import BaseDatasetSchema
