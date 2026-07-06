@@ -73,12 +73,27 @@ class MandatoryColumnsCheck(BaseValidator):
             result, columns = get_data_loaded_columns(search_items, self.name)
 
             if result is not None:
+                result.sheet_name = loaded_sheet.data_sheet_name
                 results.append(result)
 
         if results:
-            column_df = pl.DataFrame(
-                [{"sheet": item.sheet_name, "column": item.column_name} for item in results]
-            ).to_dict(as_series=False)
+            column_dict: list[dict[str, str]] = [{}]
+
+            for item in results:
+                if item.details is None:
+                    column_dict.append(
+                        {"sheet_name": item.sheet_name, "column_name": item.column_name}
+                    )
+                else:
+                    for _, d_columns in item.details.items():
+                        for d_column in d_columns:
+                            column_dict.append(
+                                {"sheet_name": item.sheet_name, "column_name": d_column}
+                            )
+
+            column_df = pl.DataFrame(column_dict, schema=["sheet_name", "column_name"]).to_dict(
+                as_series=False
+            )
             result = ValidationResult(
                 rule=self.name,
                 message=self._("mandatory_column_validator.mandatory_columns", count=len(results)),
