@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import override
@@ -32,11 +33,12 @@ from .base_dataset_schemas import BaseDatasetSchema
 from .defaults import CONSENT_COLUMN, create_cleaning_log_sheet
 
 
+@dataclass
 class SortedSheets:
-    cleaning_log_sheets: list[str] = []
-    clean_sheets: list[str] = []
-    raw_sheets: list[str] = []
-    unknown_sheets: list[str] = []
+    cleaning_log_sheets: list[str] = field(default_factory=list)
+    clean_sheets: list[str] = field(default_factory=list)
+    raw_sheets: list[str] = field(default_factory=list)
+    unknown_sheets: list[str] = field(default_factory=list)
 
 
 class DynamicDataset(BaseDataset):
