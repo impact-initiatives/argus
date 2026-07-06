@@ -47,7 +47,7 @@ class ValidationPipeline:
         else:
             raise ValueError(
                 f"Unable to find files for {schema_file} and {validator_file} for "
-                f"dataset {dataset_type} and locale {locale}."
+                + f"dataset {dataset_type} and locale {locale}."
             )
 
         return dataset
@@ -105,8 +105,8 @@ class ValidationPipeline:
                     ValidationResult(
                         rule="GetYAMLConfig",
                         message=f"No dataset schema for '{dataset_type}' was found for "
-                        f" version '{dataset_config_dir.name}'. Falling back to default of "
-                        f"'{settings.FALLBACK_DATASET}'.",
+                        + f" version '{dataset_config_dir.name}'. Falling back to "
+                        + f"'{dataset.schema.dataset_type}'.",
                         severity=SeverityLevel.WARNING,
                     )
                 )
@@ -114,7 +114,7 @@ class ValidationPipeline:
                 ValidationResult(
                     rule="GetYAMLConfig",
                     message=f"Using schema version '{dataset_config_dir.name}' for "
-                    f"dataset '{dataset.schema.dataset_type}'.",
+                    + f"dataset '{dataset.schema.dataset_type}'.",
                     severity=SeverityLevel.ADMIN_INFO,
                 )
             )
@@ -187,7 +187,7 @@ class ValidationPipeline:
                 ValidationResult(
                     rule="ExcelFileLoading",
                     message=f"Loading of the excel file '{filepath.name}'"
-                    f" encountered an error: {str(e)}",
+                    + f" encountered an error: {str(e)}",
                     severity=SeverityLevel.ADMIN_ERROR,
                 )
             )
@@ -229,7 +229,7 @@ class ValidationPipeline:
                     ValidationResult(
                         rule=validator.name,
                         message=f"Validator '{validator.name}' encountered an error:"
-                        f" {traceback.format_exc()}",
+                        + f" {traceback.format_exc()}",
                         severity=SeverityLevel.ADMIN_ERROR,
                         details=self._get_validator_params(validator),
                     )

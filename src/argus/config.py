@@ -6,7 +6,7 @@ from .utils.logging import JIVELogger
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
+    model_config: SettingsConfigDict = SettingsConfigDict(
         env_file=".env",
         env_ignore_empty=True,
         extra="ignore",
@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     )
     Path(DATASET_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
 
+    FALLBACK_PROGRAMME: str = "other"
     FALLBACK_DATASET: str = "other_dataset"
     FALLBACK_LOCALE: str = "en"
 

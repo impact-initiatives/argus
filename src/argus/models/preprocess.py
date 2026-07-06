@@ -94,7 +94,7 @@ def lowercase_schema_mappings(schema: BaseDatasetSchema) -> None:
     #     str_list[:] = [item.lower() if isinstance(item, str) else item for item in str_list]
 
     def process_list(str_list: list[Any]):
-        lower_list_items(str_list)
+        _ = lower_list_items(str_list)
         # expand_list(str_list)
 
     def process_sheet_mapping(sheet: SchemaSheetMap) -> None:

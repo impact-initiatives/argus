@@ -24,11 +24,11 @@ When Argus is run, the latest release from the schemas repository is downloaded.
 
 4. Run the process
 ```bash
-uv run main.py --dataset-type jmmi "path/to/excel/file.xlsx"
+uv run main.py --dataset-type jmmi_dataset "path/to/excel/file.xlsx"
 ```
 or
 ```bash
-uv run main.py --dataset-type other "path/to/excel/file.xlsx"
+uv run main.py --dataset-type other_dataset "path/to/excel/file.xlsx"
 ```
 5. Any validation errors will be returned in JSON format:
 ```json
@@ -62,7 +62,7 @@ If incorporating this into another project or workflow it is probably easier to 
 from src.argus.orchestrator.validation_pipeline import ValidationPipeline
 
 try:
-   results = ValidationPipeline().run_all(filepath="path/to/excel/file.xlsx", dataset_type="other", locale='en') #or jmmi
+   results = ValidationPipeline().run_all(filepath="path/to/excel/file.xlsx", dataset_type="other_dataset", locale='en') #or jmmi_dataset
 except Exception as e:
    # handle errors
    print(e)
@@ -97,7 +97,7 @@ from src.argus.validators.data_validators import RawToCleanToLogCheck
 
 
 locale = 'en'
-dataset_type = 'jmmi'
+dataset_type = 'jmmi_dataset'
 schema_file = 'schema.yaml'
 validator_file = 'validators.yaml'
 dataset_config_dir = download_config("config_directory")

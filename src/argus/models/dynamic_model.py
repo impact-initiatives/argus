@@ -1,4 +1,5 @@
 from difflib import SequenceMatcher
+from pathlib import Path
 from typing import override
 
 import polars as pl
@@ -65,10 +66,11 @@ class DynamicDataset(BaseDataset):
 
     """
 
-    def __init__(self, schema_path, validator_path) -> None:
+    def __init__(self, schema_path: Path | str, validator_path: Path | str) -> None:
         super().__init__(schema_path, validator_path)
         self.schema: BaseDatasetSchema = self.get_schema()
         self.sheet_matching: dict[str, DynamicSheetMatching] = {}
+        self.sorted_sheets: SortedSheets = SortedSheets()
 
     @override
     def process_data(self) -> list[ValidationResult]:
@@ -372,7 +374,7 @@ class DynamicDataset(BaseDataset):
                     and details.log_id_column
                 ):
                     for column in details.log_id_column:
-                        self.schema.add_mandatory_column_to_sheet(
+                        _ = self.schema.add_mandatory_column_to_sheet(
                             sheet, SchemaColumnMap(standard_name=column)
                         )
 
