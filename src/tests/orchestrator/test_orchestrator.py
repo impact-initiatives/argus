@@ -37,28 +37,28 @@ def file_not_found():
 
 class TestOrchestrator:
     def test_valid_file_jmmi(self, run_pipeline: ValidationPipeline, valid_file: Path):
-        results = run_pipeline.run_all(valid_file, "jmmi")
+        results = run_pipeline.run_all(valid_file, "jmmi_dataset")
         # assert len (results['error']) == 0
         assert len(results["admin_error"]) == 0
 
     def test_valid_file_other(self, run_pipeline: ValidationPipeline, valid_file: Path):
-        results = run_pipeline.run_all(valid_file, "other")
+        results = run_pipeline.run_all(valid_file, "other_dataset")
         # assert len (results['error']) == 0
         assert len(results["admin_error"]) == 0
 
     def test_file_not_found(self, run_pipeline: ValidationPipeline, file_not_found: Path):
-        results = run_pipeline.run_all(file_not_found, "other")
+        results = run_pipeline.run_all(file_not_found, "other_dataset")
         assert len(results["admin_error"]) == 1
 
     def test_fuzzy_file(self, run_pipeline: ValidationPipeline, valid_file_fuzzy: Path):
-        results = run_pipeline.run_all(valid_file_fuzzy, "jmmi")
+        results = run_pipeline.run_all(valid_file_fuzzy, "jmmi_dataset")
         assert len(results["admin_error"]) == 0
 
     def test_invalid_fuzzy_file(self, run_pipeline: ValidationPipeline, invalid_file_fuzzy: Path):
-        results = run_pipeline.run_all(invalid_file_fuzzy, "jmmi")
+        results = run_pipeline.run_all(invalid_file_fuzzy, "jmmi_dataset")
         assert len(results["admin_error"]) == 0
 
     def test_invalid_file_jmmi(self, run_pipeline: ValidationPipeline, invalid_file: Path):
-        results = run_pipeline.run_all(invalid_file, "jmmi")
+        results = run_pipeline.run_all(invalid_file, "jmmi_dataset")
         # assert len (results['error']) == 0
         assert len(results["admin_error"]) == 0

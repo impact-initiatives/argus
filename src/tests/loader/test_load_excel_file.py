@@ -14,7 +14,7 @@ from tests.helpers import error_counter
 @pytest.fixture
 def valid_schema() -> BaseDatasetSchema:
     dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
-    result = find_dataset_files(dataset_config_dir, "jmmi", "en", "schema.yaml", "validators.yaml")
+    result = find_dataset_files(dataset_config_dir, "jmmi_dataset", "en", "schema.yaml", "validators.yaml")
     assert result is not None
     dataset: BaseDataset = BaseDataset(
         schema_path=result["schema.yaml"], validator_path=result["validators.yaml"]
