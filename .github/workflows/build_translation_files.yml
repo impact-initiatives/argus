@@ -1,7 +1,11 @@
 name: Build Translation Files
-on: [ push, pull_request ]
-  paths:
-    - 'src/argus/locales/**'
+on: 
+  push:
+    paths:
+      - 'src/argus/locales/**'
+  pull_request:
+    paths:
+      - 'src/argus/locales/**'
 jobs:
   rebuild_translation_files:
     runs-on: ubuntu-latest
