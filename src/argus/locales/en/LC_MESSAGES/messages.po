@@ -82,7 +82,7 @@ msgstr "There were {count} row/s in '{sheet}'that did not provide consent. Check
 
 #: src/argus/validators/data_validators/cross_sheet_id_check_validator.py:130
 msgid "cross_sheet_id_check_validator.id_check"
-msgstr "{count} Id values for sheet'{child_sheet}' and column '{child_column}' were not found in sheet '{master_sheet}' column '{master_column}'. Check output for details."
+msgstr "{count} Id values for sheet '{child_sheet}' and column '{child_column}' were not found in sheet '{master_sheet}' column '{master_column}'. Check output for details."
 
 #: src/argus/validators/data_validators/cross_sheet_row_sum_check_validator.py:150
 msgid "cross_sheet_row_sum_check_validator.row_sum"
