@@ -1,5 +1,11 @@
 name: Run pytest
-on: [ push, pull_request ]
+on: 
+  push:
+    paths:
+      - 'src/argus/**'
+  pull_request:
+    paths:
+      - 'src/argus/**'
 jobs:
   run_tests:
     name: Run tests
