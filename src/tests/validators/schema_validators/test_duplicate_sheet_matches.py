@@ -13,9 +13,9 @@ from tests.helpers import do_basic_checks
 
 
 @pytest.fixture
-def valid_schema_validator():
+def valid_schema_validator(valid_schema):
     """Create a UniqueColumn validator instance"""
-    return DuplicateSheetMatchCheck()
+    return DuplicateSheetMatchCheck(valid_schema)
 
 
 @pytest.fixture
