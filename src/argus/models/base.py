@@ -60,6 +60,9 @@ class SchemaSheetMap(BaseModel):
     parent_sheet: str | None = None
     parent_linking_column: str | None = None
     allow_fuzzy_matching: bool = True
+    # if setting a matching term, the fuzzy matching config will be ignored
+    matching_term: str | None = None
+    matching_term_ignore: list[str] | None = None
     required: bool = True
 
     def get_column(self, column_name: str) -> SchemaColumnMap | None:

@@ -155,6 +155,30 @@ class BaseExcelLoader:
                 # clear warning as they are not relevant if a literal match is found
                 results = []
                 return sheet_config.standard_name, results
+            elif (
+                sheet_config.matching_term
+                and sheet_config.matching_term in excel_sheet_name
+                and (
+                    sheet_config.matching_term_ignore is None
+                    or not any(
+                        term in excel_sheet_name for term in sheet_config.matching_term_ignore
+                    )
+                )
+            ):
+                results.append(
+                    ValidationResult(
+                        rule="Match excel sheeet to schema",
+                        message=self._(
+                            "base_excel_loader.match_excel_sheet_to_schema.matching_term",
+                            excel_sheet=excel_sheet_name,
+                            schema_sheet=sheet_config.standard_name,
+                            matching_term=sheet_config.matching_term,
+                        ),
+                        severity=SeverityLevel.INFO,
+                        sheet_name=excel_sheet_name,
+                    )
+                )
+                return sheet_config.standard_name, results
             elif fuzzy_matched_values:
                 fuzzy_matched_values_schema[sheet_config.standard_name] = fuzzy_matched_values
 

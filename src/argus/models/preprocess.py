@@ -101,6 +101,12 @@ def lowercase_schema_mappings(schema: BaseDatasetSchema) -> None:
         if sheet.standard_name:
             sheet.standard_name = sheet.standard_name.lower()
 
+        if sheet.matching_term:
+            sheet.matching_term = sheet.matching_term.lower()
+
+        if sheet.matching_term_ignore:
+            process_list(sheet.matching_term_ignore)
+
         process_list(sheet.alternate_names)
 
         for column in sheet.mandatory_columns:

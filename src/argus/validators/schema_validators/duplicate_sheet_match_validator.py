@@ -2,11 +2,15 @@ import polars as pl
 
 from ...common.list_matching import duplicate_list_items
 from ...loaders.base_excel_loader import ExcelLoaderData
+from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 
 
 class DuplicateSheetMatchCheck(BaseValidator):
     """Checks to see if a schema sheet was matched to multiple excel sheets."""
+
+    def __init__(self, schema: BaseDatasetSchema):
+        self.schema = schema
 
     @property
     def name(self) -> str:
@@ -31,6 +35,11 @@ class DuplicateSheetMatchCheck(BaseValidator):
 
         if duplicates:
             for item in duplicates:
+                schema_sheet = self.schema.get_schema_loaded_sheet(item)
+                if schema_sheet and schema_sheet.matching_term:
+                    # matching on terms can match a schema sheet to multiple excel sheets
+                    # which is intended so ignore as part of this check
+                    continue
                 matched_sheets = data.get_sheet_matches(item)
                 sheet_names = [name.data_sheet_name for name in matched_sheets]
                 matches.extend([{"sheet": item, "matches": sheet_names}])

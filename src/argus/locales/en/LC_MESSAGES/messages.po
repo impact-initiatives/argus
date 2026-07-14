@@ -206,6 +206,10 @@ msgstr "Excel sheet '{excel_sheet}' was fuzzy matched with schema sheet {schema_
 msgid "base_excel_loader.match_excel_sheet_to_schema.fuzzy_match_multiple"
 msgstr "Excel sheet '{excel_sheet}' was fuzzy matched with {count} schema sheets so was not matched. This will lead to validation errors about excel sheets not being found. See output for details."
 
+msgid "base_excel_loader.match_excel_sheet_to_schema.matching_term"
+msgstr "Excel sheet '{excel_sheet}' was matched with schema sheet {schema_sheet} using the matching term {matching_term}."
+
+
 #: src/argus/loaders/base_excel_loader.py:225
 msgid "base_excel_loader.check_duplicate_columns"
 msgstr "Excel sheet '{excel_sheet}' has {count} duplicate column names and could not be loaded. Check the output for details."
