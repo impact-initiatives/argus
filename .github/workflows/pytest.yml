@@ -3,9 +3,11 @@ on:
   push:
     paths:
       - 'src/argus/**'
+      - 'src/tests/**'
   pull_request:
     paths:
       - 'src/argus/**'
+      - 'src/tests/**'
 jobs:
   run_tests:
     name: Run tests
