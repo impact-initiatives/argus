@@ -18,42 +18,42 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+      #   with:
+      #     fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      # - name: Install uv
+      #   uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
 
-      - name: Validate the tag exists
-        id: check_tag
-        run: |
-          if git rev-parse "${{ inputs.argus_release_tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ inputs.argus_release_tag }} already exists."
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ inputs.argus_release_tag }} will be created at HEAD."
+      # - name: Validate the tag exists
+      #   id: check_tag
+      #   run: |
+      #     if git rev-parse "${{ inputs.argus_release_tag }}" >/dev/null 2>&1; then
+      #       echo "exists=true" >> "$GITHUB_OUTPUT"
+      #       echo "Tag ${{ inputs.argus_release_tag }} already exists."
+      #     else
+      #       echo "exists=false" >> "$GITHUB_OUTPUT"
+      #       echo "Tag ${{ inputs.argus_release_tag }} will be created at HEAD."
             
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag "${{ inputs.argus_release_tag }}"
-            git push origin "${{ inputs.argus_release_tag }}"
-          fi
+      #       git config user.name "github-actions[bot]"
+      #       git config user.email "github-actions[bot]@users.noreply.github.com"
+      #       git tag "${{ inputs.argus_release_tag }}"
+      #       git push origin "${{ inputs.argus_release_tag }}"
+      #     fi
 
-      - name: Build distribution
-        run: |
-          # uv build produces both .whl and .tar.gz in dist/
-          uv build
+      # - name: Build distribution
+      #   run: |
+      #     # uv build produces both .whl and .tar.gz in dist/
+      #     uv build
 
-      - name: Create source archive (ZIP)
-        run: |
-          REPO_NAME=$(basename "$GITHUB_REPOSITORY")
-          git archive --format=zip \
-            --prefix="${REPO_NAME}-${{ inputs.argus_release_tag }}/" \
-            -o dist/source-${{ inputs.argus_release_tag }}.zip ${{ inputs.argus_release_tag }} 2>/dev/null || \
-            git archive --format=zip \
-            --prefix="${REPO_NAME}-HEAD/" \
-            -o dist/source-HEAD.zip HEAD
+      # - name: Create source archive (ZIP)
+      #   run: |
+      #     REPO_NAME=$(basename "$GITHUB_REPOSITORY")
+      #     git archive --format=zip \
+      #       --prefix="${REPO_NAME}-${{ inputs.argus_release_tag }}/" \
+      #       -o dist/source-${{ inputs.argus_release_tag }}.zip ${{ inputs.argus_release_tag }} 2>/dev/null || \
+      #       git archive --format=zip \
+      #       --prefix="${REPO_NAME}-HEAD/" \
+      #       -o dist/source-HEAD.zip HEAD
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
