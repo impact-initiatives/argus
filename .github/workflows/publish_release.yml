@@ -25,7 +25,3 @@ jobs:
           tag_name: ${{ inputs.release_tag }}
           name: Release ${{ inputs.release_tag }}
           generate_release_notes: true
-          # files: |
-          #   dist/*.whl
-          #   dist/*.tar.gz
-          #   dist/source-*.zip
