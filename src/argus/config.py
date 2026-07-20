@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 
 from .utils.logging import JIVELogger
@@ -85,6 +85,15 @@ class Settings(BaseSettings):
     FALLBACK_LOCALE: str = "en"
 
     ARGUS_VERSION_FILE: str = Field(alias="ARGUS_VERSION_FILE", default="/app/argus_version.txt")
+
+    @computed_field
+    @property
+    def argus_version(self) -> str:
+        try:
+            with open(self.ARGUS_VERSION_FILE) as f:
+                return f.read().strip()
+        except Exception:
+            return "unknown"
 
 
 settings = Settings()

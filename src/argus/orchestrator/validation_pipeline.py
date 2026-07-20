@@ -284,12 +284,6 @@ class ValidationPipeline:
 
         success = error_count == 0
 
-        try:
-            with open(settings.ARGUS_VERSION_FILE) as f:
-                argus_version = f.read().strip()
-        except Exception:
-            argus_version = "unknown"
-
         return {
             "success": success,
             "summary": counts,
@@ -297,7 +291,7 @@ class ValidationPipeline:
             "metadata": {
                 "dataset_type": dataset_type,
                 "validation_date": datetime.now(UTC).isoformat(timespec="seconds"),
-                "version": argus_version,
+                "version": settings.argus_version,
                 "file_name": filepath.name,
             },
         }
