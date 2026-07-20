@@ -1,4 +1,5 @@
 import traceback
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -77,7 +78,7 @@ class ValidationPipeline:
             filepath, dataset_type, locale=locale, use_local_config=use_local_config
         )
         i18n.reset_locale(token)
-        return self._compile_results(results, dataset_type)
+        return self._compile_results(results, dataset_type, filepath)
 
     def _run(
         self, filepath: Path, dataset_type: str, locale: str, use_local_config: bool = False
@@ -239,7 +240,7 @@ class ValidationPipeline:
         return all_results
 
     def _compile_results(
-        self, results: list[ValidationResult], dataset_type: str
+        self, results: list[ValidationResult], dataset_type: str, filepath: Path
     ) -> dict[str, Any]:
         """Compile validation results into structured output."""
         buckets: dict[str, list[dict[str, Any]]] = {level.value: [] for level in SeverityLevel}
@@ -283,12 +284,21 @@ class ValidationPipeline:
 
         success = error_count == 0
 
+        try:
+            with open(settings.ARGUS_VERSION_FILE) as f:
+                argus_version = f.read().strip()
+        except Exception:
+            argus_version = "unknown"
+
         return {
             "success": success,
             "summary": counts,
             **{key: buckets[key] for key in buckets},
             "metadata": {
                 "dataset_type": dataset_type,
+                "validation_date": datetime.now(UTC).isoformat(timespec="seconds"),
+                "version": argus_version,
+                "file_name": filepath.name,
             },
         }
 

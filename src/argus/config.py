@@ -1,16 +1,17 @@
 from pathlib import Path
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 from .utils.logging import JIVELogger
 
 
 class Settings(BaseSettings):
-    model_config: SettingsConfigDict = SettingsConfigDict(
-        env_file=".env",
-        env_ignore_empty=True,
-        extra="ignore",
-    )
+    # model_config: SettingsConfigDict = SettingsConfigDict(
+    #     env_file=".env",
+    #     env_ignore_empty=True,
+    #     extra="ignore",
+    # )
 
     MIN_FUZZY_MATCH_SCORE: int = 90
     FUZZY_MATCH_STRING_LENGTH_RATIO: float = 0.7
@@ -82,6 +83,8 @@ class Settings(BaseSettings):
     FALLBACK_PROGRAMME: str = "other"
     FALLBACK_DATASET: str = "other_dataset"
     FALLBACK_LOCALE: str = "en"
+
+    ARGUS_VERSION_FILE: str = Field(alias="ARGUS_VERSION_FILE", default="/app/argus_version.txt")
 
 
 settings = Settings()

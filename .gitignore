@@ -17,6 +17,7 @@ wheels/
 *.ipynb
 logs/
 dataset_config/
+config_directory/
 .~lock*
 
 # ide files
