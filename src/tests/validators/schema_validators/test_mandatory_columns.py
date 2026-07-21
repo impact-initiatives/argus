@@ -28,6 +28,12 @@ def valid_schema2_validator(valid_schema2):
 
 
 @pytest.fixture
+def valid_schema3_validator(valid_schema3):
+    """Create a UniqueColumn validator instance"""
+    return MandatoryColumnsCheck(schema=valid_schema3)
+
+
+@pytest.fixture
 def valid_no_mandatory_columns_validator(valid_no_mandatory_columns):
     """Create a UniqueColumn validator instance"""
     return MandatoryColumnsCheck(schema=valid_no_mandatory_columns)
@@ -85,6 +91,26 @@ def valid_schema2():
                     SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
                 ],
             ),
+        ],
+        schema_unloaded_sheets=[],
+    )
+
+
+@pytest.fixture
+def valid_schema3():
+
+    return BaseDatasetSchema(
+        dataset_type="jmmi",
+        schema_loaded_sheets=[
+            SchemaSheetMap(
+                standard_name="raw_data",
+                alternate_names=["raw_data"],
+                mandatory_columns=[
+                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"]),
+                    SchemaColumnMap(standard_name="col1"),
+                    SchemaColumnMap(standard_name="col2"),
+                ],
+            )
         ],
         schema_unloaded_sheets=[],
     )
@@ -229,6 +255,17 @@ class TestMandatoryColumns:
         result = invalid_schema_missing_mandatory_column_validator.validate(valid_excel_data)
 
         do_basic_checks(result, 1)
+
+    def test_missing_mandatory_columns(
+        self,
+        valid_schema3_validator: BaseValidator,
+        valid_excel_data: ExcelLoaderData,
+    ):
+        result = valid_schema3_validator.validate(valid_excel_data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details.items()) == 2
 
     def test_missing_mandatory_column_optional_sheet(
         self,

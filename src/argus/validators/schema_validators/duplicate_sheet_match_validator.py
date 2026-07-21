@@ -44,17 +44,18 @@ class DuplicateSheetMatchCheck(BaseValidator):
                 sheet_names = [name.data_sheet_name for name in matched_sheets]
                 matches.extend([{"sheet": item, "matches": sheet_names}])
 
-            matches_df = pl.DataFrame(matches)
-            results.append(
-                ValidationResult(
-                    rule=self.name,
-                    message=self._(
-                        "duplicate_sheet_match_validator.duplicate_sheets",
-                        count=matches_df.select(pl.col("sheet")).unique().height,
-                    ),
-                    severity=SeverityLevel.ERROR,
-                    details=matches_df.to_dict(),
+            if matches:
+                matches_df = pl.DataFrame(matches)
+                results.append(
+                    ValidationResult(
+                        rule=self.name,
+                        message=self._(
+                            "duplicate_sheet_match_validator.duplicate_sheets",
+                            count=matches_df.select(pl.col("sheet")).unique().height,
+                        ),
+                        severity=SeverityLevel.ERROR,
+                        details=matches_df.to_dict(),
+                    )
                 )
-            )
 
         return results

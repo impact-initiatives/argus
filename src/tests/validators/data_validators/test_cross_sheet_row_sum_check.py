@@ -20,6 +20,12 @@ def valid_schema_validator(valid_schema):
 
 
 @pytest.fixture
+def invalid_args_validator(valid_schema):
+    """Create a UniqueColumn validator instance"""
+    return CrossSheetRowSumCheck(schema=valid_schema, master_sheet="invalid_sheet")
+
+
+@pytest.fixture
 def valid_schema_child_validator(valid_schema_child):
     """Create a UniqueColumn validator instance"""
     return CrossSheetRowSumCheck(
@@ -353,6 +359,58 @@ def valid_excel_data_child():
     return ExcelLoaderData(loaded_sheets=loaded_sheets)
 
 
+@pytest.fixture
+def valid_excel_data_child_missing_deletion_sheet():
+    """Create ExcelLoaderData with matching columns"""
+    df_raw_child = pl.DataFrame(
+        {
+            "uuid": [2, 2, 3, 4],
+            "person_id": [1, 2, 3, 4],
+        }
+    )
+
+    df_raw_parent = pl.DataFrame(
+        {
+            "uuid": [1, 2, 3, 4, 5],
+        }
+    )
+    df_clean_child = pl.DataFrame(
+        {
+            "uuid": [2, 2, 3, 4],
+            "person_id": [1, 2, 3, 4],
+        }
+    )
+
+    loaded_sheets = [
+        DataSheetMap(
+            schema_sheet_name="raw_data_child",
+            data_sheet_name="raw_data_child",
+            data=df_raw_child,
+            column_map=[
+                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
+                DataColumnMap(schema_column_name="person_id", data_column_name="person_id"),
+            ],
+        ),
+        DataSheetMap(
+            schema_sheet_name="raw_data",
+            data_sheet_name="raw_data",
+            data=df_raw_parent,
+            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
+        ),
+        DataSheetMap(
+            schema_sheet_name="clean_data_child",
+            data_sheet_name="clean_data_child",
+            data=df_clean_child,
+            column_map=[
+                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
+                DataColumnMap(schema_column_name="person_id", data_column_name="person_id"),
+            ],
+        ),
+    ]
+
+    return ExcelLoaderData(loaded_sheets=loaded_sheets)
+
+
 class TestCrossSheetRowSum:
     def test_valid_data(
         self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
@@ -390,3 +448,21 @@ class TestCrossSheetRowSum:
         result = valid_schema_child_validator.validate(valid_excel_data_child)
 
         do_basic_checks(result, 0)
+
+    def test_incorrect_sheet(
+        self, invalid_args_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+    ):
+        result = invalid_args_validator.validate(valid_excel_data)
+
+        do_basic_checks(result, 1)
+
+    def test_parent_child_data_missing_deletion_sheet(
+        self,
+        valid_schema_child_validator: BaseValidator,
+        valid_excel_data_child_missing_deletion_sheet: ExcelLoaderData,
+    ):
+        result = valid_schema_child_validator.validate(
+            valid_excel_data_child_missing_deletion_sheet
+        )
+
+        do_basic_checks(result, 1)

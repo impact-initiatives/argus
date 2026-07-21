@@ -82,13 +82,21 @@ class MandatoryColumnsCheck(BaseValidator):
             for item in results:
                 if item.details is None:
                     column_dict.append(
-                        {"sheet_name": item.sheet_name, "column_name": item.column_name}
+                        {
+                            "sheet_name": item.sheet_name if item.sheet_name is not None else "",
+                            "column_name": item.column_name if item.column_name is not None else "",
+                        }
                     )
                 else:
                     for _, d_columns in item.details.items():
                         for d_column in d_columns:
                             column_dict.append(
-                                {"sheet_name": item.sheet_name, "column_name": d_column}
+                                {
+                                    "sheet_name": item.sheet_name
+                                    if item.sheet_name is not None
+                                    else "",
+                                    "column_name": d_column,
+                                }
                             )
 
             column_df = pl.DataFrame(column_dict, schema=["sheet_name", "column_name"]).to_dict(

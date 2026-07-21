@@ -4,7 +4,6 @@ from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 from ..data_helpers import (
-    get_data_loaded_sheet,
     get_data_loaded_sheets,
     get_data_sheet_id,
 )
@@ -68,7 +67,7 @@ class CrossSheetRowSumCheck(BaseValidator):
             sheets_to_load.append(self.master_deletion_log)
 
         result, data_loaded_sheets = get_data_loaded_sheets(
-            data=data, sheet_names=sheets_to_load, rule=self.name
+            data=data, sheet_names=sheets_to_load, rule=self.name, check_data=False
         )
         if result is not None:
             results.append(result)
@@ -82,6 +81,8 @@ class CrossSheetRowSumCheck(BaseValidator):
             self.schema, self.master_sheet, self.name
         )
         if result is not None:
+            # unlikely to happen as it would have to be matched to pass the previous
+            # get_data_loaded_sheets check
             results.append(result)
             return results
 
@@ -89,47 +90,44 @@ class CrossSheetRowSumCheck(BaseValidator):
             master_schema_sheet.parent_sheet is not None
             and master_schema_sheet.parent_linking_column is not None
             and self.master_deletion_log is not None
+            and data_loaded_sheets[self.master_deletion_log] is not None
         ):
-            result, master_filter_loaded_sheet = get_data_loaded_sheet(
-                data, self.master_deletion_log, rule=self.name, check_data=False
-            )
-            if result is not None:
-                results.append(result)
-                return results
-
-            if master_filter_loaded_sheet is not None:
-                if master_filter_loaded_sheet.data.height < 1:
-                    child_counts.append(
-                        ChildCounts(
-                            sheet_name=self.master_deletion_log,
-                            row_count=0,
-                        )
-                    )
-                else:
-                    result, data_sheet_ids = get_data_sheet_id(
-                        schema=self.schema,
+            if data_loaded_sheets[self.master_deletion_log].data.height < 1:
+                child_counts.append(
+                    ChildCounts(
                         sheet_name=self.master_deletion_log,
-                        loaded_sheet=master_filter_loaded_sheet,
-                        rule=self.name,
+                        row_count=0,
                     )
+                )
+            else:
+                result, data_sheet_ids = get_data_sheet_id(
+                    schema=self.schema,
+                    sheet_name=self.master_deletion_log,
+                    loaded_sheet=data_loaded_sheets[self.master_deletion_log],
+                    rule=self.name,
+                )
 
-                    if result:
-                        results.append(result)
-                        return results
-                    data_sheet_ids = data_sheet_ids[0]
+                if result:
+                    results.append(result)
+                    return results
+                data_sheet_ids = data_sheet_ids[0]
 
-                    deleted_data_count = master_filter_loaded_sheet.data.join(
+                deleted_data_count = (
+                    data_loaded_sheets[self.master_deletion_log]
+                    .data.join(
                         other=data_loaded_sheets[self.master_sheet].data,
                         left_on=data_sheet_ids.data_column_name,
                         right_on=master_schema_sheet.parent_linking_column,
                         how="inner",
-                    ).n_unique()
-                    child_counts.append(
-                        ChildCounts(
-                            sheet_name=self.master_deletion_log,
-                            row_count=deleted_data_count,
-                        )
                     )
+                    .n_unique()
+                )
+                child_counts.append(
+                    ChildCounts(
+                        sheet_name=self.master_deletion_log,
+                        row_count=deleted_data_count,
+                    )
+                )
 
         master_data_count = data_loaded_sheets[self.master_sheet].data.height
 
