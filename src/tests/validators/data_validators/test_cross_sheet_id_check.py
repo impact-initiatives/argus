@@ -734,9 +734,9 @@ class TestCrossSheetIdCheck:
         do_basic_checks(result, 1)
 
     def test_child_no_id_data(
-        self, valid_schema_validator: BaseValidator, master_no_id_data: ExcelLoaderData
+        self, valid_schema_validator: BaseValidator, child_no_id_data: ExcelLoaderData
     ):
-        result = valid_schema_validator.validate(master_no_id_data)
+        result = valid_schema_validator.validate(child_no_id_data)
 
         do_basic_checks(result, 1)
 

@@ -654,66 +654,6 @@ def missing_sheet_2_excel_data():
 
 
 @pytest.fixture
-def missing_column_1_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuidmiss": [1, 2, 3, 4, 5],
-            "question1": [1, 2, 3, 4, 5],
-            "question2": ["a", "c", "f", "a", "a"],
-        }
-    )
-
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "question1": [1, 2, 3, 4, 4],
-            "question2": ["a", "c", "f", "a", "a"],
-        }
-    )
-
-    df_clean_log = pl.DataFrame(
-        {
-            "uuid": [5],
-            "variable": ["question1"],
-            "new_value": [5],
-            "old_value": [4],
-            "change_type": ["change_response"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuidmiss", data_column_name="uuidmiss")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="cleaning_log",
-            data_sheet_name="cleaning_log",
-            data=df_clean_log,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="new_value", data_column_name="new_value"),
-                DataColumnMap(schema_column_name="variable", data_column_name="variable"),
-                DataColumnMap(schema_column_name="change_type", data_column_name="change_type"),
-                DataColumnMap(schema_column_name="old_value", data_column_name="old_value"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
 def missing_column_2_excel_data():
     """Create ExcelLoaderData with matching columns"""
 
@@ -1435,16 +1375,6 @@ class TestCleaningLog:
         result = valid_schema_validator.validate(missing_sheet_2_excel_data)
 
         do_basic_checks(result, 1)
-
-    # def test_missing_column_1_data(
-    #     self,
-    #     valid_schema_validator: BaseValidator,
-    #     missing_column_1_excel_data: ExcelLoaderData,
-    # ):
-    #     result = valid_schema_validator.validate(missing_column_1_excel_data)
-
-    #     assert isinstance(result, list)
-    #     assert len(error_counter(result)) == 1
 
     def test_missing_column_2_data(
         self,
