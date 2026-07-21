@@ -97,7 +97,7 @@ class RawToCleanToLogCheck(BaseValidator):
             sheet_names.append(self.cleaning_log_sheet)
 
         result, data_loaded_sheets = get_data_loaded_sheets(
-            data=data, sheet_names=sheet_names, rule=self.name
+            data=data, sheet_names=sheet_names, rule=self.name, check_data=False
         )
 
         if result is not None:

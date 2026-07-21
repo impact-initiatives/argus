@@ -68,7 +68,9 @@ class CrossSheetIdCheck(BaseValidator):
             return results
 
         for sheet in self.child_sheets:
-            result, child_loaded_sheet = get_data_loaded_sheet(data, sheet, self.name)
+            result, child_loaded_sheet = get_data_loaded_sheet(
+                data, sheet, self.name, check_data=False
+            )
 
             if result is not None:
                 results.append(result)

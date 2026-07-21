@@ -32,12 +32,14 @@ class MandatoryColumnsCheck(BaseValidator):
             data=data,
             sheet_names=self.schema.get_loaded_sheets_standard_names(required=True),
             rule=self.name,
+            check_data=False,
         )
         # if optional sheets have been loaded, check their columns
         result_optional, data_loaded_sheets_optional = get_data_loaded_sheets(
             data=data,
             sheet_names=self.schema.get_loaded_sheets_standard_names(required=False),
             rule=self.name,
+            check_data=False,
         )
 
         if data_loaded_sheets_optional:

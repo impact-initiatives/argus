@@ -446,6 +446,8 @@ def get_id_linking_columns(
 
     # if a match was found check the overlap to make sure
     # that it is a legitimate match
+    # Note: if a sheet is empty then this will return an error. If necessary,
+    # an option to return a match if one sheet is empty could be added.
     result_overlap = check_id_column_overlap(
         source_column=source_sheet_id_column.data_column_name,
         source_sheet=source_sheet,
@@ -488,6 +490,9 @@ def check_id_column_overlap(
     """Compares the intersection of two columns and calculates their overlap.
     Useful for verifying that id columns that have been matched through their
     names are actually linkable.
+
+    Note: if a sheet is empty then this will return an error. If necessary,
+    an option to return a match if one sheet is empty could be added.
 
     Args:
         source_column (str): name of the source column

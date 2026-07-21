@@ -20,9 +20,9 @@ def valid_schema_validator(valid_schema):
 
 
 @pytest.fixture
-def invalid_schema_validator(invalid_schema):
+def invalid_schema_multiple_unique_columns_validator(invalid_schema_multiple_unique_columns):
     """Create a UniqueColumn validator instance"""
-    return NaNDataCheck(schema=invalid_schema)
+    return NaNDataCheck(schema=invalid_schema_multiple_unique_columns)
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def valid_schema():
 
 
 @pytest.fixture
-def invalid_schema():
+def invalid_schema_multiple_unique_columns():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
@@ -145,7 +145,7 @@ def invalid_excel_data2():
 
 
 @pytest.fixture
-def invalid_excel_data3():
+def invalid_sheet_map():
     """Create ExcelLoaderData with matching columns"""
 
     df_clean = pl.DataFrame(
@@ -169,7 +169,7 @@ def invalid_excel_data3():
 
 
 @pytest.fixture
-def invalid_excel_data4():
+def invalid_excel_data_multiple_unique_columns():
     """Create ExcelLoaderData with matching columns"""
 
     df_clean = pl.DataFrame(
@@ -196,7 +196,7 @@ def invalid_excel_data4():
     return ExcelLoaderData(loaded_sheets=loaded_sheets)
 
 
-class TestCleaningLog:
+class TestNaNDataCheck:
     def test_valid_data(
         self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
     ):
@@ -226,20 +226,22 @@ class TestCleaningLog:
         assert filtered_results[0].details is not None
         assert len(filtered_results[0].details["uuid"]) == 2
 
-    def test_invalid_data3(
+    def test_invalid_sheet_map(
         self,
         valid_schema_validator: BaseValidator,
-        invalid_excel_data3: ExcelLoaderData,
+        invalid_sheet_map: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_excel_data3)
+        result = valid_schema_validator.validate(invalid_sheet_map)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_data4(
+    def test_invalid_data_multiple_unique_columns(
         self,
-        invalid_schema_validator: BaseValidator,
-        invalid_excel_data4: ExcelLoaderData,
+        invalid_schema_multiple_unique_columns_validator: BaseValidator,
+        invalid_excel_data_multiple_unique_columns: ExcelLoaderData,
     ):
-        result = invalid_schema_validator.validate(invalid_excel_data4)
+        result = invalid_schema_multiple_unique_columns_validator.validate(
+            invalid_excel_data_multiple_unique_columns
+        )
 
         do_basic_checks(result, 1)

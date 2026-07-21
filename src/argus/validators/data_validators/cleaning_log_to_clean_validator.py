@@ -96,6 +96,7 @@ class CleaningLogToCleanCheck(BaseValidator):
             data=data,
             sheet_names=[self.clean_data_sheet, self.cleaning_log_sheet],
             rule=self.name,
+            check_data=False,
         )
 
         if result is not None:
