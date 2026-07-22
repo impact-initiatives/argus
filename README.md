@@ -30,7 +30,7 @@ or
 ```bash
 uv run main.py --dataset-type other_dataset "path/to/excel/file.xlsx"
 ```
-5. Any validation errors will be returned in JSON format:
+5. Validation results and errors will be returned in JSON format:
 ```json
 {
    "success": bool,
@@ -52,7 +52,22 @@ uv run main.py --dataset-type other_dataset "path/to/excel/file.xlsx"
    "admin_info":  [...],  
    "metadata": {
       "dataset_type": str,
+      "validation_date": datetime,
+      "version": str,
+      "file_name": str
    },
+}
+
+```
+The individual validation results have the structure:
+```json
+{
+   "rule": str,
+   "message": str,
+   "severity": str,
+   "sheet_name": str,
+   "column_name": str,
+   "details": dict
 }
 ```
 
