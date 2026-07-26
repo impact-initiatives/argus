@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     ID_FILTER_NAMES: set[str] = {"start", "end"}  # , "_index"
 
-    COMMON_ID_COLUMN_NAMES: set[str] = {"uuid", "x_uuid", "person_id"}
+    COMMON_ID_COLUMN_NAMES: set[str] = {"uuid", "x_uuid", "person_id", "_uuid"}
 
     # for dynamic model creation
     CLEAN_DATA_SHEET_SEARCH_TERMS: list[str] = ["clean_data"]
