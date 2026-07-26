@@ -13,8 +13,9 @@ from ..options import PII_PATTERN_EXPRESSIONS, PII_PATTERNS, get_pii_columns
 class PiiDataCheck(BaseValidator):
     """Checks all the sheets for possible PII Data"""
 
-    def __init__(self, schema: BaseDatasetSchema):
+    def __init__(self, schema: BaseDatasetSchema, ignore_sheets: list[str] | None = None):
         self.schema = schema
+        self.ignore_sheets = ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
 
     @property
     def name(self) -> str:
@@ -45,6 +46,8 @@ class PiiDataCheck(BaseValidator):
         match_records = []
 
         for sheet in data.loaded_sheets:
+            if sheet.schema_sheet_name in self.ignore_sheets:
+                continue
             filtered_df = sheet.data.select(
                 filter_list(sheet.data.columns, settings.IGNORE_COLUMNS_FOR_VALIDATION)
             )
