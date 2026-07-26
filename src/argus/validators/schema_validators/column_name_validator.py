@@ -8,6 +8,14 @@ from ...validators.options import COLUMN_NAME_VALIDATOR_PATTERN
 class ColumnNameCheck(BaseValidator):
     """Check column names are variables instead of labels."""
 
+    def __init__(self, ignore_sheets: list[str] | None = None):
+        """
+        Args:
+            ignore_sheets (list[str] | None, optional): List of schema sheets to ignore during.
+                Defaults to "choices" and "survey" if None is specefied.
+        """
+        self.ignore_sheets = ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+
     @property
     def name(self) -> str:
         return "ColumnNameCheck"
@@ -33,6 +41,8 @@ class ColumnNameCheck(BaseValidator):
         match_records = []
 
         for sheet in data.loaded_sheets:
+            if sheet.schema_sheet_name in self.ignore_sheets:
+                continue
             matches = list(filter(COLUMN_NAME_VALIDATOR_PATTERN.search, sheet.data.columns))
             if matches:
                 match_records.extend(

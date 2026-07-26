@@ -14,6 +14,12 @@ class PiiDataCheck(BaseValidator):
     """Checks all the sheets for possible PII Data"""
 
     def __init__(self, schema: BaseDatasetSchema, ignore_sheets: list[str] | None = None):
+        """
+        Args:
+            schema (BaseDatasetSchema): dataset schema
+            ignore_sheets (list[str] | None, optional): List of schema sheets to ignore during.
+                Defaults to "choices" and "survey" if None is specefied.
+        """
         self.schema = schema
         self.ignore_sheets = ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
 
