@@ -88,7 +88,44 @@ def create_column_difference_expression(
             if column_dtype.is_temporal():
                 return column_expr.cast(pl.Datetime, strict=False)
             elif column_dtype == pl.String:
-                return column_expr.str.to_datetime(strict=False)  # .cast(pl.Datetime, strict=False)
+                # need to do additional checking when string. Sometimes the datetimes are
+                # in the correct format but the column datatype is string. One common problem is
+                # dates are passed in excel format (46202.66380787037) while in another
+                # column its an actual datetime format. Need to perform the appropriate
+                # check based on the format of the string.
+                stripped = column_expr.str.strip_chars()
+
+                # Reject numeric strings (Excel serial dates)
+                is_numeric = stripped.cast(pl.Float64, strict=False).is_not_null()
+
+                # Only attempt datetime parsing for non-numeric strings
+                parsed_formats = (
+                    pl.when(~is_numeric)
+                    .then(
+                        pl.coalesce(
+                            [
+                                stripped.str.strptime(
+                                    pl.Datetime, format="%Y-%m-%d %H:%M:%S%.f", strict=False
+                                ),
+                                stripped.str.strptime(
+                                    pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.f", strict=False
+                                ),
+                                # No fractional seconds
+                                stripped.str.strptime(
+                                    pl.Datetime, format="%Y-%m-%d %H:%M:%S", strict=False
+                                ),
+                                stripped.str.strptime(
+                                    pl.Datetime, format="%Y-%m-%dT%H:%M:%S", strict=False
+                                ),
+                                # Date only
+                                stripped.str.strptime(pl.Datetime, format="%Y-%m-%d", strict=False),
+                            ]
+                        )
+                    )
+                    .otherwise(None)
+                )
+
+                return parsed_formats
             else:
                 # if a float (possibly utc) or other is returned
                 return pl.lit(None).cast(pl.Datetime)
