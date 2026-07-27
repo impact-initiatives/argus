@@ -99,6 +99,7 @@ class JMMIColumnNameCheck(BaseValidator):
         suffix_list: list[str] = self._load_file(jmmi_config, "suffix_list.yaml")
         items_dictionary: list[str] = self._load_file(jmmi_config, "items.yaml")
         item_variables: list[str] = self._load_file(jmmi_config, "item_variables.yaml")
+        currency_codes: list[str] = self._load_file(jmmi_config, "currency_codes.yaml")
 
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data,
@@ -112,7 +113,7 @@ class JMMIColumnNameCheck(BaseValidator):
 
         clean_data_sheet_columns = data_loaded_sheets[self.clean_data_sheet].data.columns
 
-        result, country_column = get_data_loaded_column(
+        result, country_loaded_column = get_data_loaded_column(
             data_loaded_sheets[self.clean_data_sheet], self.country_column, self.name
         )
 
@@ -120,11 +121,11 @@ class JMMIColumnNameCheck(BaseValidator):
             results.append(result)
             return results
         else:
-            assert country_column is not None
+            assert country_loaded_column is not None
 
         countries_list: list[str] = (
             data_loaded_sheets[self.clean_data_sheet]
-            .data.select([country_column.data_column_name])
+            .data.select([country_loaded_column.data_column_name])
             .to_series()
             .unique()
             .str.to_lowercase()
@@ -173,8 +174,9 @@ class JMMIColumnNameCheck(BaseValidator):
             ):
                 missing_prefix_or_suffix.append(
                     {
-                        "value": f"prefix: {parts.country_code}, suffix: {parts.suffix}",
+                        "sheet": self.clean_data_sheet,
                         "column": column,
+                        "value": f"prefix: {parts.country_code}, suffix: {parts.suffix}",
                         "issue": "missing prefix or suffix",
                     }
                 )
@@ -205,13 +207,17 @@ class JMMIColumnNameCheck(BaseValidator):
                     # this tends to store the item as well
                     if parts.post_suffix in items_dictionary:
                         parts.column_variable_prefix = parts.post_suffix
-                    elif parts.post_suffix not in country_codes_list:
-                        # sometimes the country code is repeated
+                    elif (
+                        parts.post_suffix not in country_codes_list
+                        and parts.post_suffix not in currency_codes
+                    ):
+                        # sometimes the country code is repeated or there is a currency code
                         # unknown item
                         items_not_in_dictionary.append(
                             {
-                                "value": parts.post_suffix,
+                                "sheet": self.clean_data_sheet,
                                 "column": column,
+                                "value": parts.post_suffix,
                                 "issue": "item not in goods dictionary",
                             }
                         )
@@ -221,8 +227,9 @@ class JMMIColumnNameCheck(BaseValidator):
                         # means there is probably an incorrect variable
                         variables_not_in_dictionary.append(
                             {
-                                "value": parts.remaining_text,
+                                "sheet": self.clean_data_sheet,
                                 "column": column,
+                                "value": parts.remaining_text,
                                 "issue": "variable not in column name dictionary",
                             }
                         )
@@ -230,8 +237,9 @@ class JMMIColumnNameCheck(BaseValidator):
                         # unknown item
                         items_not_in_dictionary.append(
                             {
-                                "value": parts.remaining_text,
+                                "sheet": self.clean_data_sheet,
                                 "column": column,
+                                "value": parts.remaining_text,
                                 "issue": "item not in goods dictionary",
                             }
                         )
@@ -251,14 +259,20 @@ class JMMIColumnNameCheck(BaseValidator):
         for column in invalid_columns_clean_data:
             invalid_columns.append(
                 {
-                    "value": self.clean_data_sheet,
+                    "sheet": self.clean_data_sheet,
                     "column": column,
+                    "value": "",
                     "issue": "coulmn must be removed",
                 }
             )
         for column in invalid_columns_raw_data:
             invalid_columns.append(
-                {"value": self.raw_data_sheet, "column": column, "issue": "coulmn must be removed"}
+                {
+                    "sheet": self.raw_data_sheet,
+                    "column": column,
+                    "value": "",
+                    "issue": "coulmn must be removed",
+                }
             )
 
         if items_not_in_dictionary:
