@@ -77,11 +77,13 @@ If incorporating this into another project or workflow it is probably easier to 
 from src.argus.orchestrator.validation_pipeline import ValidationPipeline
 
 try:
-   results = ValidationPipeline().run_all(filepath="path/to/excel/file.xlsx", dataset_type="other_dataset", locale='en') #or jmmi_dataset
+    results = ValidationPipeline().run_all(
+        filepath="path/to/excel/file.xlsx", dataset_type="other_dataset", locale="en"
+    )  # or jmmi_dataset
 except Exception as e:
-   # handle errors
-   print(e)
-   
+    # handle errors
+    print(e)
+
 # process results
 ```
 ### Validation Message Types
@@ -111,23 +113,20 @@ from src.argus.loaders.excel_loader import ExcelLoader
 from src.argus.validators.data_validators import RawToCleanToLogCheck
 
 
-locale = 'en'
-dataset_type = 'jmmi_dataset'
-schema_file = 'schema.yaml'
-validator_file = 'validators.yaml'
+locale = "en"
+dataset_type = "jmmi_dataset"
+schema_file = "schema.yaml"
+validator_file = "validators.yaml"
 dataset_config_dir = download_config("config_directory")
 result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
 
-dataset = BaseDataset(
-                    schema_path=result[schema_file], validator_path=result[validator_file]
-                )
+dataset = BaseDataset(schema_path=result[schema_file], validator_path=result[validator_file])
 loader = ExcelLoader(dataset.schema)
 dataset.data, loader_results = loader.load("path/to/excel/file.xlsx")
 
 # run the required rule setting the appropriate parameters
 results = RawToCleanToLogCheck(schema=schema).validate(data=data)
 # review results
-
 ```
 or for other datasets:
 ```python
@@ -137,16 +136,14 @@ from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
 from src.argus.validators.data_validators import CrossSheetIdCheck
 
-locale = 'en'
-dataset_type = 'other_dataset'
-schema_file = 'schema.yaml'
-validator_file = 'validators.yaml'
+locale = "en"
+dataset_type = "other_dataset"
+schema_file = "schema.yaml"
+validator_file = "validators.yaml"
 dataset_config_dir = download_config("config_directory")
 result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
 
-dataset = DynamicDataset(
-                    schema_path=result[schema_file], validator_path=result[validator_file]
-                )
+dataset = DynamicDataset(schema_path=result[schema_file], validator_path=result[validator_file])
 loader = ExcelLoader(dataset.schema)
 dataset.data, loader_results = loader.load("path/to/excel/file.xlsx", load_all_sheets=True)
 

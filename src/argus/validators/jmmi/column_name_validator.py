@@ -55,7 +55,7 @@ class JMMIColumnNameCheck(BaseValidator):
         - country specific variables have an appropriate suffix
         - items should be in the goods dictionary
         - variables should be in the column name dictionary
-        - certain columns are removed from the dataset 
+        - certain columns are removed from the dataset
 
         Args:
             data (ExcelLoaderData): data (ExcelLoaderData): data to be validated
