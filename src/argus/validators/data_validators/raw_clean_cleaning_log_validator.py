@@ -71,7 +71,9 @@ class RawToCleanToLogCheck(BaseValidator):
     def name(self) -> str:
         return "RawToCleanToLogCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """This process compares the differences between the clean and raw data sheets
         and then checks that all these differences are reflected in the cleaning log if
         provided

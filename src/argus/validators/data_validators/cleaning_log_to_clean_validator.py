@@ -69,7 +69,9 @@ class CleaningLogToCleanCheck(BaseValidator):
     def name(self) -> str:
         return "CleaningLogToCleanCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """This process validates the data in the cleaning log
 
         After making sure that the required sheets and columns have been loaded

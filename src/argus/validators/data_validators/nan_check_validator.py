@@ -28,7 +28,9 @@ class NaNDataCheck(BaseValidator):
     def name(self) -> str:
         return "NaNDataCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks columns for invalid numeric values like NaN and -999.
 
         Args:

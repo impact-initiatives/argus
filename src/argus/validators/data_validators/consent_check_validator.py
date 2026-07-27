@@ -46,7 +46,9 @@ class ConsentCheck(BaseValidator):
     def name(self) -> str:
         return "ConsentCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks that records in raw_data that did not provide consent are
         not present in clean_data.
 

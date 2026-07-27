@@ -96,17 +96,17 @@ class ValidationPipeline:
 
         try:
             if use_local_config:
-                dataset_config_dir = settings.DATASET_CONFIG_LOCAL_DIR
+                dataset_config_directory = settings.DATASET_CONFIG_LOCAL_DIR
             else:
-                dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
-            dataset = self._setup_schema(dataset_config_dir, dataset_type, locale)
+                dataset_config_directory = download_config(settings.DATASET_CONFIG_DIR)
+            dataset = self._setup_schema(dataset_config_directory, dataset_type, locale)
 
             if dataset.schema.dataset_type != dataset_type:
                 all_results.append(
                     ValidationResult(
                         rule="GetYAMLConfig",
                         message=f"No dataset schema for '{dataset_type}' was found for "
-                        + f" version '{dataset_config_dir.name}'. Falling back to "
+                        + f" version '{dataset_config_directory.name}'. Falling back to "
                         + f"'{dataset.schema.dataset_type}'.",
                         severity=SeverityLevel.WARNING,
                     )
@@ -114,7 +114,7 @@ class ValidationPipeline:
             all_results.append(
                 ValidationResult(
                     rule="GetYAMLConfig",
-                    message=f"Using schema version '{dataset_config_dir.name}' for "
+                    message=f"Using schema version '{dataset_config_directory.name}' for "
                     + f"dataset '{dataset.schema.dataset_type}'.",
                     severity=SeverityLevel.ADMIN_INFO,
                 )
@@ -212,7 +212,9 @@ class ValidationPipeline:
         # run each of the validators for the dataset.
         for validator in dataset.validators:
             try:
-                results = validator.validate(dataset.data)
+                results = validator.validate(
+                    dataset.data, dataset_config_directory=dataset_config_directory
+                )
                 if results:
                     all_results.extend(results)
 

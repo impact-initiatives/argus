@@ -12,7 +12,9 @@ class MissingSheetsCheck(BaseValidator):
     def __init__(self, schema: BaseDatasetSchema):
         self.schema = schema
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks to see if any expected sheets are missing
         across a dataset.
 

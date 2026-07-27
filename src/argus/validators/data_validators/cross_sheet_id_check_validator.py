@@ -42,7 +42,9 @@ class CrossSheetIdCheck(BaseValidator):
     def name(self) -> str:
         return "CrossSheetIdCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks to see if ids from child sheet/s are present in a master/parent sheet
 
             this process assumes that:

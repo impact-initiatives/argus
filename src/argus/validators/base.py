@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import StrEnum, auto
+from pathlib import Path
 from typing import Any
 
 from argus.locales.il8n import _
@@ -29,7 +30,7 @@ class BaseValidator(ABC):
     """Abstract base class for all validators."""
 
     @abstractmethod
-    def validate(self, data: Any) -> list[ValidationResult]:
+    def validate(self, data: Any, **kwargs: str | int | float | Path) -> list[ValidationResult]:
         pass
 
     @property
