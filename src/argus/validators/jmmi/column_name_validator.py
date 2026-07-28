@@ -56,10 +56,11 @@ class JMMIColumnNameCheck(BaseValidator):
         - items should be in the goods dictionary
         - variables should be in the column name dictionary (if not country specific)
         - country specific variables are not standardisable
-        All of these checks assume the work "item" is in the column name.
+        All of these checks assume the word "item" is in the column name.
 
         also checking:
         - certain columns are removed from the dataset
+        - if columns that dont contain the word "item" contain words in the goods dictionary
 
         Args:
             data (ExcelLoaderData): data (ExcelLoaderData): data to be validated
@@ -103,6 +104,7 @@ class JMMIColumnNameCheck(BaseValidator):
 
         jmmi_config: Path = dataset_config_directory / "jmmi" / "config"
 
+        # config files stored in argus_schemas repoistory
         country_codes_list: list[str] = self._load_file(jmmi_config, "iso_codes.yaml")
         suffix_list: list[str] = self._load_file(jmmi_config, "suffix_list.yaml")
         items_dictionary: list[str] = self._load_file(jmmi_config, "items.yaml")
@@ -164,7 +166,6 @@ class JMMIColumnNameCheck(BaseValidator):
             if splits[0] in country_codes_list and splits[0] in countries_list:
                 parts.country_code = splits[0]
                 parts.remaining_text = parts.remaining_text.replace(splits[0] + "_", "", 1)
-                splits.pop(0)
 
             # check for suffix
             suffix_match = re.match(r"[a-zA-Z0-9]*", splits[-1])
@@ -175,7 +176,6 @@ class JMMIColumnNameCheck(BaseValidator):
                     parts.remaining_text = "".join(
                         parts.remaining_text.rsplit("_" + final_split, 1)[0]
                     )
-                    splits.pop()
 
             # country specific columns missing either a prefix or suffix
             if (parts.country_code and not parts.suffix) or (
@@ -275,7 +275,7 @@ class JMMIColumnNameCheck(BaseValidator):
                             "sheet": self.clean_data_sheet,
                             "column": column,
                             "value": f"standardised column: {parts.column_variable_prefix + '_'}"
-                            f"{parts.column_variable}",
+                            + f"{parts.column_variable}",
                             "issue": "column contains standardised items and variables",
                         }
                     )
