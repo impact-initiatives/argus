@@ -19,8 +19,10 @@ logs/
 dataset_config/
 config_directory/
 .~lock*
+*.csv
 
 # ide files
 *.vscode
 *.code-workspace
+
 

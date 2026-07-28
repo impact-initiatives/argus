@@ -7,7 +7,9 @@ class UnexpectedSheetsCheck(BaseValidator):
     def name(self) -> str:
         return "UnexpectedSheetsCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks to see if there are any unexpected sheets
         across a dataset.
 

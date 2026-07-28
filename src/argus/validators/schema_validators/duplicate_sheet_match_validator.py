@@ -16,7 +16,9 @@ class DuplicateSheetMatchCheck(BaseValidator):
     def name(self) -> str:
         return "DuplicateSheetMatchCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks to see if a schema sheet was matched to multiple excel sheets.
 
         Args:

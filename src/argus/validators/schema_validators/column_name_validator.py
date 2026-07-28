@@ -20,7 +20,9 @@ class ColumnNameCheck(BaseValidator):
     def name(self) -> str:
         return "ColumnNameCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Check column names are variables instead of labels.
 
         This is done through regex matching that checks if there

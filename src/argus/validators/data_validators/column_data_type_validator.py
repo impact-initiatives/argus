@@ -53,7 +53,9 @@ class DataTypeCheck(BaseValidator):
     def name(self) -> str:
         return "DataTypeCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks that columns and column values are the correct datatype
         based on the kobo survey.
 

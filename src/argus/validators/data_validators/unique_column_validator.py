@@ -13,7 +13,9 @@ class UniqueColumnCheck(BaseValidator):
     def __init__(self, schema: BaseDatasetSchema):
         self.schema = schema
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks to see if any expected unique columns contain any
         non unique values across relevant sheets.
 

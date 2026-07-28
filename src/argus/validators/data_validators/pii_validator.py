@@ -27,7 +27,9 @@ class PiiDataCheck(BaseValidator):
     def name(self) -> str:
         return "PiiDataCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """This performs two sets of checks
 
         First: checks to see if any pii columns are present across relevant sheets.

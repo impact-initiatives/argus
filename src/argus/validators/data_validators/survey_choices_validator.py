@@ -65,7 +65,9 @@ class SurveyChoicesCheck(BaseValidator):
     def name(self) -> str:
         return "SurveyChoicesCheck"
 
-    def validate(self, data: ExcelLoaderData) -> list[ValidationResult]:
+    def validate(
+        self, data: ExcelLoaderData, **kwargs: str | int | float
+    ) -> list[ValidationResult]:
         """Checks that clean_data values are valid when they come from
         kobo select_one or select_multiple questions.
 

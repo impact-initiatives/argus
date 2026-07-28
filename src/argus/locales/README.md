@@ -15,8 +15,8 @@ from locales.il8n import _
 ValidationResult(
     rule=rule,
     message=_(
-        "data_helpers.get_data_loaded_column", #key
-        column="some_column", #parameters, if required
+        "data_helpers.get_data_loaded_column",  # key
+        column="some_column",  # parameters, if required
         sheet="some_sheet",
     ),
     severity=SeverityLevel.ERROR,
@@ -29,8 +29,8 @@ or if a base class already has a helper function:
 ValidationResult(
     rule=self.name,
     message=self._(
-        "duplicate_sheet_match_validator.duplicate_sheets", #key
-        count=100, #parameters, if required
+        "duplicate_sheet_match_validator.duplicate_sheets",  # key
+        count=100,  # parameters, if required
     ),
     severity=SeverityLevel.ERROR,
     details=some_details_df.to_dict(),

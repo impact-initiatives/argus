@@ -269,3 +269,21 @@ msgstr "{count} clean data sheets did not match to a parent. There should only b
 #: src/argus/models/dynamic_model.py:619
 msgid "dynamic_model.match_data.raw_data_parents"
 msgstr "{count} raw data sheets did not match to a parent. There should only be 1 raw data sheet without a parent."
+
+msgid "jmmi_column_name_validator.items_not_in_dictionary"
+msgstr "{count} columns listed items not in the JMMI goods dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."
+
+msgid "jmmi_column_name_validator.missing_prefix_or_suffix"
+msgstr "{count} country specific variables were missing either a prefix or suffix. Check the output for details."
+
+msgid "jmmi_column_name_validator.variables_not_in_dictionary"
+msgstr "{count} columns contained variables not in the JMMI standard column names dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."
+
+msgid "jmmi_column_name_validator.invalid_columns"
+msgstr "{count} columns were found that should not be included in the dataset. Check the output for details."
+
+msgid "jmmi_column_name_validator.standardisable_columns"
+msgstr "{count} country specific columns were found that are standardisable. Check the output for details."
+
+msgid "jmmi_column_name_validator.possible_item_columns"
+msgstr "{count} columns were found appear to be item columns. Check to see if these have been named incorrectly. Check the output for details."
