@@ -54,7 +54,11 @@ class JMMIColumnNameCheck(BaseValidator):
         - country specific variables have an appropriate prefix
         - country specific variables have an appropriate suffix
         - items should be in the goods dictionary
-        - variables should be in the column name dictionary
+        - variables should be in the column name dictionary (if not country specific)
+        - country specific variables are not standardisable
+        All of these checks assume the work "item" is in the column name.
+
+        also checking:
         - certain columns are removed from the dataset
 
         Args:
@@ -73,6 +77,10 @@ class JMMIColumnNameCheck(BaseValidator):
         variables_not_in_dictionary: list[dict[str, str]] = []
         # B001, B002
         missing_prefix_or_suffix: list[dict[str, str]] = []
+        # B003
+        standardisable_country_columns: list[dict[str, str]] = []
+        # columns that look like they should follow standardised checks
+        possible_item_columns: list[dict[str, str]] = []
         pattern = r"^([a-zA-Z0-9_]+)(?:[^a-zA-Z0-9_]+(.+))?$"
         # E001
         invalid_columns: list[dict[str, str]] = []
@@ -136,7 +144,7 @@ class JMMIColumnNameCheck(BaseValidator):
             parts = ColumnParts()
 
             # some values have other separators after the final _
-            # eg: SSD_accepted_mobile_money_type_sm.other
+            # eg: SSD_grinding_costs_item_sm.sorghum
             # so split it out to get the main part
             post_suffix_match = re.match(pattern, column)
             if post_suffix_match is not None:
@@ -150,7 +158,8 @@ class JMMIColumnNameCheck(BaseValidator):
             # check for country code prefix
             # there is an issue where the country code is also the name of an item
             #  eg bra and brazil (BRA). check country column to ensure that
-            # items arent set as country_code
+            # items arent set as country_code. this will still have false positives
+            # in cases like brazil though
             splits = parts.remaining_text.split("_")
             if splits[0] in country_codes_list and splits[0] in countries_list:
                 parts.country_code = splits[0]
@@ -203,10 +212,14 @@ class JMMIColumnNameCheck(BaseValidator):
                     # ie we might find bread_subsidised and bread.
                     # the longest match is the one we want
                     parts.column_variable_prefix = max(item_matches, key=len)
+                    parts.remaining_text = parts.remaining_text.replace(
+                        parts.column_variable_prefix + "_", ""
+                    )
                 elif parts.post_suffix:
                     # this tends to store the item as well
                     if parts.post_suffix in items_dictionary:
                         parts.column_variable_prefix = parts.post_suffix
+
                     elif (
                         parts.post_suffix not in country_codes_list
                         and parts.post_suffix not in currency_codes
@@ -221,33 +234,67 @@ class JMMIColumnNameCheck(BaseValidator):
                                 "issue": "item not in goods dictionary",
                             }
                         )
-                elif not parts.country_code:
-                    # items not in list?
-                    if "item" in parts.remaining_text:
-                        # means there is probably an incorrect variable
-                        variables_not_in_dictionary.append(
-                            {
-                                "sheet": self.clean_data_sheet,
-                                "column": column,
-                                "value": parts.remaining_text,
-                                "issue": "variable not in column name dictionary",
-                            }
-                        )
-                    else:
-                        # unknown item
-                        items_not_in_dictionary.append(
-                            {
-                                "sheet": self.clean_data_sheet,
-                                "column": column,
-                                "value": parts.remaining_text,
-                                "issue": "item not in goods dictionary",
-                            }
-                        )
-                        parts.column_variable_prefix = parts.remaining_text
+                    parts.remaining_text = parts.remaining_text.replace(parts.post_suffix + "_", "")
+
+                # item variable not in list?
+                if (
+                    "item" in parts.remaining_text
+                    and parts.country_code is None
+                    and parts.suffix is None
+                ):
+                    # means there is probably an incorrect variable
+                    variables_not_in_dictionary.append(
+                        {
+                            "sheet": self.clean_data_sheet,
+                            "column": column,
+                            "value": parts.remaining_text,
+                            "issue": "variable not in column name dictionary",
+                        }
+                    )
+
+                if parts.column_variable_prefix is None and parts.post_suffix is None:
+                    # unknown item
+                    items_not_in_dictionary.append(
+                        {
+                            "sheet": self.clean_data_sheet,
+                            "column": column,
+                            "value": parts.remaining_text,
+                            "issue": "item not in goods dictionary",
+                        }
+                    )
+
+                if (
+                    parts.column_variable_prefix is not None
+                    and parts.column_variable is not None
+                    and (parts.country_code is not None or parts.suffix is not None)
+                ):
+                    # items that are country variables but have items and column names that have
+                    # been standardised
+                    standardisable_country_columns.append(
+                        {
+                            "sheet": self.clean_data_sheet,
+                            "column": column,
+                            "value": f"standardised column: {parts.column_variable_prefix + '_'}"
+                            f"{parts.column_variable}",
+                            "issue": "column contains standardised items and variables",
+                        }
+                    )
 
                 if parts.column_variable_prefix:
                     # store all items found for later use
                     items_found.add(parts.column_variable_prefix)
+            else:
+                # do a simple check to see if it looks like a column should be an item column
+                possible_matches = [item for item in items_dictionary if item in column]
+                if possible_matches:
+                    possible_item_columns.append(
+                        {
+                            "sheet": self.clean_data_sheet,
+                            "column": column,
+                            "value": ", ".join(possible_matches),
+                            "issue": "column contains standardised items and variables",
+                        }
+                    )
 
             column_parts[column] = parts
 
@@ -315,6 +362,36 @@ class JMMIColumnNameCheck(BaseValidator):
                     ),
                     severity=SeverityLevel.ERROR,
                     details=variables_not_in_dictionary_df.to_dict(as_series=False),
+                )
+            )
+
+        if standardisable_country_columns:
+            standardisable_country_columns_df = pl.DataFrame(standardisable_country_columns)
+
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "jmmi_column_name_validator.standardisable_columns",
+                        count=standardisable_country_columns_df.height,
+                    ),
+                    severity=SeverityLevel.ERROR,
+                    details=standardisable_country_columns_df.to_dict(as_series=False),
+                )
+            )
+
+        if possible_item_columns:
+            possible_item_columns_df = pl.DataFrame(possible_item_columns)
+
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "jmmi_column_name_validator.possible_item_columns",
+                        count=possible_item_columns_df.height,
+                    ),
+                    severity=SeverityLevel.WARNING,
+                    details=possible_item_columns_df.to_dict(as_series=False),
                 )
             )
 

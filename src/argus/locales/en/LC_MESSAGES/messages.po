@@ -282,3 +282,8 @@ msgstr "{count} columns contained variables not in the JMMI standard column name
 msgid "jmmi_column_name_validator.invalid_columns"
 msgstr "{count} columns were found that should not be included in the dataset. Check the output for details."
 
+msgid "jmmi_column_name_validator.standardisable_columns"
+msgstr "{count} country specific columns were found that are standardisable. Check the output for details."
+
+msgid "jmmi_column_name_validator.possible_item_columns"
+msgstr "{count} columns were found appear to be item columns. Check to see if these have been named incorrectly. Check the output for details."
