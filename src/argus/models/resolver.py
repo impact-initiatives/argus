@@ -22,7 +22,7 @@ from ..validators.data_validators import (
     SurveyChoicesCheck,
     UniqueColumnCheck,
 )
-from ..validators.jmmi import JMMIColumnNameCheck
+from ..validators.jmmi import JMMIColumnNameCheck, JMMIMebAnalysisCheck
 from ..validators.schema_validators import (
     ColumnNameCheck,
     DuplicateSheetMatchCheck,
@@ -50,6 +50,7 @@ VALIDATOR_REGISTRY = {
     "MissingSheetsCheck": MissingSheetsCheck,
     "UnexpectedSheetsCheck": UnexpectedSheetsCheck,
     "JMMIColumnNameCheck": JMMIColumnNameCheck,
+    "JMMIMebAnalysisCheck": JMMIMebAnalysisCheck,
 }
 
 

@@ -289,10 +289,19 @@ msgid "jmmi_column_name_validator.possible_item_columns"
 msgstr "{count} columns were found appear to be item columns. Check to see if these have been named incorrectly. Check the output for details."
 
 msgid "jmmi_meb_analysis_validator.suffix_check"
-msgstr "{no_expected} columns in the sheet '{sheet}' were expected to contain a suffix but only {count} was found. Expected suffixes: {expected_suffixes}."
+msgstr "{no_expected} columns in the sheet '{sheet}' were expected to contain columns with the '{expected_suffix}' suffix but only {count} were found."
 
 msgid "jmmi_meb_analysis_validator.numeric_suffix_check"
 msgstr "Numeric columns in the sheet '{sheet}' are expected to contain a suffix but {count} did not. Expected suffixes: {expected_suffixes}. Check output for details."
 
 msgid "jmmi_meb_analysis_validator.numeric_suffix_check_non_numeric_columns"
 msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix. Check if these columns should have this suffix or that the data is all numeric. Check output for details."
+
+# msgid "jmmi_meb_analysis_validator.meb_official_columns_missing"
+# msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix. Check if these columns should have this suffix or that the data is all numeric. Check output for details."
+
+# msgid "jmmi_meb_analysis_validator.meb_parallel_columns_missing"
+# msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix. Check if these columns should have this suffix or that the data is all numeric. Check output for details."
+
+# msgid "jmmi_meb_analysis_validator.no_meb_columns"
+# msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix. Check if these columns should have this suffix or that the data is all numeric. Check output for details."
