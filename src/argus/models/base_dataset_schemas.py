@@ -27,6 +27,21 @@ class BaseDatasetSchema(BaseModel):
                 return sheet
         return None
 
+    def get_schema_sheet(self, sheet_name: str):
+        """searches both loaded and unloaded sheets for the provided
+        sheet name.
+
+        Args:
+            sheet_name (str): Schema sheets to be searched for
+
+        Returns:
+            LoadedSheet | None: Loaded sheet details if found
+        """
+        sheet = self.get_schema_loaded_sheet(sheet_name)
+        if sheet is None:
+            sheet = self.get_schema_unloaded_sheet(sheet_name)
+        return sheet
+
     def get_loaded_sheets_standard_names(self, required: bool | None = None) -> list[str]:
         """Gets all the standard names for all the loaded sheets.
 
@@ -134,5 +149,5 @@ class BaseDatasetSchema(BaseModel):
         """
         sheet = self.get_schema_loaded_sheet(sheet_standard_name)
         if sheet is not None:
-            _ = sheet.add_mandatory_column(column)
+            _ = sheet.add_column(column)
             return sheet

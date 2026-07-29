@@ -31,7 +31,7 @@ def create_cleaning_log_sheet(
         standard_name=standard_name,
         alternate_names=alternate_names,
         allow_fuzzy_matching=False,
-        mandatory_columns=[
+        columns=[
             SchemaColumnMap(standard_name="old_value"),
             SchemaColumnMap(standard_name="new_value"),
             SchemaColumnMap(
@@ -48,7 +48,7 @@ def create_cleaning_log_sheet(
     )
 
     if id_column is not None:
-        _ = sheet.add_mandatory_column(
+        _ = sheet.add_column(
             SchemaColumnMap(
                 standard_name=id_column,
                 alternate_names=id_column_alt if id_column_alt is not None else [],

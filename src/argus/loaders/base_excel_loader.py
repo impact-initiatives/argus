@@ -42,7 +42,7 @@ class BaseExcelLoader:
 
         excel_columns_filtered = filter_list(excel_columns, settings.IGNORE_COLUMNS_FOR_MATCHING)
 
-        for column in schema_sheet.mandatory_columns:
+        for column in schema_sheet.columns:
             literal_matches, fuzzy_matched_values = match_list_to_list(
                 column.combine(), excel_columns_filtered, fuzzy_match=column.allow_fuzzy_matching
             )

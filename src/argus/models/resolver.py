@@ -64,7 +64,7 @@ class ResolveDataset(BaseModel):
         result: dict[str, Any] = base.copy()
         for key, value in override.items():
             # Skip internal directive keys to avoid them being merged as data
-            if key in {"$append_mandatory_columns"}:
+            if key in {"$append_columns"}:
                 continue
 
             if key in result and isinstance(result[key], dict) and isinstance(value, dict):
@@ -80,7 +80,7 @@ class ResolveDataset(BaseModel):
 
         if isinstance(item, dict):
             # supported keys used in yaml files
-            internal_keys = {"$use", "override", "$append_mandatory_columns"}
+            internal_keys = {"$use", "override", "$append_columns"}
 
             if "$use" in item:
                 ref_name = item["$use"]
@@ -111,12 +111,12 @@ class ResolveDataset(BaseModel):
 
                 # 4. Handle Directives ($append)
                 # These are applied on the CURRENT item, so we need to resolve their values first
-                if "$append_mandatory_columns" in item:
+                if "$append_columns" in item:
                     new_cols = self._resolve(
-                        item["$append_mandatory_columns"], definitions, f"{path}(append)"
+                        item["$append_columns"], definitions, f"{path}(append)"
                     )
-                    current = resolved_content.get("mandatory_columns", [])
-                    resolved_content["mandatory_columns"] = current + new_cols
+                    current = resolved_content.get("columns", [])
+                    resolved_content["columns"] = current + new_cols
 
                 if "override" in item:
                     override_data = self._resolve(

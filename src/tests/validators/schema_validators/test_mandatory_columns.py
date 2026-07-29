@@ -1,5 +1,4 @@
 import polars as pl
-import pytest
 
 from argus.loaders.base import (
     DataColumnMap,
@@ -8,270 +7,154 @@ from argus.loaders.base import (
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.base import BaseValidator
 from argus.validators.schema_validators.mandatory_column_validator import (
     MandatoryColumnsCheck,
 )
 from tests.helpers import do_basic_checks
 
 
-@pytest.fixture
-def valid_schema_validator(valid_schema):
+def get_validator(schema):
     """Create a UniqueColumn validator instance"""
-    return MandatoryColumnsCheck(schema=valid_schema)
+    return MandatoryColumnsCheck(schema=schema)
 
 
-@pytest.fixture
-def valid_schema2_validator(valid_schema2):
-    """Create a UniqueColumn validator instance"""
-    return MandatoryColumnsCheck(schema=valid_schema2)
-
-
-@pytest.fixture
-def valid_schema3_validator(valid_schema3):
-    """Create a UniqueColumn validator instance"""
-    return MandatoryColumnsCheck(schema=valid_schema3)
-
-
-@pytest.fixture
-def valid_no_mandatory_columns_validator(valid_no_mandatory_columns):
-    """Create a UniqueColumn validator instance"""
-    return MandatoryColumnsCheck(schema=valid_no_mandatory_columns)
-
-
-@pytest.fixture
-def invalid_schema_missing_sheet_validator(invalid_schema_missing_sheet):
-    """Create a UniqueColumn validator instance"""
-    return MandatoryColumnsCheck(schema=invalid_schema_missing_sheet)
-
-
-@pytest.fixture
-def invalid_schema_missing_mandatory_column_validator(
-    invalid_schema_missing_mandatory_column,
-):
-    """Create a UniqueColumn validator instance"""
-    return MandatoryColumnsCheck(schema=invalid_schema_missing_mandatory_column)
-
-
-@pytest.fixture
-def valid_schema():
+def build_schema(sheet_name: str, columns: list[tuple[str, bool]], required=True):
+    column_map: list[SchemaColumnMap] = []
+    for column in columns:
+        column_map.append(SchemaColumnMap(standard_name=column[0], required=column[1]))
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
         schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
-            )
+            SchemaSheetMap(standard_name=sheet_name, columns=column_map, required=required)
         ],
         schema_unloaded_sheets=[],
     )
 
 
-@pytest.fixture
-def valid_schema2():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="other_sheet",
-                required=False,
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def valid_schema3():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"]),
-                    SchemaColumnMap(standard_name="col1"),
-                    SchemaColumnMap(standard_name="col2"),
-                ],
-            )
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def valid_no_mandatory_columns():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(standard_name="raw_data", alternate_names=["raw_data"])
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def valid_excel_data():
+def build_excel_data(sheet_name: str, columns):
     """Create ExcelLoaderData with matching columns"""
+    column_map: list[DataColumnMap] = []
     df = pl.DataFrame(
         {
             "uuid": [1, 2, 3, 4, 5],
         }
     )
+    for column in columns:
+        column_map.append(DataColumnMap(schema_column_name=column, data_column_name=column))
 
     loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
+        schema_sheet_name=sheet_name,
+        data_sheet_name=sheet_name,
         data=df,
-        column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
+        column_map=column_map,
     )
 
     return ExcelLoaderData(loaded_sheets=[loaded_sheet])
 
 
-@pytest.fixture
-def invalid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df2 = pl.DataFrame(
-        {
-            "not_correct": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-        column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-    )
-
-    loaded_sheet2 = DataSheetMap(
-        schema_sheet_name="other_sheet",
-        data_sheet_name="other_sheet",
-        data=df2,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet, loaded_sheet2])
-
-
-@pytest.fixture
-def invalid_schema_missing_sheet():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def invalid_schema_missing_mandatory_column():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuidx", alternate_names=["X_uuid"])
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
 class TestMandatoryColumns:
     def test_valid_schema(
-        self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+        self,
     ):
-        result = valid_schema_validator.validate(valid_excel_data)
+        schema = build_schema("clean_data", [("uuid", True), ("country", True)])
+        data = build_excel_data("clean_data", ["uuid", "country"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
 
         do_basic_checks(result, 0)
 
     def test_no_mandatory_columns(
         self,
-        valid_no_mandatory_columns_validator: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
     ):
-        result = valid_no_mandatory_columns_validator.validate(valid_excel_data)
+        schema = build_schema("clean_data", [("uuid", False), ("country", False)])
+        data = build_excel_data("clean_data", ["uuid", "country"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
 
         do_basic_checks(result, 0)
 
-    def test_missing_column(
+    def test_missing_required_column(
         self,
-        invalid_schema_missing_sheet_validator: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
     ):
-        result = invalid_schema_missing_sheet_validator.validate(valid_excel_data)
+        schema = build_schema("clean_data", [("uuid", True), ("country", True)])
+        data = build_excel_data("clean_data", ["uuid"])
+        validator = get_validator(schema)
 
-        do_basic_checks(result, 1)
-
-    def test_missing_mandatory_column(
-        self,
-        invalid_schema_missing_mandatory_column_validator: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
-    ):
-        result = invalid_schema_missing_mandatory_column_validator.validate(valid_excel_data)
-
-        do_basic_checks(result, 1)
-
-    def test_missing_mandatory_columns(
-        self,
-        valid_schema3_validator: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
-    ):
-        result = valid_schema3_validator.validate(valid_excel_data)
+        result = validator.validate(data)
 
         do_basic_checks(result, 1)
         assert result[0].details is not None
-        assert len(result[0].details.items()) == 2
+        assert len(result[0].details["required"]) == 1
+        assert result[0].details["required"][0] == "Yes"
 
-    def test_missing_mandatory_column_optional_sheet(
+    def test_multiple_missing_required_column(
         self,
-        valid_schema2_validator: BaseValidator,
-        invalid_excel_data: ExcelLoaderData,
     ):
-        result = valid_schema2_validator.validate(invalid_excel_data)
+        schema = build_schema("clean_data", [("uuid", True), ("country", True), ("admin_1", True)])
+        data = build_excel_data("clean_data", ["uuid"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["required"]) == 2
+        assert result[0].details["required"][0] == "Yes"
+
+    def test_missing_required_column_optional_sheet(
+        self,
+    ):
+        schema = build_schema("clean_data", [("uuid", True), ("country", True)], required=False)
+        data = build_excel_data("clean_data", ["uuid"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["required"]) == 1
+        assert result[0].details["required"][0] == "Yes"
+
+    def test_missing_optional_column(
+        self,
+    ):
+        schema = build_schema("clean_data", [("uuid", True), ("country", False)])
+        data = build_excel_data("clean_data", ["uuid"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["required"]) == 1
+        assert result[0].details["required"][0] == "Check if required"
+
+    def test_missing_optional_column_optional_sheet(
+        self,
+    ):
+        schema = build_schema("clean_data", [("uuid", True), ("country", False)], required=False)
+        data = build_excel_data("clean_data", ["uuid"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["required"]) == 1
+        assert result[0].details["required"][0] == "Check if required"
+
+    def test_missing_sheet(
+        self,
+    ):
+        schema = build_schema("clean_data", [("uuid", True), ("country", True)])
+        data = build_excel_data("raw_data", ["uuid"])
+        validator = get_validator(schema)
+
+        result = validator.validate(data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["missing_sheets"]) == 1

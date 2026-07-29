@@ -40,6 +40,9 @@ def invalid_file_fuzzy():
 
 
 class TestLoadData:
+    # TODO these need to be rewriten as each time the prod
+    # schema changes these test results have a chance to change
+    # need to mock the schema to make the tests consistent
     def test_valid_file(self, valid_schema: BaseDatasetSchema, valid_file: Path):
         data, results = ExcelLoader(valid_schema).load(valid_file)
         assert len(results) == 0
@@ -48,9 +51,9 @@ class TestLoadData:
         data, results = ExcelLoader(valid_schema).load(valid_file_fuzzy)
         assert len(error_counter(results)) == 0
         assert len(data.unexpected_sheets) == 2
-        assert len(results) == 1
+        assert len(results) == 0
 
     def test_invalid_file_fuzzy(self, valid_schema: BaseDatasetSchema, invalid_file_fuzzy: Path):
         data, results = ExcelLoader(valid_schema).load(invalid_file_fuzzy, True)
-        assert len(error_counter(results)) == 3
-        assert len(results) == 3
+        assert len(error_counter(results)) == 1
+        assert len(results) == 1

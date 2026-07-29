@@ -45,7 +45,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid", "uuid2"],
@@ -56,7 +56,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="deletion_log",
                 alternate_names=["deletion_log"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         is_unique=True,
@@ -77,7 +77,7 @@ def valid_schema_child():
             SchemaSheetMap(
                 standard_name="raw_data_child",
                 alternate_names=["raw_data_child"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="person_id",
                         is_unique=True,
@@ -92,7 +92,7 @@ def valid_schema_child():
             SchemaSheetMap(
                 standard_name="clean_data_child",
                 alternate_names=["clean_data_child"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="person_id",
                         is_unique=True,
@@ -105,7 +105,7 @@ def valid_schema_child():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         is_unique=True,
@@ -115,7 +115,7 @@ def valid_schema_child():
             SchemaSheetMap(
                 standard_name="deletion_log",
                 alternate_names=["deletion_log"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         is_unique=True,

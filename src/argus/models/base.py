@@ -42,6 +42,7 @@ class SchemaColumnMap(BaseModel):
     is_unique: bool = False
     process_values: list[ProcessValueMap] = Field(default=[])
     allow_fuzzy_matching: bool = True
+    required: bool = True
 
     def combine(self) -> list[str]:
         """returns a unique list of column names and alternate names"""
@@ -56,7 +57,7 @@ class SchemaColumnMap(BaseModel):
 class SchemaSheetMap(BaseModel):
     standard_name: str
     alternate_names: list[str] = Field(default=[])
-    mandatory_columns: list[SchemaColumnMap] = Field(default=[])
+    columns: list[SchemaColumnMap] = Field(default=[])
     parent_sheet: str | None = None
     parent_linking_column: str | None = None
     allow_fuzzy_matching: bool = True
@@ -66,18 +67,18 @@ class SchemaSheetMap(BaseModel):
     required: bool = True
 
     def get_column(self, column_name: str) -> SchemaColumnMap | None:
-        """Returns a column from mandatory_columns if a name is matched."""
-        for column in self.mandatory_columns:
+        """Returns a column from columns if a name is matched."""
+        for column in self.columns:
             if column.standard_name == column_name:
                 return column
 
     def get_column_standard_names(self):
         """Gets the standard names for all mandatory columns."""
-        return [item.standard_name for item in self.mandatory_columns]
+        return [item.standard_name for item in self.columns]
 
     def get_unique_columns(self) -> list[SchemaColumnMap]:
         """Gets all the columns markes as unique"""
-        return [column for column in self.mandatory_columns if column.is_unique]
+        return [column for column in self.columns if column.is_unique]
 
     def combine_column_names(self, return_unique_list: bool = True) -> list[str]:
         """Creates a unique list of mandatory and unique column name options
@@ -92,7 +93,7 @@ class SchemaSheetMap(BaseModel):
             List[str]: returns a list of column names and alternate names for a sheet
         """
         column_list: list[str] = []
-        for column in self.mandatory_columns:
+        for column in self.columns:
             column_list.extend(column.combine())
 
         # this list may have dupliaces if columns share names or laternate names
@@ -110,8 +111,8 @@ class SchemaSheetMap(BaseModel):
         """
         return add_to_list(self.standard_name, self.alternate_names)
 
-    def add_mandatory_column(self, column: SchemaColumnMap) -> SchemaColumnMap | None:
-        """Adds a column to mandatory_columns if the standard_name provided
+    def add_column(self, column: SchemaColumnMap) -> SchemaColumnMap | None:
+        """Adds a column to columns if the standard_name provided
         does not exist.
 
         If the name exists within alternate_names then the schema prevalidation
@@ -124,5 +125,5 @@ class SchemaSheetMap(BaseModel):
         """
 
         if self.get_column(column.standard_name) is None:
-            self.mandatory_columns.append(column)
+            self.columns.append(column)
             return column
