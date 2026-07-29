@@ -37,6 +37,9 @@ msgstr "{count} sheets were mapped to the same schema sheet. There should be at 
 msgid "mandatory_column_validator.mandatory_columns"
 msgstr "{count} excel columns were expected but not found. See output for details."
 
+msgid "mandatory_column_validator.optional_columns"
+msgstr "{count} excel columns were optional but not found. Check to see if these columns should be included. See output for details."
+
 msgid "mandatory_column_validator.missing_sheets"
 msgstr "{count} excel sheets were expected but not found. See output for details."
 

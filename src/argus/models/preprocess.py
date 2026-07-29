@@ -109,7 +109,7 @@ def lowercase_schema_mappings(schema: BaseDatasetSchema) -> None:
 
         process_list(sheet.alternate_names)
 
-        for column in sheet.mandatory_columns:
+        for column in sheet.columns:
             process_column_mapping(column)
 
     def process_column_mapping(column: SchemaColumnMap | None) -> None:

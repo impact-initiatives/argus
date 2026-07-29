@@ -33,9 +33,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             )
         ],
         schema_unloaded_sheets=[],
@@ -50,9 +48,7 @@ def valid_schema_matching_term():
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
                 matching_term="raw",
             )
         ],

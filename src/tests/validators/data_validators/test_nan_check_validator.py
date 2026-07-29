@@ -34,7 +34,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid", "uuid2"],
@@ -56,7 +56,7 @@ def invalid_schema_multiple_unique_columns():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],

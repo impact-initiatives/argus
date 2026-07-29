@@ -30,7 +30,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -41,7 +41,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[
@@ -60,7 +60,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="choices",
                 alternate_names=["choices"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(standard_name="list_name"),
                     SchemaColumnMap(standard_name="name"),
                 ],

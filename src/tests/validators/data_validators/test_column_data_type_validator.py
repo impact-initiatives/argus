@@ -66,7 +66,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -77,7 +77,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[
@@ -107,7 +107,7 @@ def schema_missing_sheet1():
             SchemaSheetMap(
                 standard_name="clean_dataxxx",
                 alternate_names=["clean_dataxxx"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -118,7 +118,7 @@ def schema_missing_sheet1():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[
@@ -148,7 +148,7 @@ def schema_missing_sheet2():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -159,7 +159,7 @@ def schema_missing_sheet2():
             SchemaSheetMap(
                 standard_name="surveyxxx",
                 alternate_names=["surveyxxx"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[
@@ -189,7 +189,7 @@ def schema_missing_column1():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -200,7 +200,7 @@ def schema_missing_column1():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="typexxx",
                         process_values=[
@@ -230,7 +230,7 @@ def schema_missing_column2():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -241,7 +241,7 @@ def schema_missing_column2():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[
@@ -271,7 +271,7 @@ def schema_missing_process1():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -282,7 +282,7 @@ def schema_missing_process1():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[
@@ -312,7 +312,7 @@ def schema_missing_process2():
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["clean_data"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="uuid",
                         alternate_names=["uuidx", "X_uuid"],
@@ -323,7 +323,7 @@ def schema_missing_process2():
             SchemaSheetMap(
                 standard_name="survey",
                 alternate_names=["survey"],
-                mandatory_columns=[
+                columns=[
                     SchemaColumnMap(
                         standard_name="type",
                         process_values=[

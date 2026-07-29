@@ -15,9 +15,7 @@ def valid_schema():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             )
         ],
         schema_unloaded_sheets=[
@@ -35,16 +33,12 @@ def invalid_schema():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
         schema_unloaded_sheets=[
@@ -62,16 +56,12 @@ def invalid_schema_2():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
             SchemaSheetMap(
                 standard_name="clean_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
         schema_unloaded_sheets=[],
@@ -87,16 +77,12 @@ def invalid_schema_3():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
         schema_unloaded_sheets=[
@@ -115,16 +101,12 @@ def invalid_schema_4():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
         schema_unloaded_sheets=[
@@ -143,16 +125,12 @@ def invalid_schema_5():
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
-                mandatory_columns=[
-                    SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])
-                ],
+                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
         schema_unloaded_sheets=[
