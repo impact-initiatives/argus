@@ -60,7 +60,8 @@ class JMMIColumnNameCheck(BaseValidator):
 
         also checking:
         - certain columns are removed from the dataset
-        - if columns that dont contain the word "item" contain words in the goods dictionary
+        - (currently removed)if columns that dont contain the word "item"
+            contain words in the goods dictionary
 
         Args:
             data (ExcelLoaderData): data (ExcelLoaderData): data to be validated
