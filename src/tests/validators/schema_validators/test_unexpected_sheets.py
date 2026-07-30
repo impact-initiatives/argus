@@ -11,13 +11,12 @@ from tests.helpers import do_basic_checks
 
 
 @pytest.fixture
-def valid_schema_validator():
+def get_validator():
     """Create a UniqueColumn validator instance"""
     return UnexpectedSheetsCheck()
 
 
-@pytest.fixture
-def unexpected_excel_data():
+def build_excel_data(sheet_name: str, unexpected_sheets: list[str], hidden_sheets: list[str]):
     """Create ExcelLoaderData with matching columns"""
     df = pl.DataFrame(
         {
@@ -26,86 +25,54 @@ def unexpected_excel_data():
     )
 
     loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_datax",
-        data_sheet_name="raw_datax",
+        schema_sheet_name=sheet_name,
+        data_sheet_name=sheet_name,
         data=df,
     )
-    unexpected_sheets = ["somesheet", "anothersheet"]
 
-    data = ExcelLoaderData(loaded_sheets=[loaded_sheet])
-    data.unexpected_sheets = unexpected_sheets
-
-    return data
-
-
-@pytest.fixture
-def hidden_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
+    return ExcelLoaderData(
+        loaded_sheets=[loaded_sheet],
+        unexpected_sheets=unexpected_sheets,
+        hidden_sheets=hidden_sheets,
     )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_datax",
-        data_sheet_name="raw_datax",
-        data=df,
-    )
-    hidden_excel_data = ["somesheet", "anothersheet"]
-
-    data = ExcelLoaderData(loaded_sheets=[loaded_sheet])
-    data.hidden_sheets = hidden_excel_data
-
-    return data
-
-
-@pytest.fixture
-def expected_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_datax",
-        data_sheet_name="raw_datax",
-        data=df,
-    )
-    unexpected_sheets = []
-
-    data = ExcelLoaderData(loaded_sheets=[loaded_sheet])
-    data.unexpected_sheets = unexpected_sheets
-
-    return data
 
 
 class TestUnexpectedSheets:
-    def test_unexpected_data(
+    def test_unexpected_sheets(
         self,
-        valid_schema_validator: BaseValidator,
-        unexpected_excel_data: ExcelLoaderData,
+        get_validator: BaseValidator,
     ):
-        result = valid_schema_validator.validate(unexpected_excel_data)
+        data = build_excel_data(
+            sheet_name="clean_data",
+            unexpected_sheets=["somesheet", "anothersheet"],
+            hidden_sheets=[],
+        )
+        result = get_validator.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["unexpected_sheets"]) == 2
 
-    def test_hidden_data(
+    def test_hidden_sheet(
         self,
-        valid_schema_validator: BaseValidator,
-        hidden_excel_data: ExcelLoaderData,
+        get_validator: BaseValidator,
     ):
-        result = valid_schema_validator.validate(hidden_excel_data)
+        data = build_excel_data(
+            sheet_name="clean_data",
+            unexpected_sheets=[],
+            hidden_sheets=["somesheet", "anothersheet"],
+        )
+        result = get_validator.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["hidden_sheets"]) == 2
 
-    def test_expected_data(
+    def test_expected_sheets(
         self,
-        valid_schema_validator: BaseValidator,
-        expected_excel_data: ExcelLoaderData,
+        get_validator: BaseValidator,
     ):
-        result = valid_schema_validator.validate(expected_excel_data)
+        data = build_excel_data(sheet_name="clean_data", unexpected_sheets=[], hidden_sheets=[])
+        result = get_validator.validate(data)
 
         do_basic_checks(result, 0)

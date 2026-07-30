@@ -56,7 +56,7 @@ class DuplicateSheetMatchCheck(BaseValidator):
                             count=matches_df.select(pl.col("sheet")).unique().height,
                         ),
                         severity=SeverityLevel.ERROR,
-                        details=matches_df.to_dict(),
+                        details=matches_df.to_dict(as_series=False),
                     )
                 )
 

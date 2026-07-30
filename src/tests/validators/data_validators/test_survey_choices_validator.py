@@ -469,7 +469,7 @@ def invalid_choice_data():
     return ExcelLoaderData(loaded_sheets=loaded_sheets)
 
 
-class TestDataType:
+class TestSurveyChoices:
     def test_valid_data(
         self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
     ):

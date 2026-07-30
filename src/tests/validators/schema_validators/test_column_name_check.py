@@ -1,32 +1,25 @@
 import polars as pl
-import pytest
 
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.loaders.excel_loader import DataSheetMap
-from argus.validators.base import BaseValidator
 from argus.validators.schema_validators.column_name_validator import (
     ColumnNameCheck,
 )
 from tests.helpers import do_basic_checks
 
 
-@pytest.fixture
-def validator():
+def get_validator(ignore_sheets: list[str] | None = None):
     """Create a UniqueColumn validator instance"""
-    return ColumnNameCheck()
+    return ColumnNameCheck(ignore_sheets=ignore_sheets)
 
 
-@pytest.fixture
-def valid_excel_data():
+def build_excel_data(columns: list[str]):
     """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "some_column": [1, 2, 3, 4, 5],
-            "some.column": [1, 2, 3, 4, 5],
-            "SomeColumn": [1, 2, 3, 4, 5],
-        }
-    )
+    columns_dict: list[dict[str, list[int]]] = []
+    for column in columns:
+        columns_dict.append({column: [1, 2, 3, 4, 5]})
+
+    df = pl.DataFrame(columns_dict)
 
     loaded_sheet = DataSheetMap(
         schema_sheet_name="raw_data",
@@ -34,49 +27,52 @@ def valid_excel_data():
         data=df,
     )
 
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame({"uuid": [1, 2, 3, 4, 5], "some column": [1, 2, 3, 4, 5]})
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
+    return ExcelLoaderData(
+        loaded_sheets=[loaded_sheet],
     )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_excel_data2():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame({"uuid": [1, 2, 3, 4, 5], "some@column": [1, 2, 3, 4, 5]})
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
 
 
 class TestColumnNames:
-    def test_valid_data(self, validator: BaseValidator, valid_excel_data: ExcelLoaderData):
-        result = validator.validate(valid_excel_data)
+    def test_valid_columns(
+        self,
+    ):
+
+        data = build_excel_data(["some_column", "some.column", "somecolumn"])
+        validator = get_validator()
+        result = validator.validate(data)
 
         do_basic_checks(result, 0)
 
-    def test_invalid_data(self, validator: BaseValidator, invalid_excel_data: ExcelLoaderData):
-        result = validator.validate(invalid_excel_data)
+    def test_invalid_column(
+        self,
+    ):
+
+        data = build_excel_data(["some@column"])
+        validator = get_validator()
+        result = validator.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["columns"][0] == "some@column"
 
-    def test_invalid_data2(self, validator: BaseValidator, invalid_excel_data2: ExcelLoaderData):
-        result = validator.validate(invalid_excel_data2)
+    def test_invalid_column2(
+        self,
+    ):
+
+        data = build_excel_data(["some column"])
+        validator = get_validator()
+        result = validator.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["columns"][0] == "some column"
+
+    def test_ignore_sheet(
+        self,
+    ):
+
+        data = build_excel_data(["some@column"])
+        validator = get_validator(ignore_sheets=["raw_data"])
+        result = validator.validate(data)
+
+        do_basic_checks(result, 0)

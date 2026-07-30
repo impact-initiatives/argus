@@ -32,7 +32,7 @@ def build_schema(sheet_name: str, columns: list[tuple[str, bool]], required=True
     )
 
 
-def build_excel_data(sheet_name: str, columns):
+def build_excel_data(sheet_name: str, columns: list[str]):
     """Create ExcelLoaderData with matching columns"""
     column_map: list[DataColumnMap] = []
     df = pl.DataFrame(

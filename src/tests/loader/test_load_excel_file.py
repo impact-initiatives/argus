@@ -51,9 +51,9 @@ class TestLoadData:
         data, results = ExcelLoader(valid_schema).load(valid_file_fuzzy)
         assert len(error_counter(results)) == 0
         assert len(data.unexpected_sheets) == 2
-        assert len(results) == 0
+        assert len(results) == 1
 
     def test_invalid_file_fuzzy(self, valid_schema: BaseDatasetSchema, invalid_file_fuzzy: Path):
         data, results = ExcelLoader(valid_schema).load(invalid_file_fuzzy, True)
-        assert len(error_counter(results)) == 1
-        assert len(results) == 1
+        assert len(error_counter(results)) == 3
+        assert len(results) == 3

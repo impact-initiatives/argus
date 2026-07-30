@@ -52,7 +52,7 @@ class UniqueColumnCheck(BaseValidator):
                                     mapped_column.data_column_name
                                 ).is_duplicated()
                             )
-                            .select(mapped_column.data_column_name)
+                            .select(pl.col(mapped_column.data_column_name).cast(pl.String))
                             .rename({mapped_column.data_column_name: "value"})
                         )
                         unique_duplicated_row_count = unique_duplicated_rows_df.n_unique()

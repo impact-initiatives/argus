@@ -1,161 +1,88 @@
 import polars as pl
-import pytest
 
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.loaders.excel_loader import DataSheetMap
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.base import BaseValidator
 from argus.validators.schema_validators.duplicate_sheet_match_validator import (
     DuplicateSheetMatchCheck,
 )
 from tests.helpers import do_basic_checks
 
 
-@pytest.fixture
-def valid_schema_validator(valid_schema):
+def get_validator(schema):
     """Create a UniqueColumn validator instance"""
-    return DuplicateSheetMatchCheck(valid_schema)
+    return DuplicateSheetMatchCheck(schema=schema)
 
 
-@pytest.fixture
-def valid_schema_matching_term_validator(valid_schema_matching_term):
-    """Create a UniqueColumn validator instance"""
-    return DuplicateSheetMatchCheck(valid_schema_matching_term)
-
-
-@pytest.fixture
-def valid_schema():
+def build_schema(sheet_name: str, columns: list[str], matching_term: str | None = None):
+    column_map: list[SchemaColumnMap] = []
+    for column in columns:
+        column_map.append(SchemaColumnMap(standard_name=column))
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
         schema_loaded_sheets=[
             SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
+                standard_name=sheet_name, columns=column_map, matching_term=matching_term
             )
         ],
         schema_unloaded_sheets=[],
     )
 
 
-@pytest.fixture
-def valid_schema_matching_term():
+def build_excel_data(sheets: list[tuple[str, str]]):
+    """Create ExcelLoaderData with matching columns"""
+    df = pl.DataFrame(
+        {
+            "uuid": [1, 2, 3, 4, 5],
+        }
+    )
 
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
-                matching_term="raw",
+    loaded_sheets: list[DataSheetMap] = []
+    for item in sheets:
+        loaded_sheets.append(
+            DataSheetMap(
+                schema_sheet_name=item[0],
+                data_sheet_name=item[1],
+                data=df,
             )
-        ],
-        schema_unloaded_sheets=[],
+        )
+
+    return ExcelLoaderData(
+        loaded_sheets=loaded_sheets,
     )
 
 
-@pytest.fixture
-def valid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-    df2 = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df,
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data2",
-            data=df2,
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def valid_excel_data_matching_term():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-    df2 = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df,
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data2",
-            data=df2,
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-class TestMissingSheets:
+class TestDuplicateSheets:
     def test_valid_schema(
-        self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+        self,
     ):
-        result = valid_schema_validator.validate(valid_excel_data)
+        schema = build_schema("clean_data", ["uuid", "country"])
+        data = build_excel_data([("clean_data", "clean_data")])
+        validator = get_validator(schema)
 
+        result = validator.validate(data)
         do_basic_checks(result, 0)
 
-    def test_invalid_data(
-        self, valid_schema_validator: BaseValidator, invalid_excel_data: ExcelLoaderData
+    def test_duplicate_sheet_matches(
+        self,
     ):
-        result = valid_schema_validator.validate(invalid_excel_data)
+        schema = build_schema("clean_data", ["uuid", "country"])
+        data = build_excel_data([("clean_data", "clean_data"), ("clean_data", "clean_data2")])
+        validator = get_validator(schema)
 
+        result = validator.validate(data)
         do_basic_checks(result, 1)
         assert result[0].details is not None
-        assert len(result[0].details.items()) == 2
+        assert result[0].details["sheet"][0] == "clean_data"
 
     def test_valid_schema_matching_term(
         self,
-        valid_schema_matching_term_validator: BaseValidator,
-        valid_excel_data_matching_term: ExcelLoaderData,
     ):
-        result = valid_schema_matching_term_validator.validate(valid_excel_data_matching_term)
+        schema = build_schema("clean_data", ["uuid", "country"], matching_term="clean")
+        data = build_excel_data([("clean_data", "clean_data"), ("clean_data", "clean_data2")])
+        validator = get_validator(schema)
 
+        result = validator.validate(data)
         do_basic_checks(result, 0)
