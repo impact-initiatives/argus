@@ -120,6 +120,15 @@ class RawToCleanToLogCheck(BaseValidator):
         assert clean_data_id_columns is not None
 
         if self.cleaning_log_sheet is not None:
+            result, schema_loaded_sheets = get_schema_loaded_sheets(
+                schema=self.schema,
+                sheet_names=[self.cleaning_log_sheet],
+                rule=self.name,
+            )
+            if result is not None:
+                results.append(result)
+                return results
+
             result, clean_log_id_columns, clean_data_id_columns = get_id_linking_columns(
                 schema=self.schema,
                 data_loaded_sheets=data_loaded_sheets,
@@ -145,15 +154,6 @@ class RawToCleanToLogCheck(BaseValidator):
                 rule=self.name,
             )
 
-            if result is not None:
-                results.append(result)
-                return results
-
-            result, schema_loaded_sheets = get_schema_loaded_sheets(
-                schema=self.schema,
-                sheet_names=[self.cleaning_log_sheet],
-                rule=self.name,
-            )
             if result is not None:
                 results.append(result)
                 return results
@@ -329,12 +329,19 @@ class RawToCleanToLogCheck(BaseValidator):
             )
 
             # difference between above and cleaning log
+            # This does not check the actual values. It only checks that
+            # there is a cleaning log record when there should be one for a uuid and question
+            # if the actual values are incorrect that should be picked up
+            # by CleaningLogToCleanCheck
             if self.cleaning_log_sheet is not None:
                 difference_df = difference_raw_to_clean_df.join(
                     other=modified_rows_df,
                     how="anti",
-                    left_on="uuid",
-                    right_on=clean_log_id_columns.data_column_name,
+                    left_on=["uuid", self.cleaning_log_question_column],
+                    right_on=[
+                        clean_log_id_columns.data_column_name,
+                        self.cleaning_log_question_column,
+                    ],
                 )
 
                 if difference_df.height > 0:

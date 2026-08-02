@@ -1,13 +1,9 @@
-import polars as pl
-
-from argus.loaders.base_excel_loader import ExcelLoaderData
-from argus.loaders.excel_loader import DataSheetMap
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.schema_validators.missing_sheets_validator import (
     MissingSheetsCheck,
 )
-from tests.helpers import do_basic_checks
+from tests.helpers import build_excel_data, do_basic_checks
 
 
 def get_validator(schema):
@@ -29,31 +25,18 @@ def build_schema(sheet_name: str, columns: list[str], required=True):
     )
 
 
-def build_excel_data(sheet_name: str):
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name=sheet_name,
-        data_sheet_name=sheet_name,
-        data=df,
-    )
-
-    return ExcelLoaderData(
-        loaded_sheets=[loaded_sheet],
-    )
-
-
 class TestMissingSheets:
     def test_valid_schema(
         self,
     ):
         schema = build_schema("clean_data", ["uuid", "country"])
-        data = build_excel_data("clean_data")
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -63,7 +46,13 @@ class TestMissingSheets:
         self,
     ):
         schema = build_schema("clean_data", ["uuid", "country"])
-        data = build_excel_data("other_sheet")
+        data = build_excel_data(
+            {
+                "other_sheet": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -75,7 +64,13 @@ class TestMissingSheets:
         self,
     ):
         schema = build_schema("clean_data", ["uuid", "country"], required=False)
-        data = build_excel_data("clean_data")
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -85,7 +80,13 @@ class TestMissingSheets:
         self,
     ):
         schema = build_schema("clean_data", ["uuid", "country"], required=False)
-        data = build_excel_data("other_sheet")
+        data = build_excel_data(
+            {
+                "other_sheet": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -97,7 +98,13 @@ class TestMissingSheets:
         self,
     ):
         schema = build_schema("sampling_info", ["uuid", "country"], required=False)
-        data = build_excel_data("other_sheet")
+        data = build_excel_data(
+            {
+                "other_sheet": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
         result = validator.validate(data)
 

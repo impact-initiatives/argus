@@ -132,10 +132,10 @@ class NaNDataCheck(BaseValidator):
                 # get the valies
                 output_df = merged_df.select(
                     [
-                        pl.col(id_column).alias("uuid"),
+                        pl.col(id_column).cast(pl.String).alias("uuid"),
                         pl.lit(sheet).alias("sheet"),
                         pl.col("column"),
-                        pl.col("value").cast(pl.Utf8).alias("value"),
+                        pl.col("value").cast(pl.String).alias("value"),
                     ]
                 )
                 # concat results to those from previous sheets

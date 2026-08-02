@@ -1,3 +1,9 @@
+import polars as pl
+
+from argus.loaders.base import DataColumnMap, DataSheetMap
+from argus.loaders.base_excel_loader import ExcelLoaderData
+from argus.models.base import ProcessValueMap, SchemaColumnMap, SchemaSheetMap
+from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import SeverityLevel, ValidationResult
 
 
@@ -18,3 +24,72 @@ def admin_error_counter(results: list[ValidationResult]):
 def do_basic_checks(results: list[ValidationResult], expected: int):
     assert isinstance(results, list)
     assert len(error_counter(results)) == expected
+
+
+def build_excel_data(sheet_details: dict[str, list[tuple[str, list[str | int | float]]]]):
+    """Create ExcelLoaderData with matching columns"""
+    loaded_sheets: list[DataSheetMap] = []
+    for sheet, columns in sheet_details.items():
+        column_map: list[DataColumnMap] = []
+        columns_dict = {}
+
+        for column in columns:
+            column_map.append(
+                DataColumnMap(schema_column_name=column[0], data_column_name=column[0])
+            )
+            columns_dict[column[0]] = column[1]
+
+        df = pl.DataFrame(columns_dict)
+
+        loaded_sheets.append(
+            DataSheetMap(
+                schema_sheet_name=sheet,
+                data_sheet_name=sheet,
+                data=df,
+                column_map=column_map,
+            )
+        )
+
+    return ExcelLoaderData(
+        loaded_sheets=loaded_sheets,
+    )
+
+
+def build_schema_with_process(
+    sheet_details: dict[str, list[str]],
+    process_details: dict[str, list[str | int | float]],
+    process_sheet: str,
+    process_column: str,
+    unique_columns: bool = True,
+):
+    sheet_maps: list[SchemaSheetMap] = []
+
+    for sheet, columns in sheet_details.items():
+        column_map: list[SchemaColumnMap] = []
+
+        for column in columns:
+            if sheet == process_sheet and column == process_column:
+                process_values_map: list[ProcessValueMap] = []
+                for process_name, proces_values in process_details.items():
+                    process_values_local = proces_values.copy()
+                    if process_values_local is None:
+                        process_values_local = []
+
+                    if process_name is not None:
+                        process_values_map.append(
+                            ProcessValueMap(process_name=process_name, values=process_values_local)
+                        )
+
+                column_map.append(
+                    SchemaColumnMap(standard_name=column, process_values=process_values_map)
+                )
+            else:
+                column_map.append(SchemaColumnMap(standard_name=column, is_unique=unique_columns))
+
+        sheet_maps.append(SchemaSheetMap(standard_name=sheet, columns=column_map))
+
+    return BaseDatasetSchema(
+        dataset_type="jmmi",
+        schema_loaded_sheets=sheet_maps,
+        schema_unloaded_sheets=[],
+    )

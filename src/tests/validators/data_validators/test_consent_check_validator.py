@@ -1,511 +1,242 @@
-import polars as pl
-import pytest
-
-from argus.loaders.base import (
-    DataColumnMap,
-    DataSheetMap,
-)
-from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.models.base import ProcessValueMap, SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.base import BaseValidator
 from argus.validators.data_validators.consent_check_validator import (
     ConsentCheck,
 )
-from tests.helpers import do_basic_checks
+from tests.helpers import build_excel_data, do_basic_checks
 
 
-@pytest.fixture
-def valid_schema_validator(valid_schema):
+def get_validator(schema):
     """Create a UniqueColumn validator instance"""
-    return ConsentCheck(schema=valid_schema)
+    return ConsentCheck(schema=schema)
 
 
-@pytest.fixture
-def invalid_schema_validator(invalid_schema):
-    """Create a UniqueColumn validator instance"""
-    return ConsentCheck(schema=invalid_schema)
+def build_schema(
+    sheet_details: dict[str, list[str]],
+    process_name: str | None = None,
+    process_values: list[str | int | float] | None = None,
+    unique_columns: bool = True,
+):
+    sheet_maps: list[SchemaSheetMap] = []
 
+    if process_values is None:
+        process_values = []
 
-@pytest.fixture
-def invalid_schema_validator2(invalid_schema2):
-    """Create a UniqueColumn validator instance"""
-    return ConsentCheck(schema=invalid_schema2)
+    for sheet, columns in sheet_details.items():
+        column_map: list[SchemaColumnMap] = []
 
+        for column in columns:
+            if sheet == "raw_data" and column == "consent":
+                if process_name is not None:
+                    process = [ProcessValueMap(process_name=process_name, values=process_values)]
+                else:
+                    process = []
+                column_map.append(SchemaColumnMap(standard_name=column, process_values=process))
+            else:
+                column_map.append(SchemaColumnMap(standard_name=column, is_unique=unique_columns))
 
-@pytest.fixture
-def invalid_schema_validator3(invalid_schema3):
-    """Create a UniqueColumn validator instance"""
-    return ConsentCheck(schema=invalid_schema3)
-
-
-@pytest.fixture
-def invalid_schema_validator4(invalid_schema4):
-    """Create a UniqueColumn validator instance"""
-    return ConsentCheck(schema=invalid_schema4)
-
-
-@pytest.fixture
-def valid_schema():
+        sheet_maps.append(SchemaSheetMap(standard_name=sheet, columns=column_map))
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    )
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    ),
-                    SchemaColumnMap(
-                        standard_name="consent",
-                        alternate_names=[],
-                        process_values=[
-                            ProcessValueMap(process_name="consent_check_validation", values=["yes"])
-                        ],
-                    ),
-                ],
-            ),
-        ],
+        schema_loaded_sheets=sheet_maps,
         schema_unloaded_sheets=[],
     )
-
-
-@pytest.fixture
-def invalid_schema():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    )
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="raw_dataxx",
-                alternate_names=["raw_dataxx"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    ),
-                    SchemaColumnMap(
-                        standard_name="consent",
-                        alternate_names=[],
-                        process_values=[
-                            ProcessValueMap(process_name="consent_check_validation", values=["yes"])
-                        ],
-                    ),
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def invalid_schema2():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    )
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    ),
-                    SchemaColumnMap(
-                        standard_name="consent",
-                        alternate_names=[],
-                        process_values=[
-                            ProcessValueMap(process_name="consent_check_validation", values=[])
-                        ],
-                    ),
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def invalid_schema3():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=False,
-                    )
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    ),
-                    SchemaColumnMap(
-                        standard_name="consent",
-                        alternate_names=[],
-                        process_values=[
-                            ProcessValueMap(process_name="consent_check_validation", values=["yes"])
-                        ],
-                    ),
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def invalid_schema4():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=True,
-                    )
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid", "uuid2"],
-                        is_unique=False,
-                    ),
-                    SchemaColumnMap(
-                        standard_name="consent",
-                        alternate_names=[],
-                        process_values=[
-                            ProcessValueMap(process_name="consent_check_validation", values=["yes"])
-                        ],
-                    ),
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def valid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "consent": ["yes", "yes", "yes", "yes", "yes"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="consent", data_column_name="consent"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "consent": ["yes", "no", "yes", "yes", "no"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="consent", data_column_name="consent"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_excel_data2():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "consent": ["yes", "yes", "yes", "yes", "yes"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_dataxx",
-            data_sheet_name="clean_dataxx",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="consent", data_column_name="consent"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_excel_data3():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "consent": ["yes", "yes", "yes", "yes", "yes"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_dataxx",
-            data_sheet_name="raw_dataxx",
-            data=df_raw,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="consent", data_column_name="consent"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_excel_data4():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "consent": ["yes", "yes", "yes", "yes", "yes"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
 
 
 class TestConsentCheck:
     def test_valid_data(
-        self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+        self,
     ):
-        result = valid_schema_validator.validate(valid_excel_data)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 0)
 
-    def test_invalid_data(
-        self, valid_schema_validator: BaseValidator, invalid_excel_data: ExcelLoaderData
+    def test_consent_not_removed(
+        self,
     ):
-        result = valid_schema_validator.validate(invalid_excel_data)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
         assert result[0].details is not None
-        assert len(result[0].details["uuid"]) == 2
+        assert len(result[0].details["uuid"]) == 1
 
-    def test_invalid_data2(
+    def test_missing_data_sheet(
         self,
-        valid_schema_validator: BaseValidator,
-        invalid_excel_data2: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_excel_data2)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data_missing": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_data3(
+    def test_missing_clean_schema_sheet(
         self,
-        valid_schema_validator: BaseValidator,
-        invalid_excel_data3: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_excel_data3)
+        schema = build_schema(
+            {"clean_data_missing": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_data4(
+    def test_missing_raw_schema_sheet(
         self,
-        valid_schema_validator: BaseValidator,
-        invalid_excel_data4: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_excel_data4)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data_missing": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_schema(
-        self, invalid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+    def test_missing_consent_values(
+        self,
     ):
-        result = invalid_schema_validator.validate(valid_excel_data)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=[],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_schema2(
+    def test_missing_consent_process(
         self,
-        invalid_schema_validator2: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
     ):
-        result = invalid_schema_validator2.validate(valid_excel_data)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name=None,
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_schema3(
+    def test_no_id_columns(
         self,
-        invalid_schema_validator3: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
     ):
-        result = invalid_schema_validator3.validate(valid_excel_data)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+            unique_columns=False,
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
+
+        do_basic_checks(result, 2)
+
+    def test_no_consent_column_schema(
+        self,
+    ):
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent_missing"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3])],
+                "raw_data": [("uuid", [1, 2, 3, 4]), ("consent", ["yes", "yes", "yes", "no"])],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_schema4(
+    def test_no_consent_column_data(
         self,
-        invalid_schema_validator4: BaseValidator,
-        valid_excel_data: ExcelLoaderData,
     ):
-        result = invalid_schema_validator4.validate(valid_excel_data)
+        schema = build_schema(
+            {"clean_data": ["uuid"], "raw_data": ["uuid", "consent"]},
+            process_name="consent_check_validation",
+            process_values=["yes"],
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [("uuid", [1, 2, 3])],
+                "raw_data": [
+                    ("uuid", [1, 2, 3, 4]),
+                    ("consent_missing", ["yes", "yes", "yes", "no"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)

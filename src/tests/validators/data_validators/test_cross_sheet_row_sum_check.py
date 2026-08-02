@@ -1,16 +1,12 @@
-import polars as pl
 import pytest
 
-from argus.loaders.base import DataColumnMap
-from argus.loaders.base_excel_loader import ExcelLoaderData
-from argus.loaders.excel_loader import DataSheetMap
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import BaseValidator
 from argus.validators.data_validators import (
     CrossSheetRowSumCheck,
 )
-from tests.helpers import do_basic_checks
+from tests.helpers import build_excel_data, do_basic_checks
 
 
 @pytest.fixture
@@ -127,342 +123,190 @@ def valid_schema_child():
     )
 
 
-@pytest.fixture
-def valid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_deleted = pl.DataFrame(
-        {
-            "uuid": [1],
-        }
-    )
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-        ),
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-        ),
-        DataSheetMap(
-            schema_sheet_name="deletion_log",
-            data_sheet_name="deletion_log",
-            data=df_deleted,
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def missing_deleted_data():
-    """Create ExcelLoaderData with matching columns"""
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_deleted = pl.DataFrame(
-        {
-            "uuid": [],
-        }
-    )
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-        ),
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-        ),
-        DataSheetMap(
-            schema_sheet_name="deletion_log",
-            data_sheet_name="deletion_log",
-            data=df_deleted,
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def missing_clean_data():
-    """Create ExcelLoaderData with matching columns"""
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_deleted = pl.DataFrame(
-        {
-            "uuid": [1],
-        }
-    )
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [3, 4, 5],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw,
-        ),
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-        ),
-        DataSheetMap(
-            schema_sheet_name="deletion_log",
-            data_sheet_name="deletion_log",
-            data=df_deleted,
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def missing_sheet_data():
-    """Create ExcelLoaderData with matching columns"""
-    df_raw = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_deleted = pl.DataFrame(
-        {
-            "uuid": [1],
-        }
-    )
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [3, 4, 5],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="bla",
-            data_sheet_name="bla",
-            data=df_raw,
-        ),
-        DataSheetMap(
-            schema_sheet_name="blo",
-            data_sheet_name="blo",
-            data=df_clean,
-        ),
-        DataSheetMap(
-            schema_sheet_name="ble",
-            data_sheet_name="ble",
-            data=df_deleted,
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def valid_excel_data_child():
-    """Create ExcelLoaderData with matching columns"""
-    df_raw_child = pl.DataFrame(
-        {
-            "uuid": [2, 2, 3, 4],
-            "person_id": [1, 2, 3, 4],
-        }
-    )
-
-    df_deleted = pl.DataFrame(
-        {
-            "uuid": [1],
-        }
-    )
-
-    df_raw_parent = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-    df_clean_child = pl.DataFrame(
-        {
-            "uuid": [2, 2, 3, 4],
-            "person_id": [1, 2, 3, 4],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data_child",
-            data_sheet_name="raw_data_child",
-            data=df_raw_child,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="person_id", data_column_name="person_id"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw_parent,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="deletion_log",
-            data_sheet_name="deletion_log",
-            data=df_deleted,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="clean_data_child",
-            data_sheet_name="clean_data_child",
-            data=df_clean_child,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="person_id", data_column_name="person_id"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def valid_excel_data_child_missing_deletion_sheet():
-    """Create ExcelLoaderData with matching columns"""
-    df_raw_child = pl.DataFrame(
-        {
-            "uuid": [2, 2, 3, 4],
-            "person_id": [1, 2, 3, 4],
-        }
-    )
-
-    df_raw_parent = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-    df_clean_child = pl.DataFrame(
-        {
-            "uuid": [2, 2, 3, 4],
-            "person_id": [1, 2, 3, 4],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="raw_data_child",
-            data_sheet_name="raw_data_child",
-            data=df_raw_child,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="person_id", data_column_name="person_id"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="raw_data",
-            data_sheet_name="raw_data",
-            data=df_raw_parent,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="clean_data_child",
-            data_sheet_name="clean_data_child",
-            data=df_clean_child,
-            column_map=[
-                DataColumnMap(schema_column_name="uuid", data_column_name="uuid"),
-                DataColumnMap(schema_column_name="person_id", data_column_name="person_id"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
 class TestCrossSheetRowSum:
     def test_valid_data(
-        self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+        self,
+        valid_schema_validator: BaseValidator,
     ):
-        result = valid_schema_validator.validate(valid_excel_data)
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4])],
+                "clean_data": [("uuid", [1, 2, 3])],
+                "deletion_log": [("uuid", [4])],
+            }
+        )
+
+        result = valid_schema_validator.validate(data)
+
+        do_basic_checks(result, 0)
+
+    def test_valid_data_no_deletions(
+        self,
+        valid_schema_validator: BaseValidator,
+    ):
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4])],
+                "clean_data": [("uuid", [1, 2, 3, 4])],
+                "deletion_log": [("uuid", [])],
+            }
+        )
+
+        result = valid_schema_validator.validate(data)
 
         do_basic_checks(result, 0)
 
     def test_missing_deleted_data(
         self,
         valid_schema_validator: BaseValidator,
-        missing_deleted_data: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(missing_deleted_data)
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4])],
+                "clean_data": [("uuid", [1, 2, 3])],
+                "deletion_log": [("uuid", [])],
+            }
+        )
+        result = valid_schema_validator.validate(data)
 
         do_basic_checks(result, 1)
 
     def test_missing_clean_data(
-        self, valid_schema_validator: BaseValidator, missing_clean_data: ExcelLoaderData
+        self,
+        valid_schema_validator: BaseValidator,
     ):
-        result = valid_schema_validator.validate(missing_clean_data)
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4])],
+                "clean_data": [
+                    (
+                        "uuid",
+                        [
+                            1,
+                            2,
+                        ],
+                    )
+                ],
+                "deletion_log": [("uuid", [4])],
+            }
+        )
+        result = valid_schema_validator.validate(data)
 
         do_basic_checks(result, 1)
 
     def test_missing_sheet_data(
-        self, valid_schema_validator: BaseValidator, missing_sheet_data: ExcelLoaderData
+        self,
+        valid_schema_validator: BaseValidator,
     ):
-        result = valid_schema_validator.validate(missing_sheet_data)
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4])],
+                "clean_data": [
+                    (
+                        "uuid",
+                        [
+                            1,
+                            2,
+                        ],
+                    )
+                ],
+                "missing_sheet": [("uuid", [4])],
+            }
+        )
+        result = valid_schema_validator.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_parent_child_data(
-        self, valid_schema_child_validator: BaseValidator, valid_excel_data_child: ExcelLoaderData
+    def test_valid_parent_child_data(
+        self,
+        valid_schema_child_validator: BaseValidator,
     ):
-        result = valid_schema_child_validator.validate(valid_excel_data_child)
+        data = build_excel_data(
+            {
+                "raw_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4, 5])],
+                "clean_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "deletion_log": [("uuid", [1])],
+            }
+        )
+        result = valid_schema_child_validator.validate(data)
 
         do_basic_checks(result, 0)
 
-    def test_incorrect_sheet(
-        self, invalid_args_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+    def test_valid_parent_child_data_no_deletions(
+        self,
+        valid_schema_child_validator: BaseValidator,
     ):
-        result = invalid_args_validator.validate(valid_excel_data)
+        data = build_excel_data(
+            {
+                "raw_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [2, 3, 4, 5])],
+                "clean_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "deletion_log": [("uuid", [])],
+            }
+        )
+        result = valid_schema_child_validator.validate(data)
+
+        do_basic_checks(result, 0)
+
+    def test_invalid_parent_child_data(
+        self,
+        valid_schema_child_validator: BaseValidator,
+    ):
+        data = build_excel_data(
+            {
+                "raw_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4, 5])],
+                "clean_data_child": [("uuid", [2, 2, 3]), ("person_id", [1, 2, 3])],
+                "deletion_log": [("uuid", [1])],
+            }
+        )
+        result = valid_schema_child_validator.validate(data)
+
+        do_basic_checks(result, 1)
+
+    def test_parent_child_data_missing_id_column(
+        self,
+        valid_schema_child_validator: BaseValidator,
+    ):
+        data = build_excel_data(
+            {
+                "raw_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4, 5])],
+                "clean_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "deletion_log": [("missing_column", [1])],
+            }
+        )
+        result = valid_schema_child_validator.validate(data)
+
+        do_basic_checks(result, 1)
+
+    def test_incorrect_sheet(
+        self,
+        invalid_args_validator: BaseValidator,
+    ):
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4])],
+                "clean_data": [("uuid", [1, 2, 3])],
+                "deletion_log": [("uuid", [4])],
+            }
+        )
+        result = invalid_args_validator.validate(data)
 
         do_basic_checks(result, 1)
 
     def test_parent_child_data_missing_deletion_sheet(
         self,
         valid_schema_child_validator: BaseValidator,
-        valid_excel_data_child_missing_deletion_sheet: ExcelLoaderData,
     ):
-        result = valid_schema_child_validator.validate(
-            valid_excel_data_child_missing_deletion_sheet
+        data = build_excel_data(
+            {
+                "raw_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+                "raw_data": [("uuid", [1, 2, 3, 4, 5])],
+                "clean_data_child": [("uuid", [2, 2, 3, 4]), ("person_id", [1, 2, 3, 4])],
+            }
         )
+        result = valid_schema_child_validator.validate(data)
 
         do_basic_checks(result, 1)

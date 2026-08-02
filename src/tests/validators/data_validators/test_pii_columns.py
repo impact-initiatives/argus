@@ -1,20 +1,14 @@
-import polars as pl
 import pytest
 
-from argus.loaders.base import DataColumnMap
-from argus.loaders.base_excel_loader import ExcelLoaderData
-from argus.loaders.excel_loader import DataSheetMap
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.base import BaseValidator
 from argus.validators.data_validators.pii_validator import PiiDataCheck
-from tests.helpers import do_basic_checks, error_counter
+from tests.helpers import build_excel_data, do_basic_checks, error_counter
 
 
-@pytest.fixture
-def validator(valid_schema):
+def get_validator(valid_schema, ignore_sheets: list[str] | None = None):
     """Create a UniqueColumn validator instance"""
-    return PiiDataCheck(schema=valid_schema)
+    return PiiDataCheck(schema=valid_schema, ignore_sheets=ignore_sheets)
 
 
 @pytest.fixture
@@ -39,132 +33,71 @@ def valid_schema():
     )
 
 
-@pytest.fixture
-def valid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "phone_number": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_fuzzy_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "phone_number1": [1, 2, 3, 4, 5],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_excel_data2():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "some_column": ["a@b.com", "2", "3", "4", "5"],
-            "another_column": ["1", "2", "3", "4", "0557456783"],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-        column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
-@pytest.fixture
-def invalid_excel_data3():
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "some_column": ["a@b.com", "2", "3", "4", "5"],
-            "another_column": ["1", "2", "3", "4", "0557456783"],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name="raw_data",
-        data_sheet_name="raw_data",
-        data=df,
-        column_map=[DataColumnMap(data_column_name="uuid", schema_column_name="uuid")],
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
 class TestPiiColumns:
-    def test_valid_data(self, validator: BaseValidator, valid_excel_data: ExcelLoaderData):
-        result = validator.validate(valid_excel_data)
+    def test_valid_data(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("uuid", [1, 2, 3, 4, 5])]})
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
 
         do_basic_checks(result, 0)
 
-    def test_invalid_data(self, validator: BaseValidator, invalid_excel_data: ExcelLoaderData):
-        result = validator.validate(invalid_excel_data)
+    def test_invalid_data(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("phone_number", [1, 2, 3, 4, 5])]})
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_fuzzy_data(
-        self, validator: BaseValidator, invalid_fuzzy_excel_data: ExcelLoaderData
-    ):
-        result = validator.validate(invalid_fuzzy_excel_data)
+    def test_invalid_fuzzy_data(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("phone_number1", [1, 2, 3, 4, 5])]})
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_invalid_data2(self, validator: BaseValidator, invalid_excel_data2: ExcelLoaderData):
-        result = validator.validate(invalid_excel_data2)
+    def test_email_match(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("some_column", ["a@b.com", "2", "3", "4", "5"])]})
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
 
         filtered_results = error_counter(result)
         do_basic_checks(filtered_results, 1)
         assert filtered_results[0].details is not None
-        assert len(filtered_results[0].details["uuid"]) == 2
+        assert filtered_results[0].details["pii_type"][0] == "email"
+        assert filtered_results[0].details["matched_value"][0] == "a@b.com"
 
-    def test_invalid_data3(self, validator: BaseValidator, invalid_excel_data3: ExcelLoaderData):
-        result = validator.validate(invalid_excel_data3)
+    def test_phone_number_match(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("some_column", ["1", "2", "3", "4", "0557456783"])]})
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
 
         filtered_results = error_counter(result)
         do_basic_checks(filtered_results, 1)
         assert filtered_results[0].details is not None
-        assert len(filtered_results[0].details["uuid"]) == 2
+        assert filtered_results[0].details["pii_type"][0] == "phone"
+        assert filtered_results[0].details["matched_value"][0] == "0557456783"
+
+    def test_phone_number_match_id_column(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data(
+            {
+                "raw_data": [
+                    ("some_column", ["1", "2", "3", "4", "0557456783"]),
+                    ("uuid", ["1", "2", "3", "4", "5"]),
+                ]
+            }
+        )
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
+
+        filtered_results = error_counter(result)
+        do_basic_checks(filtered_results, 1)
+        assert filtered_results[0].details is not None
+        assert filtered_results[0].details["pii_type"][0] == "phone"
+        assert filtered_results[0].details["matched_value"][0] == "0557456783"
+
+    def test_ignore_sheet(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("phone_number", [1, 2, 3, 4, 5])]})
+        validator = get_validator(valid_schema, ignore_sheets=["raw_data"])
+        result = validator.validate(data)
+
+        do_basic_checks(result, 0)

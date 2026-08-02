@@ -1,16 +1,9 @@
-import polars as pl
-
-from argus.loaders.base import (
-    DataColumnMap,
-    DataSheetMap,
-)
-from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.data_validators.unique_column_validator import (
     UniqueColumnCheck,
 )
-from tests.helpers import do_basic_checks
+from tests.helpers import build_excel_data, do_basic_checks
 
 
 def get_validator(schema):
@@ -32,32 +25,12 @@ def build_schema(sheet_name: str, column: str, unique: bool):
     )
 
 
-def build_excel_data(sheet_name: str, column: tuple[str, list[str | int]]):
-    """Create ExcelLoaderData with matching columns"""
-    df = pl.DataFrame(
-        {
-            column[0]: column[1],
-        }
-    )
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name=sheet_name,
-        data_sheet_name=sheet_name,
-        data=df,
-        column_map=[DataColumnMap(schema_column_name=column[0], data_column_name=column[0])],
-    )
-
-    return ExcelLoaderData(
-        loaded_sheets=[loaded_sheet],
-    )
-
-
 class TestUniqueColumns:
     def test_unique_column(
         self,
     ):
         schema = build_schema("clean_data", "uuid", unique=True)
-        data = build_excel_data("clean_data", ("uuid", [1, 2, 3]))
+        data = build_excel_data({"clean_data": [("uuid", [1, 2, 3])]})
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -67,7 +40,7 @@ class TestUniqueColumns:
         self,
     ):
         schema = build_schema("clean_data", "uuid", unique=False)
-        data = build_excel_data("clean_data", ("uuid", [1, 1, 3]))
+        data = build_excel_data({"clean_data": [("uuid", [1, 1, 3])]})
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -77,7 +50,7 @@ class TestUniqueColumns:
         self,
     ):
         schema = build_schema("clean_data", "uuid", unique=True)
-        data = build_excel_data("clean_data", ("uuid", ["1", "1", "3"]))
+        data = build_excel_data({"clean_data": [("uuid", ["1", "1", "3"])]})
         validator = get_validator(schema)
         result = validator.validate(data)
 
@@ -89,7 +62,7 @@ class TestUniqueColumns:
         self,
     ):
         schema = build_schema("clean_data", "uuid", unique=True)
-        data = build_excel_data("clean_data", ("uuid", [1, 1, 3]))
+        data = build_excel_data({"clean_data": [("uuid", [1, 1, 3])]})
         validator = get_validator(schema)
         result = validator.validate(data)
 

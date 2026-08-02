@@ -1,16 +1,9 @@
-import polars as pl
-
-from argus.loaders.base import (
-    DataColumnMap,
-    DataSheetMap,
-)
-from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.schema_validators.mandatory_column_validator import (
     MandatoryColumnsCheck,
 )
-from tests.helpers import do_basic_checks
+from tests.helpers import build_excel_data, do_basic_checks
 
 
 def get_validator(schema):
@@ -32,33 +25,19 @@ def build_schema(sheet_name: str, columns: list[tuple[str, bool]], required=True
     )
 
 
-def build_excel_data(sheet_name: str, columns: list[str]):
-    """Create ExcelLoaderData with matching columns"""
-    column_map: list[DataColumnMap] = []
-    df = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-        }
-    )
-    for column in columns:
-        column_map.append(DataColumnMap(schema_column_name=column, data_column_name=column))
-
-    loaded_sheet = DataSheetMap(
-        schema_sheet_name=sheet_name,
-        data_sheet_name=sheet_name,
-        data=df,
-        column_map=column_map,
-    )
-
-    return ExcelLoaderData(loaded_sheets=[loaded_sheet])
-
-
 class TestMandatoryColumns:
     def test_valid_schema(
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", True)])
-        data = build_excel_data("clean_data", ["uuid", "country"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                    ("country", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -69,7 +48,14 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", False), ("country", False)])
-        data = build_excel_data("clean_data", ["uuid", "country"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                    ("country", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -80,7 +66,13 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", True)])
-        data = build_excel_data("clean_data", ["uuid"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -94,7 +86,13 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", True), ("admin_1", True)])
-        data = build_excel_data("clean_data", ["uuid"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -108,7 +106,13 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", True)], required=False)
-        data = build_excel_data("clean_data", ["uuid"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -122,7 +126,13 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", False)])
-        data = build_excel_data("clean_data", ["uuid"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -136,7 +146,13 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", False)], required=False)
-        data = build_excel_data("clean_data", ["uuid"])
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)
@@ -150,7 +166,13 @@ class TestMandatoryColumns:
         self,
     ):
         schema = build_schema("clean_data", [("uuid", True), ("country", True)])
-        data = build_excel_data("raw_data", ["uuid"])
+        data = build_excel_data(
+            {
+                "raw_data": [
+                    ("uuid", [1, 2, 3, 4, 5]),
+                ]
+            }
+        )
         validator = get_validator(schema)
 
         result = validator.validate(data)

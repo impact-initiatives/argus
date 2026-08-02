@@ -1,530 +1,294 @@
-import polars as pl
-import pytest
-
-from argus.loaders.base import (
-    DataColumnMap,
-    DataSheetMap,
-)
-from argus.loaders.base_excel_loader import ExcelLoaderData
-from argus.models.base import ProcessValueMap, SchemaColumnMap, SchemaSheetMap
-from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.base import BaseValidator
 from argus.validators.data_validators.survey_choices_validator import (
     SurveyChoicesCheck,
 )
-from tests.helpers import do_basic_checks
+from tests.helpers import build_excel_data, build_schema_with_process, do_basic_checks
 
 
-@pytest.fixture
-def valid_schema_validator(valid_schema):
+def get_validator(schema):
     """Create a UniqueColumn validator instance"""
-    return SurveyChoicesCheck(schema=valid_schema)
-
-
-@pytest.fixture
-def valid_schema():
-
-    return BaseDatasetSchema(
-        dataset_type="jmmi",
-        schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="clean_data",
-                alternate_names=["clean_data"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="uuid",
-                        alternate_names=["uuidx", "X_uuid"],
-                        is_unique=True,
-                    )
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="survey",
-                alternate_names=["survey"],
-                columns=[
-                    SchemaColumnMap(
-                        standard_name="type",
-                        process_values=[
-                            ProcessValueMap(
-                                process_name="data_type_numeric_check",
-                                values=["integer", "decimal"],
-                            ),
-                            ProcessValueMap(
-                                process_name="data_type_temporal_check", values=["date"]
-                            ),
-                        ],
-                    ),
-                    SchemaColumnMap(standard_name="name"),
-                ],
-            ),
-            SchemaSheetMap(
-                standard_name="choices",
-                alternate_names=["choices"],
-                columns=[
-                    SchemaColumnMap(standard_name="list_name"),
-                    SchemaColumnMap(standard_name="name"),
-                ],
-            ),
-        ],
-        schema_unloaded_sheets=[],
-    )
-
-
-@pytest.fixture
-def valid_excel_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["male", "male", "female", "female", "other"],
-            "items": ["rice pasta", "pasta super_food", "flour", "rice", "flour rice"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item", "item"],
-            "name": ["male", "female", "other", "rice", "pasta", "flour", "super_food"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="survey",
-            data_sheet_name="survey",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_name", data_column_name="list_name"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def missing_sheet_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["male", "male", "female", "female", "other"],
-            "items": ["rice", "pasta", "flour", "rice", "flour"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item"],
-            "name": ["male", "female", "other", "rice", "pasta", "flour"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="surveyXXX",
-            data_sheet_name="surveyXXX",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_name", data_column_name="list_name"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def missing_column_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["male", "male", "female", "female", "other"],
-            "items": ["rice", "pasta", "flour", "rice", "flour"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item"],
-            "name": ["male", "female", "other", "rice", "pasta", "flour"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="survey",
-            data_sheet_name="survey",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_nameXXX", data_column_name="list_nameXXX"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def missing_id_column_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["male", "male", "female", "female", "other"],
-            "items": ["rice pasta", "pasta", "flour", "rice", "flour rice"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item"],
-            "name": ["male", "female", "other", "rice", "pasta", "flour"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuidXXX", data_column_name="uuidXXX")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="survey",
-            data_sheet_name="survey",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_name", data_column_name="list_name"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_select_one_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["man", "male", "female", "female", "other"],
-            "items": ["rice", "pasta", "flour", "rice", "flour"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item"],
-            "name": ["male", "female", "other", "rice", "pasta", "flour"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="survey",
-            data_sheet_name="survey",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_name", data_column_name="list_name"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_select_multiple_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["male", "male", "female", "female", "other"],
-            "items": ["rice pasta", "pasta apples", "flour", "rice", "flour"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item"],
-            "name": ["male", "female", "other", "rice", "pasta", "flour"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="survey",
-            data_sheet_name="survey",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_name", data_column_name="list_name"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
-
-
-@pytest.fixture
-def invalid_choice_data():
-    """Create ExcelLoaderData with matching columns"""
-
-    df_clean = pl.DataFrame(
-        {
-            "uuid": [1, 2, 3, 4, 5],
-            "gender": ["male man", "male", "female", "female", "other"],
-            "items": ["rice pasta", "pasta", "flour", "rice", "flour rice"],
-            "question3": [1, 2, 3, 4, 5],
-        }
-    )
-
-    df_survey = pl.DataFrame(
-        {
-            "type": ["select_one gender", "select_multiple item", "integer"],
-            "name": ["gender", "items", "question3"],
-        }
-    )
-
-    df_choices = pl.DataFrame(
-        {
-            "list_name": ["gender", "gender", "gender", "item", "item", "item"],
-            "name": ["male man", "female", "other", "rice", "pasta", "flour"],
-        }
-    )
-
-    loaded_sheets = [
-        DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
-            data=df_clean,
-            column_map=[DataColumnMap(schema_column_name="uuid", data_column_name="uuid")],
-        ),
-        DataSheetMap(
-            schema_sheet_name="survey",
-            data_sheet_name="survey",
-            data=df_survey,
-            column_map=[
-                DataColumnMap(schema_column_name="type", data_column_name="type"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-        DataSheetMap(
-            schema_sheet_name="choices",
-            data_sheet_name="choices",
-            data=df_choices,
-            column_map=[
-                DataColumnMap(schema_column_name="list_name", data_column_name="list_name"),
-                DataColumnMap(schema_column_name="name", data_column_name="name"),
-            ],
-        ),
-    ]
-
-    return ExcelLoaderData(loaded_sheets=loaded_sheets)
+    return SurveyChoicesCheck(schema=schema)
 
 
 class TestSurveyChoices:
     def test_valid_data(
-        self, valid_schema_validator: BaseValidator, valid_excel_data: ExcelLoaderData
+        self,
     ):
-        result = valid_schema_validator.validate(valid_excel_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("items", ["rice pasta", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey": [
+                    ("type", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    ("name", ["male", "female", "other", "rice", "pasta", "flour", "super_food"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 0)
 
     def test_missing_sheet_data(
-        self, valid_schema_validator: BaseValidator, missing_sheet_data: ExcelLoaderData
+        self,
     ):
-        result = valid_schema_validator.validate(missing_sheet_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("items", ["rice pasta", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey_missing": [
+                    ("type", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    ("name", ["male", "female", "other", "rice", "pasta", "flour", "super_food"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
     def test_missing_column_data(
         self,
-        valid_schema_validator: BaseValidator,
-        missing_column_data: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(missing_column_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("items", ["rice pasta", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey": [
+                    ("type_missing", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    ("name", ["male", "female", "other", "rice", "pasta", "flour", "super_food"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
-    def test_missing_id_column_data(
+    def test_missing_id_column(
         self,
-        valid_schema_validator: BaseValidator,
-        missing_id_column_data: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(missing_id_column_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+            unique_columns=False,
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("items", ["rice pasta", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey": [
+                    ("type", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    ("name", ["male", "female", "other", "rice", "pasta", "flour", "super_food"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
 
     def test_invalid_select_one_data(
         self,
-        valid_schema_validator: BaseValidator,
-        invalid_select_one_data: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_select_one_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["invalid_gender", "female", "other"]),
+                    ("items", ["rice pasta", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey": [
+                    ("type", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    ("name", ["male", "female", "other", "rice", "pasta", "flour", "super_food"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["invalid_value"][0] == "invalid_gender"
 
     def test_invalid_select_multiple_data(
         self,
-        valid_schema_validator: BaseValidator,
-        invalid_select_multiple_data: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_select_multiple_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("items", ["rice apples", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey": [
+                    ("type", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    ("name", ["male", "female", "other", "rice", "pasta", "flour", "super_food"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["invalid_value"][0] == "rice apples"
 
     def test_choice_data(
         self,
-        valid_schema_validator: BaseValidator,
-        invalid_choice_data: ExcelLoaderData,
     ):
-        result = valid_schema_validator.validate(invalid_choice_data)
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("items", ["rice flour", "pasta super_food", "flour"]),
+                    (
+                        "question3",
+                        [
+                            1,
+                            2,
+                            3,
+                        ],
+                    ),
+                ],
+                "survey": [
+                    ("type", ["select_one gender", "select_multiple item", "integer"]),
+                    ("name", ["gender", "items", "question3"]),
+                ],
+                "choices": [
+                    ("list_name", ["gender", "gender", "gender", "item", "item", "item", "item"]),
+                    (
+                        "name",
+                        ["male man", "female", "other", "rice", "pasta", "flour", "super_food"],
+                    ),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["invalid_value"][0] == "male"

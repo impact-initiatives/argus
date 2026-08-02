@@ -145,7 +145,7 @@ class PiiDataCheck(BaseValidator):
                         message=self._("pii_validator.pii_data", sheet=sheet.data_sheet_name),
                         severity=SeverityLevel.WARNING,
                         sheet_name=sheet.data_sheet_name,
-                        details=final_df.to_dict(),
+                        details=final_df.to_dict(as_series=False),
                     )
                 )
         if match_records:
