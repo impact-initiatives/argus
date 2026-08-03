@@ -2,7 +2,7 @@ import pytest
 
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.models.preprocess import lowercase_schema_mappings, validate_schema
+from argus.models.preprocess import validate_schema
 from tests.helpers import do_basic_checks
 
 
@@ -127,7 +127,6 @@ def invalid_schema_duplicate_loaded_unloaded_sheets_alt():
 
 class TestSchemaSheets:
     def test_valid_schema(self, valid_schema: BaseDatasetSchema):
-        lowercase_schema_mappings(valid_schema)
         result = validate_schema(valid_schema)
 
         do_basic_checks(result, 0)

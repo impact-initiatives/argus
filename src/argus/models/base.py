@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum, auto
 
 import polars as pl
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ..common.list_matching import add_to_list, unique_list
 
@@ -35,6 +35,12 @@ class ProcessValueMap(BaseModel):
     process_name: str
     values: list[str | int | float] = Field(default=[])
 
+    @model_validator(mode="after")
+    def lowercase_all(self):
+        self.process_name = self.process_name.lower()
+        self.values = [item.lower() if isinstance(item, str) else item for item in self.values]
+        return self
+
 
 class SchemaColumnMap(BaseModel):
     standard_name: str
@@ -43,6 +49,12 @@ class SchemaColumnMap(BaseModel):
     process_values: list[ProcessValueMap] = Field(default=[])
     allow_fuzzy_matching: bool = True
     required: bool = True
+
+    @model_validator(mode="after")
+    def lowercase_all(self):
+        self.standard_name = self.standard_name.lower()
+        self.alternate_names = [name.lower() for name in self.alternate_names]
+        return self
 
     def combine(self) -> list[str]:
         """returns a unique list of column names and alternate names"""
@@ -63,8 +75,16 @@ class SchemaSheetMap(BaseModel):
     allow_fuzzy_matching: bool = True
     # if setting a matching term, the fuzzy matching config will be ignored
     matching_term: str | None = None
-    matching_term_ignore: list[str] | None = None
+    matching_term_ignore: list[str] = Field(default=[])
     required: bool = True
+
+    @model_validator(mode="after")
+    def lowercase_all(self):
+        self.standard_name = self.standard_name.lower()
+        self.alternate_names = [name.lower() for name in self.alternate_names]
+        self.matching_term = self.matching_term.lower() if self.matching_term is not None else None
+        self.matching_term_ignore = [name.lower() for name in self.matching_term_ignore]
+        return self
 
     def get_column(self, column_name: str) -> SchemaColumnMap | None:
         """Returns a column from columns if a name is matched."""

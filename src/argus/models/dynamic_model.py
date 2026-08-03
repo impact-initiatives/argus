@@ -6,7 +6,6 @@ from typing import override
 import polars as pl
 
 from argus.locales.il8n import _
-from argus.models.preprocess import lowercase_schema_mappings
 
 from ..common.list_matching import filter_list, get_set_overlap, match_list, unique_list
 from ..config import settings
@@ -391,7 +390,6 @@ class DynamicDataset(BaseDataset):
                 if column_map:
                     self.data.set_column_map_for_loaded_sheet(sheet, column_map)
 
-            lowercase_schema_mappings(self.schema)
         return results, consent_sheet
 
     def match_data(self) -> list[ValidationResult]:

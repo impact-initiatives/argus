@@ -2,7 +2,6 @@ from abc import abstractmethod
 from pathlib import Path
 
 from ..loaders.base_excel_loader import ExcelLoaderData
-from ..models.preprocess import lowercase_schema_mappings
 from ..validators.base import BaseValidator, ValidationResult
 from .base_dataset_schemas import BaseDatasetSchema
 from .resolver import ResolveDataset
@@ -19,7 +18,6 @@ class BaseDataset:
 
     def get_schema(self) -> BaseDatasetSchema:
         schema = self.resolver.resolve_schema(self.schema_path)
-        lowercase_schema_mappings(schema)
         return schema
 
     def get_validators(self) -> list[BaseValidator]:

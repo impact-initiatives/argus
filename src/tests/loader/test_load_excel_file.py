@@ -92,6 +92,24 @@ class TestLoadData:
             assert data.get_loaded_sheet("clean_data") is not None
             assert len(error_counter(results)) == 0
 
+    def test_valid_file_upper(self, mock_fastexcel):
+        schema = build_schema("clean_data", ["uuid"], fuzzy=False)
+        sheet_data = [
+            MockSheetConfig(
+                name="Clean_data",
+                visible="visible",
+                data=pl.DataFrame({"uuid": [1, 2]}),
+            )
+        ]
+
+        with mock_fastexcel(sheet_data) as mocks:
+            data, results = ExcelLoader(schema).load(Path("/some/file.xlsx"))
+            assert len(results) == 0
+            mocks["fastexcel"].read_excel.assert_called_once_with(Path("/some/file.xlsx"))
+            mocks["reader"].load_sheet.assert_called_once()
+            assert data.get_loaded_sheet("clean_data") is not None
+            assert len(error_counter(results)) == 0
+
     def test_valid_file_fuzzy_sheet(self, mock_fastexcel):
         schema = build_schema("clean_data", ["uuid"])
         sheet_data = [
