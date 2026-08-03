@@ -1,4 +1,3 @@
-
 from argus.validators.data_validators.cleaning_log_to_clean_validator import (
     CleaningLogToCleanCheck,
 )

@@ -4,6 +4,9 @@ import pytest
 
 from src.argus.orchestrator.validation_pipeline import ValidationPipeline
 
+# TODO Change this to mock the various pipeline components
+# otherwise schema changes can make these tests fail
+
 
 @pytest.fixture
 def run_pipeline():

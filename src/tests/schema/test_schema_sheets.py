@@ -25,7 +25,7 @@ def valid_schema():
 
 
 @pytest.fixture
-def invalid_schema():
+def invalid_schema_duplicate_sheets():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
@@ -48,7 +48,7 @@ def invalid_schema():
 
 
 @pytest.fixture
-def invalid_schema_2():
+def invalid_schema_duplicate_sheets_alt():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
@@ -69,16 +69,11 @@ def invalid_schema_2():
 
 
 @pytest.fixture
-def invalid_schema_3():
+def invalid_schema_duplicate_unloaded_sheets():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
         schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
-            ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -93,16 +88,11 @@ def invalid_schema_3():
 
 
 @pytest.fixture
-def invalid_schema_4():
+def invalid_schema_duplicate_loaded_unloaded_sheets():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
         schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
-            ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -117,16 +107,11 @@ def invalid_schema_4():
 
 
 @pytest.fixture
-def invalid_schema_5():
+def invalid_schema_duplicate_loaded_unloaded_sheets_alt():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
         schema_loaded_sheets=[
-            SchemaSheetMap(
-                standard_name="raw_data",
-                alternate_names=["raw_data"],
-                columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
-            ),
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -147,27 +132,43 @@ class TestSchemaSheets:
 
         do_basic_checks(result, 0)
 
-    def test_invalid_schema(self, invalid_schema: BaseDatasetSchema):
-        result = validate_schema(invalid_schema)
+    def test_duplicate_sheets(self, invalid_schema_duplicate_sheets: BaseDatasetSchema):
+        result = validate_schema(invalid_schema_duplicate_sheets)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["sheets"][0] == "raw_data"
 
-    def test_invalid_schema2(self, invalid_schema_2: BaseDatasetSchema):
-        result = validate_schema(invalid_schema_2)
-
-        do_basic_checks(result, 1)
-
-    def test_invalid_schema3(self, invalid_schema_3: BaseDatasetSchema):
-        result = validate_schema(invalid_schema_3)
+    def test_duplicate_sheets_alt(self, invalid_schema_duplicate_sheets_alt: BaseDatasetSchema):
+        result = validate_schema(invalid_schema_duplicate_sheets_alt)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["sheets"][0] == "raw_data"
 
-    def test_invalid_schema4(self, invalid_schema_4: BaseDatasetSchema):
-        result = validate_schema(invalid_schema_4)
+    def test_duplicate_unloaded_sheets(
+        self, invalid_schema_duplicate_unloaded_sheets: BaseDatasetSchema
+    ):
+        result = validate_schema(invalid_schema_duplicate_unloaded_sheets)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["sheets"][0] == "read_me"
 
-    def test_invalid_schema5(self, invalid_schema_5: BaseDatasetSchema):
-        result = validate_schema(invalid_schema_5)
+    def test_duplicate_loaded_unloaded_sheets(
+        self, invalid_schema_duplicate_loaded_unloaded_sheets: BaseDatasetSchema
+    ):
+        result = validate_schema(invalid_schema_duplicate_loaded_unloaded_sheets)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["sheets"][0] == "raw_data"
+
+    def test_duplicate_loaded_unloaded_sheets_alt(
+        self, invalid_schema_duplicate_loaded_unloaded_sheets_alt: BaseDatasetSchema
+    ):
+        result = validate_schema(invalid_schema_duplicate_loaded_unloaded_sheets_alt)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["sheets"][0] == "raw_data"

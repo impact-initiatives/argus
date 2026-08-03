@@ -23,7 +23,7 @@ def valid_schema():
 
 
 @pytest.fixture
-def invalid_schema():
+def invalid_schema_duplicate_columns():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
@@ -42,7 +42,7 @@ def invalid_schema():
 
 
 @pytest.fixture
-def invalid_schema_2():
+def invalid_schema_duplicate_columns_alt():
 
     return BaseDatasetSchema(
         dataset_type="jmmi",
@@ -60,18 +60,22 @@ def invalid_schema_2():
     )
 
 
-class TestSchemaSheets:
+class TestSchemaColumns:
     def test_valid_schema(self, valid_schema: BaseDatasetSchema):
         result = validate_schema(valid_schema)
 
         do_basic_checks(result, 0)
 
-    def test_invalid_schema(self, invalid_schema: BaseDatasetSchema):
-        result = validate_schema(invalid_schema)
+    def test_duplicate_columns(self, invalid_schema_duplicate_columns: BaseDatasetSchema):
+        result = validate_schema(invalid_schema_duplicate_columns)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["columns"]) == 2
 
-    def test_invalid_schema2(self, invalid_schema_2: BaseDatasetSchema):
-        result = validate_schema(invalid_schema_2)
+    def test_duplicate_columns_alt(self, invalid_schema_duplicate_columns_alt: BaseDatasetSchema):
+        result = validate_schema(invalid_schema_duplicate_columns_alt)
 
         do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["columns"]) == 1
