@@ -16,7 +16,7 @@ class SeverityLevel(StrEnum):
     ADMIN_INFO = auto()
 
 
-@dataclass
+@dataclass(slots=True)
 class ValidationResult:
     rule: str
     message: str

@@ -33,7 +33,7 @@ def build_schema(
     )
 
 
-@dataclass
+@dataclass(slots=True)
 class MockSheetConfig:
     name: str
     visible: str = "visible"  # "visible" or "hidden"

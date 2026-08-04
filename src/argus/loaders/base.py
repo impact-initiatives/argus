@@ -3,13 +3,13 @@ from dataclasses import dataclass, field
 import polars as pl
 
 
-@dataclass
+@dataclass(slots=True)
 class DataColumnMap:
     schema_column_name: str
     data_column_name: str
 
 
-@dataclass
+@dataclass(slots=True)
 class DataSheetMap:
     schema_sheet_name: str
     data_sheet_name: str

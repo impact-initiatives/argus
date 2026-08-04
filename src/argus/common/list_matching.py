@@ -8,7 +8,7 @@ from ..config import settings
 from ..loaders.base import DataColumnMap, DataSheetMap
 
 
-@dataclass
+@dataclass(slots=True)
 class FuzzMatch:
     schema_name: str
     matches: dict[Any, Any] = field(default_factory=dict)

@@ -57,7 +57,7 @@ class CrossSheetRowSumCheck(BaseValidator):
         master_data_count: int = 0
         deleted_data_count: int | None = None
 
-        @dataclass
+        @dataclass(slots=True)
         class ChildCounts:
             sheet_name: str
             row_count: int

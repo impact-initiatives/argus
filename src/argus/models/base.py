@@ -14,7 +14,7 @@ class SheetClassification(StrEnum):
     UNKNOWN = auto()
 
 
-@dataclass
+@dataclass(slots=True)
 class DynamicSheetMatching:
     data: pl.DataFrame
     id_column: str | None

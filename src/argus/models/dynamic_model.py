@@ -32,7 +32,7 @@ from .base_dataset_schemas import BaseDatasetSchema
 from .defaults import CONSENT_COLUMN, create_cleaning_log_sheet
 
 
-@dataclass
+@dataclass(slots=True)
 class SortedSheets:
     cleaning_log_sheets: list[str] = field(default_factory=list)
     clean_sheets: list[str] = field(default_factory=list)

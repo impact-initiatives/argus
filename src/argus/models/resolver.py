@@ -3,7 +3,7 @@ import inspect
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.utils.yaml_loader import load_file
@@ -54,7 +54,7 @@ VALIDATOR_REGISTRY = {
 }
 
 
-class ResolveDataset(BaseModel):
+class ResolveDataset:
     def _deep_merge(self, base: dict[str, str], override: dict[str, str]) -> dict[str, str]:
         """
         Deep merges two dictionaries.

@@ -254,7 +254,7 @@ class BaseExcelLoader:
         return _(key, **kwargs)
 
 
-@dataclass
+@dataclass(slots=True)
 class ExcelLoaderData:
     loaded_sheets: list[DataSheetMap] = field(default_factory=list)
     unloaded_sheets: list[DataSheetMap] = field(default_factory=list)

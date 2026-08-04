@@ -1,7 +1,6 @@
 import itertools
-from dataclasses import field
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 
@@ -9,9 +8,9 @@ from argus.models.base import SchemaColumnMap, SchemaSheetMap
 class BaseDatasetSchema(BaseModel):
     dataset_type: str = ""
     # sheets that have to be loaded and used for further validation
-    schema_loaded_sheets: list[SchemaSheetMap] = field(default_factory=list)
+    schema_loaded_sheets: list[SchemaSheetMap] = Field(default=[])
     # sheets that should exist but dont need to be loaded
-    schema_unloaded_sheets: list[SchemaSheetMap] = field(default_factory=list)
+    schema_unloaded_sheets: list[SchemaSheetMap] = Field(default=[])
 
     def get_schema_loaded_sheet(self, sheet_name: str) -> SchemaSheetMap | None:
         """Gets the details and data for a loaded sheet if it exists.

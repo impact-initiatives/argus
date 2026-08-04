@@ -1,8 +1,8 @@
 import re
+from dataclasses import dataclass
 from pathlib import Path, PosixPath
 
 import polars as pl
-from pydantic import BaseModel
 
 from ...common.list_matching import lower_list_items, match_list
 from ...loaders.base_excel_loader import ExcelLoaderData
@@ -14,7 +14,8 @@ from ...validators.data_helpers import (
 )
 
 
-class ColumnParts(BaseModel):
+@dataclass(slots=True)
+class ColumnParts:
     country_code: str | None = None
     suffix: str | None = None
     post_suffix: str | None = None
@@ -50,18 +51,36 @@ class JMMIColumnNameCheck(BaseValidator):
     ) -> list[ValidationResult]:
         """Validates column names for jmmi datasets.
 
-        JMMI datasets have standardised naming conventions. This checks the follwoing rules:
-        - country specific variables have an appropriate prefix
-        - country specific variables have an appropriate suffix
-        - items should be in the goods dictionary
-        - variables should be in the column name dictionary (if not country specific)
+        JMMI datasets have standardised naming conventions.
+
+        This process attempts to spit a column into its respective parts. Eg:
+
+        bean_wholesale_stock_duration_days_item
+        item: bean_wholesale > column_variable_prefix
+        column name: stock_duration_days_item > column_variable
+
+        SSD_groundnut_stock_duration_unit_so
+        prefix: SSD > country_code
+        suffix: so > suffix
+        item: bean_wholesale > column_variable_prefix
+        column name: stock_duration_days_item > column_variable
+
+        shop_availability_item.maize_grain
+        column name: shop_availability_item > column_variable
+        item: maize_grain > post_suffix > column_variable_prefix
+
+        Using these parts the follwoing rules are checked:
+        - country specific variables  have an appropriate prefix (country_code)
+        - country specific variables have an appropriate suffix (suffix)
+        - items should be in the goods dictionary (column_variable_prefix)
+        - non country specific variables should be in the column name dictionary (column_variable)
         - country specific variables are not standardisable
+            (column_variable_prefix + column_variable)
+
         All of these checks assume the word "item" is in the column name.
 
         also checking:
-        - certain columns are removed from the dataset
-        - (currently removed)if columns that dont contain the word "item"
-            contain words in the goods dictionary
+        - certain columns are removed from the dataset (columns_to_remove)
 
         Args:
             data (ExcelLoaderData): data (ExcelLoaderData): data to be validated
