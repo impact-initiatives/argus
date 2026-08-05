@@ -23,6 +23,7 @@ from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
 class ValidationPipeline:
     def __init__(self):
         self.set_errors: set[SeverityLevel] = set([SeverityLevel.ADMIN_ERROR, SeverityLevel.ERROR])
+        self.argus_schemas_version: str = ""
 
     def _setup_schema(self, config_directory: Path, dataset_type: str, locale: str):
         """Initialise schema and validators based on dataset type.
@@ -99,6 +100,7 @@ class ValidationPipeline:
                 dataset_config_directory = settings.DATASET_CONFIG_LOCAL_DIR
             else:
                 dataset_config_directory = download_config(settings.DATASET_CONFIG_DIR)
+            self.argus_schemas_version = dataset_config_directory.name
             dataset = self._setup_schema(dataset_config_directory, dataset_type, locale)
 
             if dataset.schema.dataset_type != dataset_type:
@@ -293,7 +295,8 @@ class ValidationPipeline:
             "metadata": {
                 "dataset_type": dataset_type,
                 "validation_date": datetime.now(UTC).isoformat(timespec="seconds"),
-                "version": settings.argus_version,
+                "argus_version": settings.argus_version,
+                "argus_schemas_version": self.argus_schemas_version,
                 "file_name": filepath.name,
             },
         }
