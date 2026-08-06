@@ -342,7 +342,15 @@ class RawToCleanToLogCheck(BaseValidator):
                         clean_log_id_columns.data_column_name,
                         data_loaded_columns[self.cleaning_log_question_column].data_column_name,
                     ],
-                )
+                ).with_columns(
+                [
+                    pl.lit("change not reflected in cleaning_log").alias("issue"),
+                    pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
+                    pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
+                    pl.lit(self.raw_data_sheet).alias("raw_data sheet"),
+                ]
+            )
+        
 
                 if difference_df.height > 0:
                     results.append(
@@ -371,7 +379,13 @@ class RawToCleanToLogCheck(BaseValidator):
                         ),
                         severity=SeverityLevel.ERROR,
                         sheet_name=self.cleaning_log_sheet,
-                        details=difference_raw_to_clean_df.to_dict(as_series=False),
+                        details=difference_raw_to_clean_df.with_columns(
+                [
+                    pl.lit("change not reflected in cleaning_log").alias("issue"),
+                    pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
+                    pl.lit(self.raw_data_sheet).alias("raw_data sheet"),
+                ]
+            ).to_dict(as_series=False),
                     )
                 )
 

@@ -71,6 +71,7 @@ class MissingSheetsCheck(BaseValidator):
                         message=self._("missing_sheets_validator.sampling_info"),
                         sheet_name="sampling_info",
                         severity=SeverityLevel.WARNING,
+                        details={"optional_sheets": ["sampling_info"]},
                     )
                 )
             optional_missing_sheets = filter_list(optional_missing_sheets, ["sampling_info"])

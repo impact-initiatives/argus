@@ -127,6 +127,17 @@ class CrossSheetIdCheck(BaseValidator):
                 .to_list()
             )
             if missing_ids:
+                missing_df = pl.DataFrame(
+                    {child_data_id_columns.data_column_name: missing_ids}
+                ).with_columns(
+                    [
+                        pl.lit(child_loaded_sheet.data_sheet_name).alias("found_in_sheet"),
+                        pl.lit(data_loaded_sheets[self.master_sheet].data_sheet_name).alias(
+                            "missing_in_sheet"
+                        ),
+                    ]
+                )
+
                 results.append(
                     ValidationResult(
                         rule=self.name,
@@ -141,7 +152,7 @@ class CrossSheetIdCheck(BaseValidator):
                         severity=SeverityLevel.ERROR,
                         sheet_name=child_loaded_sheet.data_sheet_name,
                         column_name=child_data_id_columns.data_column_name,
-                        details={child_data_id_columns.data_column_name: missing_ids},
+                        details=missing_df.to_dict(as_series=False),
                     )
                 )
 

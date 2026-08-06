@@ -193,8 +193,16 @@ class CleaningLogToCleanCheck(BaseValidator):
             data_loaded_columns[self.cleaning_log_question_column].data_column_name,
         ).is_duplicated()
 
-        multiple_change_df = modified_rows_df.filter(multiple_change_mask).sort(
-            clean_log_id_columns.data_column_name
+        multiple_change_df = (
+            modified_rows_df.filter(multiple_change_mask)
+            .sort(clean_log_id_columns.data_column_name)
+            .with_columns(
+                [
+                    pl.lit("multiple changes for same question and id").alias("issue"),
+                    pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
+                    pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
+                ]
+            )
         )
 
         if multiple_change_df.height > 0:
@@ -213,18 +221,27 @@ class CleaningLogToCleanCheck(BaseValidator):
             )
 
         # scan cleaning log for old value = new value
-        same_value_df = modified_rows_df.filter(
-            pl.col(data_loaded_columns[self.cleaning_log_new_value_column].data_column_name).cast(
-                pl.Utf8
+        same_value_df = (
+            modified_rows_df.filter(
+                pl.col(
+                    data_loaded_columns[self.cleaning_log_new_value_column].data_column_name
+                ).cast(pl.Utf8)
+                == pl.col(
+                    data_loaded_columns[self.cleaning_log_old_value_column].data_column_name
+                ).cast(pl.Utf8)
             )
-            == pl.col(
-                data_loaded_columns[self.cleaning_log_old_value_column].data_column_name
-            ).cast(pl.Utf8)
-        ).select(
-            clean_log_id_columns.data_column_name,
-            data_loaded_columns[self.cleaning_log_new_value_column].data_column_name,
-            data_loaded_columns[self.cleaning_log_old_value_column].data_column_name,
-            data_loaded_columns[self.cleaning_log_change_type_column].data_column_name,
+            .select(
+                clean_log_id_columns.data_column_name,
+                data_loaded_columns[self.cleaning_log_new_value_column].data_column_name,
+                data_loaded_columns[self.cleaning_log_old_value_column].data_column_name,
+                data_loaded_columns[self.cleaning_log_change_type_column].data_column_name,
+            )
+            .with_columns(
+                [
+                    pl.lit("same value for new value and old value").alias("issue"),
+                    pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
+                ]
+            )
         )
         if same_value_df.height > 0:
             results.append(
@@ -278,6 +295,13 @@ class CleaningLogToCleanCheck(BaseValidator):
             questions, data_loaded_sheets[self.clean_data_sheet].data.columns
         )
         if missing_quesitons:
+            missing_quesitons_df = pl.DataFrame({data_loaded_columns[self.cleaning_log_question_column].data_column_name: missing_quesitons}).with_columns(
+                [
+                    pl.lit(f"{data_loaded_columns[self.cleaning_log_question_column].data_column_name} not found in {self.clean_data_sheet} sheet").alias("issue"),
+                    pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
+                    pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
+                ]
+            )
             results.append(
                 ValidationResult(
                     rule=self.name,
@@ -289,7 +313,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                         clean_data_sheet=data_loaded_sheets[self.clean_data_sheet].data_sheet_name,
                     ),
                     severity=SeverityLevel.WARNING,
-                    details={"missing_questions": missing_quesitons},
+                    details=missing_quesitons_df.to_dict(as_series=False),
                 )
             )
             questions = filter_list(questions, missing_quesitons)
@@ -393,7 +417,7 @@ class CleaningLogToCleanCheck(BaseValidator):
             new_values_df = changes_only.unpivot(
                 index=[clean_log_id_columns.data_column_name],
                 on=questions,
-                variable_name=self.cleaning_log_question_column,
+                variable_name=data_loaded_columns[self.cleaning_log_question_column].data_column_name,
                 value_name=f"{self.clean_data_sheet}_value",
             )
 
@@ -407,7 +431,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                 .unpivot(
                     index=[clean_log_id_columns.data_column_name],
                     on=questions,  # Now unpivoting the renamed columns
-                    variable_name=self.cleaning_log_question_column,
+                    variable_name=data_loaded_columns[self.cleaning_log_question_column].data_column_name,
                     value_name=f"{self.cleaning_log_sheet}_value",
                 )
             )
@@ -422,19 +446,19 @@ class CleaningLogToCleanCheck(BaseValidator):
                 pl.col("flag_column_name")
                 .str.replace("^is_", "", literal=False)
                 .str.replace("_changed$", "", literal=False)
-                .alias(self.cleaning_log_question_column)
+                .alias(data_loaded_columns[self.cleaning_log_question_column].data_column_name)
             )
 
             # join all together.  Filter the changed rows
             merged_df = (
                 new_values_df.join(
                     original_values_df,
-                    on=[clean_log_id_columns.data_column_name, self.cleaning_log_question_column],
+                    on=[clean_log_id_columns.data_column_name, data_loaded_columns[self.cleaning_log_question_column].data_column_name],
                     how="inner",
                 )
                 .join(
                     flags_long_df,
-                    on=[clean_log_id_columns.data_column_name, self.cleaning_log_question_column],
+                    on=[clean_log_id_columns.data_column_name, data_loaded_columns[self.cleaning_log_question_column].data_column_name],
                     how="inner",
                 )
                 .filter(pl.col("is_changed"))
@@ -446,9 +470,15 @@ class CleaningLogToCleanCheck(BaseValidator):
                     pl.col(clean_log_id_columns.data_column_name).alias(
                         clean_log_id_columns.data_column_name
                     ),
-                    pl.col(self.cleaning_log_question_column),
+                    pl.col(data_loaded_columns[self.cleaning_log_question_column].data_column_name),
                     pl.col(f"{self.cleaning_log_sheet}_value"),
                     pl.col(f"{self.clean_data_sheet}_value"),
+                ]
+            ).with_columns(
+                [
+                    pl.lit(f"change not reflected in {self.clean_data_sheet} sheet").alias("issue"),
+                    pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
+                    pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                 ]
             )
 

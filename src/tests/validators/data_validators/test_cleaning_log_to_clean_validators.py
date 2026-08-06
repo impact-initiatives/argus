@@ -354,8 +354,8 @@ class TestCleaningLog:
         do_basic_checks(result, 1)
         filtered_results = error_counter(result)
         assert filtered_results[0].details is not None
-        assert len(filtered_results[0].details["missing_questions"]) == 1
-        assert filtered_results[0].details["missing_questions"][0] == "question1"
+        assert len(filtered_results[0].details["variable"]) == 1
+        assert filtered_results[0].details["variable"][0] == "question1"
 
     def test_missing_question_cleaning_log(
         self,
@@ -399,8 +399,8 @@ class TestCleaningLog:
         do_basic_checks(result, 1)
         filtered_results = error_counter(result)
         assert filtered_results[0].details is not None
-        assert len(filtered_results[0].details["missing_questions"]) == 1
-        assert filtered_results[0].details["missing_questions"][0] == "question_missing"
+        assert len(filtered_results[0].details["variable"]) == 1
+        assert filtered_results[0].details["variable"][0] == "question_missing"
 
     def test_multientry_data(
         self,
