@@ -2,10 +2,10 @@ name: Ruff
 on: 
   push:
     paths:
-      - 'src/argus/**'
+      - 'src/**/*.py'
   pull_request:
     paths:
-      - 'src/argus/**'
+      - 'src/**/*.py'
   workflow_dispatch:
 jobs:
   ruff:

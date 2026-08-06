@@ -2,10 +2,10 @@ name: Build Translation Files
 on: 
   push:
     paths:
-      - 'src/argus/locales/**'
+      - 'src/argus/locales/**/*.po'
   pull_request:
     paths:
-      - 'src/argus/locales/**'
+      - 'src/argus/locales/**/*.po'
   workflow_dispatch:
 jobs:
   rebuild_translation_files:
