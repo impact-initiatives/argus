@@ -303,18 +303,6 @@ class JMMIColumnNameCheck(BaseValidator):
                 if parts.column_variable_prefix:
                     # store all items found for later use
                     items_found.add(parts.column_variable_prefix)
-            else:
-                # do a simple check to see if it looks like a column should be an item column
-                possible_matches = [item for item in items_dictionary if item in column]
-                if possible_matches:
-                    possible_item_columns.append(
-                        {
-                            "sheet": self.clean_data_sheet,
-                            "column": column,
-                            "value": ", ".join(possible_matches),
-                            "issue": "column contains standardised items and variables",
-                        }
-                    )
 
             column_parts[column] = parts
 
