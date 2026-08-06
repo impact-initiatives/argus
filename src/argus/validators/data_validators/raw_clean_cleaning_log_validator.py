@@ -340,7 +340,7 @@ class RawToCleanToLogCheck(BaseValidator):
                     left_on=["uuid", self.cleaning_log_question_column],
                     right_on=[
                         clean_log_id_columns.data_column_name,
-                        self.cleaning_log_question_column,
+                        data_loaded_columns[self.cleaning_log_question_column].data_column_name,
                     ],
                 )
 

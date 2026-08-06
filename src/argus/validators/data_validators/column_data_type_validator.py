@@ -213,6 +213,9 @@ class DataTypeCheck(BaseValidator):
                     )
 
                     if incorrect_values_df.height > 0:
+                        incorrect_values_df = incorrect_values_df.with_columns(
+                            pl.lit(sheet).alias("sheet")
+                        )
                         results.append(
                             ValidationResult(
                                 rule=self.name,
@@ -269,6 +272,9 @@ class DataTypeCheck(BaseValidator):
                     )
 
                     if incorrect_values_df.height > 0:
+                        incorrect_values_df = incorrect_values_df.with_columns(
+                            pl.lit(sheet).alias("sheet")
+                        )
                         results.append(
                             ValidationResult(
                                 rule=self.name,
