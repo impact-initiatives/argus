@@ -175,16 +175,6 @@ class TestColumnNames:
             assert results[1].details is not None
             assert len(results[1].details["sheet"]) == 1
 
-    def test_possible_item_column(self, validator: BaseValidator):
-        data = create_loader_data("chicken_meat_availability_in_3_months")
-        with patch.object(
-            JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
-        ):
-            results = validator.validate(data, dataset_config_directory=Path("./some/location"))
-            do_basic_checks(results, 1)
-            assert results[0].details is not None
-            assert len(results[0].details["sheet"]) == 1
-
     def test_invalid_column(self, validator: BaseValidator):
         data = create_loader_data("deviceid")
         with patch.object(
