@@ -198,7 +198,10 @@ class CleaningLogToCleanCheck(BaseValidator):
             .sort(clean_log_id_columns.data_column_name)
             .with_columns(
                 [
-                    pl.lit("multiple changes for same question and id").alias("issue"),
+                    pl.lit(
+                        f"multiple changes for same {self.cleaning_log_question_column} and"
+                        + f" {clean_log_id_columns.data_column_name}"
+                    ).alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                     pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                 ]
@@ -295,9 +298,18 @@ class CleaningLogToCleanCheck(BaseValidator):
             questions, data_loaded_sheets[self.clean_data_sheet].data.columns
         )
         if missing_quesitons:
-            missing_quesitons_df = pl.DataFrame({data_loaded_columns[self.cleaning_log_question_column].data_column_name: missing_quesitons}).with_columns(
+            missing_quesitons_df = pl.DataFrame(
+                {
+                    data_loaded_columns[
+                        self.cleaning_log_question_column
+                    ].data_column_name: missing_quesitons
+                }
+            ).with_columns(
                 [
-                    pl.lit(f"{data_loaded_columns[self.cleaning_log_question_column].data_column_name} not found in {self.clean_data_sheet} sheet").alias("issue"),
+                    pl.lit(
+                        f"{data_loaded_columns[self.cleaning_log_question_column].data_column_name}"
+                        + f" not found in {self.clean_data_sheet} sheet"
+                    ).alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                     pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                 ]
@@ -417,7 +429,9 @@ class CleaningLogToCleanCheck(BaseValidator):
             new_values_df = changes_only.unpivot(
                 index=[clean_log_id_columns.data_column_name],
                 on=questions,
-                variable_name=data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+                variable_name=data_loaded_columns[
+                    self.cleaning_log_question_column
+                ].data_column_name,
                 value_name=f"{self.clean_data_sheet}_value",
             )
 
@@ -431,7 +445,9 @@ class CleaningLogToCleanCheck(BaseValidator):
                 .unpivot(
                     index=[clean_log_id_columns.data_column_name],
                     on=questions,  # Now unpivoting the renamed columns
-                    variable_name=data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+                    variable_name=data_loaded_columns[
+                        self.cleaning_log_question_column
+                    ].data_column_name,
                     value_name=f"{self.cleaning_log_sheet}_value",
                 )
             )
@@ -453,12 +469,18 @@ class CleaningLogToCleanCheck(BaseValidator):
             merged_df = (
                 new_values_df.join(
                     original_values_df,
-                    on=[clean_log_id_columns.data_column_name, data_loaded_columns[self.cleaning_log_question_column].data_column_name],
+                    on=[
+                        clean_log_id_columns.data_column_name,
+                        data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+                    ],
                     how="inner",
                 )
                 .join(
                     flags_long_df,
-                    on=[clean_log_id_columns.data_column_name, data_loaded_columns[self.cleaning_log_question_column].data_column_name],
+                    on=[
+                        clean_log_id_columns.data_column_name,
+                        data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+                    ],
                     how="inner",
                 )
                 .filter(pl.col("is_changed"))
