@@ -76,6 +76,10 @@ def lower_list_items(source: list[str]):
     return list(map(str.lower, source))
 
 
+def upper_list_items(source: list[str]):
+    return list(map(str.upper, source))
+
+
 def match_list(source: list[str] | set[str], target: list[str] | set[str]) -> list[str]:
     """Returns items in source that are in target"""
     return [item for item in source if item in target]

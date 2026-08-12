@@ -69,6 +69,9 @@ class ExcelLoader(BaseExcelLoader):
                             data_sheet_name=excel_sheet_name,
                             data=data_df,
                             column_map=column_matches,
+                            original_column_names=[
+                                item.name for item in excel_sheet.available_columns()
+                            ],
                         )
                     )
                     results.extend(l_results)
@@ -94,6 +97,9 @@ class ExcelLoader(BaseExcelLoader):
                         data_sheet_name=excel_sheet_name,
                         data=data_df,
                         auto_loaded=True,
+                        original_column_names=[
+                            item.name for item in excel_sheet.available_columns()
+                        ],
                     )
                 )
             return True

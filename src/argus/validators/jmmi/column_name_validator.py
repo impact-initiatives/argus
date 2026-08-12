@@ -4,7 +4,7 @@ from pathlib import Path, PosixPath
 
 import polars as pl
 
-from ...common.list_matching import lower_list_items, match_list
+from ...common.list_matching import lower_list_items, match_list, upper_list_items
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...utils.yaml_loader import load_file
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
@@ -131,6 +131,8 @@ class JMMIColumnNameCheck(BaseValidator):
         item_variables: list[str] = self._load_file(jmmi_config, "item_variables.yaml")
         currency_codes: list[str] = self._load_file(jmmi_config, "currency_codes.yaml")
 
+        country_codes_list = upper_list_items(country_codes_list)
+
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data,
             sheet_names=[self.clean_data_sheet, self.raw_data_sheet],
@@ -141,7 +143,7 @@ class JMMIColumnNameCheck(BaseValidator):
             results.append(result)
             return results
 
-        clean_data_sheet_columns = data_loaded_sheets[self.clean_data_sheet].data.columns
+        clean_data_sheet_columns = data_loaded_sheets[self.clean_data_sheet].original_column_names
 
         result, country_loaded_column = get_data_loaded_column(
             data_loaded_sheets[self.clean_data_sheet], self.country_column, self.name
@@ -152,15 +154,6 @@ class JMMIColumnNameCheck(BaseValidator):
             return results
         else:
             assert country_loaded_column is not None
-
-        countries_list: list[str] = (
-            data_loaded_sheets[self.clean_data_sheet]
-            .data.select([country_loaded_column.data_column_name])
-            .to_series()
-            .unique()
-            .str.to_lowercase()
-            .to_list()
-        )
 
         for column in clean_data_sheet_columns:
             parts = ColumnParts()
@@ -178,12 +171,8 @@ class JMMIColumnNameCheck(BaseValidator):
                 parts.remaining_text = column
 
             # check for country code prefix
-            # there is an issue where the country code is also the name of an item
-            #  eg bra and brazil (BRA). check country column to ensure that
-            # items arent set as country_code. this will still have false positives
-            # in cases like brazil though
             splits = parts.remaining_text.split("_")
-            if splits[0] in country_codes_list and splits[0] in countries_list:
+            if splits[0] in country_codes_list:
                 parts.country_code = splits[0]
                 parts.remaining_text = parts.remaining_text.replace(splits[0] + "_", "", 1)
 

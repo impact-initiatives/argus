@@ -21,7 +21,7 @@ def validator():
 
 
 def create_loader_data(column: str):
-    df = pl.DataFrame({column: [1, 2, 3, 4, 5], "country": ["ssd", "ssd", "ssd", "ssd", "ssd"]})
+    df = pl.DataFrame({column: [1, 2, 3, 4, 5], "country": ["SSD", "SSD", "SSD", "SSD", "SSD"]})
 
     loaded_sheet = [
         DataSheetMap(
@@ -29,11 +29,13 @@ def create_loader_data(column: str):
             data_sheet_name="clean_data",
             column_map=[DataColumnMap(schema_column_name="country", data_column_name="country")],
             data=df,
+            original_column_names=["country", column],
         ),
         DataSheetMap(
             schema_sheet_name="raw_data",
             data_sheet_name="raw_data",
             data=df,
+            original_column_names=["country", column],
         ),
     ]
 
@@ -41,9 +43,9 @@ def create_loader_data(column: str):
 
 
 MOCK_FILE_DATA = {
-    "iso_codes.yaml": ["ssd", "afg"],
+    "iso_codes.yaml": ["ssd", "AFG", "BRA"],  # should be made upper case in the validator
     "suffix_list.yaml": ["yn", "so"],
-    "items.yaml": ["egg", "chicken_meat"],
+    "items.yaml": ["egg", "chicken_meat", "bra"],
     "item_variables.yaml": ["availability_in_3_months_item"],
     "currency_codes.yaml": ["AED"],
 }
@@ -67,8 +69,18 @@ class TestColumnNames:
             results = validator.validate(data, dataset_config_directory=Path("./some/location"))
             do_basic_checks(results, 0)
 
+    def test_valid_standardised_variable_country(self, validator: BaseValidator):
+        # bra should not match with the country code BRA . if it did there would be an error
+        # about a missing suffix (tested below)
+        data = create_loader_data("bra_availability_in_3_months_item")
+        with patch.object(
+            JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
+        ):
+            results = validator.validate(data, dataset_config_directory=Path("./some/location"))
+            do_basic_checks(results, 0)
+
     def test_valid_country_variable(self, validator: BaseValidator):
-        data = create_loader_data("ssd_chicken_meat_availability_in_4_months_item_yn")
+        data = create_loader_data("SSD_chicken_meat_availability_in_4_months_item_yn")
         with patch.object(
             JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
         ):
@@ -76,7 +88,7 @@ class TestColumnNames:
             do_basic_checks(results, 0)
 
     def test_valid_country_variable_valid_post_suffix(self, validator: BaseValidator):
-        data = create_loader_data("ssd_availability_in_4_months_item_yn.chicken_meat")
+        data = create_loader_data("SSD_availability_in_4_months_item_yn.chicken_meat")
         with patch.object(
             JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
         ):
@@ -84,7 +96,7 @@ class TestColumnNames:
             do_basic_checks(results, 0)
 
     def test_valid_country_variable_invalid_post_suffix(self, validator: BaseValidator):
-        data = create_loader_data("ssd_availability_in_4_months_item_yn.kangaroo_meat")
+        data = create_loader_data("SSD_availability_in_4_months_item_yn.kangaroo_meat")
         with patch.object(
             JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
         ):
@@ -92,6 +104,7 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "item not in goods dictionary"
 
     def test_country_variable_missing_prefix(self, validator: BaseValidator):
         data = create_loader_data("chicken_meat_availability_in_4_months_item_yn")
@@ -102,9 +115,10 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "missing prefix or suffix"
 
     def test_country_variable_missing_suffix(self, validator: BaseValidator):
-        data = create_loader_data("ssd_chicken_meat_availability_in_4_months_item")
+        data = create_loader_data("BRA_chicken_meat_availability_in_4_months_item")
         with patch.object(
             JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
         ):
@@ -112,9 +126,10 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "missing prefix or suffix"
 
     def test_country_variable_unknown_suffix(self, validator: BaseValidator):
-        data = create_loader_data("ssd_chicken_meat_availability_in_4_months_item_ynn")
+        data = create_loader_data("SSD_chicken_meat_availability_in_4_months_item_ynn")
         with patch.object(
             JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
         ):
@@ -122,6 +137,7 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "missing prefix or suffix"
 
     def test_country_variable_unknown_prefix(self, validator: BaseValidator):
         data = create_loader_data("sssd_chicken_meat_availability_in_4_months_item_yn")
@@ -132,9 +148,10 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "missing prefix or suffix"
 
-    def test_valid_country_standardisable_variable(self, validator: BaseValidator):
-        data = create_loader_data("ssd_chicken_meat_availability_in_3_months_item_yn")
+    def test_country_variable_lowercase_prefix(self, validator: BaseValidator):
+        data = create_loader_data("ssd_chicken_meat_availability_in_4_months_item_yn")
         with patch.object(
             JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
         ):
@@ -142,6 +159,20 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "missing prefix or suffix"
+
+    def test_valid_country_standardisable_variable(self, validator: BaseValidator):
+        data = create_loader_data("SSD_chicken_meat_availability_in_3_months_item_yn")
+        with patch.object(
+            JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
+        ):
+            results = validator.validate(data, dataset_config_directory=Path("./some/location"))
+            do_basic_checks(results, 1)
+            assert results[0].details is not None
+            assert len(results[0].details["sheet"]) == 1
+            assert (
+                results[0].details["issue"][0] == "column contains standardised items and variables"
+            )
 
     def test_valid_unknown_item(self, validator: BaseValidator):
         data = create_loader_data("kangaroo_meat_availability_in_3_months_item")
@@ -152,6 +183,7 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "item not in goods dictionary"
 
     def test_invalid_standardised_variable(self, validator: BaseValidator):
         data = create_loader_data("chicken_meat_3_months_availability_item")
@@ -162,6 +194,7 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "variable not in column name dictionary"
 
     def test_invalid_standardised_variable_and_item(self, validator: BaseValidator):
         data = create_loader_data("kangaroo_meat_3_months_availability_item")
@@ -172,8 +205,10 @@ class TestColumnNames:
             do_basic_checks(results, 2)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
+            assert results[0].details["issue"][0] == "item not in goods dictionary"
             assert results[1].details is not None
             assert len(results[1].details["sheet"]) == 1
+            assert results[1].details["issue"][0] == "variable not in column name dictionary"
 
     def test_invalid_column(self, validator: BaseValidator):
         data = create_loader_data("deviceid")
@@ -184,3 +219,4 @@ class TestColumnNames:
             do_basic_checks(results, 1)
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 2
+            assert results[0].details["issue"][0] == "coulmn must be removed"

@@ -58,6 +58,7 @@ class TestColumnNames:
         )
         results = validator.validate(data)
         do_basic_checks(results, 1)
+        assert results[0].details is None
 
     def test_not_enough_xrate_columns(self, validator: BaseValidator):
         data = create_loader_data(
@@ -69,6 +70,7 @@ class TestColumnNames:
         )
         results = validator.validate(data)
         do_basic_checks(results, 1)
+        assert results[0].details is None
 
     def test_numeric_column_no_suffix(self, validator: BaseValidator):
         data = create_loader_data(

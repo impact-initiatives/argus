@@ -16,6 +16,7 @@ class DataSheetMap:
     data: pl.DataFrame = field(default_factory=pl.DataFrame)
     column_map: list[DataColumnMap] = field(default_factory=list)
     auto_loaded: bool = False
+    original_column_names: list[str] = field(default_factory=list)
 
     def get_column_map(self, search_column: str) -> DataColumnMap | None:
         """Searches if a schema column name was mapped during data load.
