@@ -1,35 +1,92 @@
+import json
 import logging
+import sys
+from datetime import UTC, datetime
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
+from typing import override
 
 
-class JIVELogger:
-    def __init__(self, log_dir: Path = Path("logs")):
-        self.log_dir = log_dir
-        self.log_dir.mkdir(exist_ok=True)
+class JSONFormatter(logging.Formatter):
+    """Formats log records as JSON for Azure Log Analytics ingestion."""
 
-        # Setup logging
-        self.logger = logging.getLogger("argus")
-        self.logger.setLevel(logging.INFO)
+    @override
+    def format(self, record: logging.LogRecord) -> str:
+        log_entry = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
 
-        # Clear existing handlers to avoid duplicates
-        self.logger.handlers.clear()
+        # Include any custom extra fields dynamically
+        standard_attrs = {
+            "name",
+            "msg",
+            "args",
+            "levelname",
+            "levelno",
+            "pathname",
+            "filename",
+            "module",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "lineno",
+            "funcName",
+            "created",
+            "msecs",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "processName",
+            "process",
+            "message",
+        }
+        for key, value in record.__dict__.items():
+            if key not in standard_attrs:
+                log_entry[key] = value
 
-        # Timed rotating file handler - rotates at midnight
+        if record.exc_info:
+            log_entry["exception"] = self.formatException(record.exc_info)
+            log_entry["exception_type"] = (
+                type(record.exc_info[1]).__name__ if record.exc_info[1] else "Exception"
+            )
+
+        return json.dumps(log_entry, default=str)
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Returns a JSON-formatted logger.
+
+    Args:
+        name: Logger name (typically module name).
+
+    Returns:
+        Configured logger instance.
+    """
+    logger = logging.getLogger(name)
+
+    if not logger.handlers:
+        formatter = JSONFormatter()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+
+        Path("./logs").mkdir(exist_ok=True)
+
         file_handler = TimedRotatingFileHandler(
-            self.log_dir / "argus.log",
+            "logs/argus.log",
             when="midnight",  # Rotate at midnight
             interval=1,  # Every 1 day
             backupCount=30,  # Keep 30 days of old logs
             encoding="utf-8",
         )
-
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
 
-    def log_error(self, message: str):
-        self.logger.error(message)
+        logger.addHandler(handler)
+        logger.addHandler(file_handler)
+        logger.setLevel(logging.INFO)
 
-    def log_exception(self, message: object):
-        self.logger.exception(message)
+        logging.getLogger("fastexcel.types.dtype").setLevel(logging.ERROR)
+
+    return logger

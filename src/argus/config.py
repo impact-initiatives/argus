@@ -3,8 +3,6 @@ from pathlib import Path
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 
-from .utils.logging import JIVELogger
-
 
 class Settings(BaseSettings):
     # model_config: SettingsConfigDict = SettingsConfigDict(
@@ -67,8 +65,6 @@ class Settings(BaseSettings):
     ]
     # limits the output of each of the validation results. set below 0 to ignore.
     LIMIT_DETAILS_THRESHOLD: int = -1
-
-    logger: JIVELogger = JIVELogger()
 
     # for local testing
     # eg Path.cwd() / "dataset_config" / "v2026.06.25.01"

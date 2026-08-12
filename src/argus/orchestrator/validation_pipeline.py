@@ -17,7 +17,10 @@ from ..models.base_dataset import BaseDataset
 from ..models.base_dataset_schemas import BaseDatasetSchema
 from ..models.dynamic_model import DynamicDataset
 from ..models.preprocess import validate_schema
+from ..utils.logging import get_logger
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
+
+logger = get_logger("argus.orchestrator")
 
 
 class ValidationPipeline:
@@ -75,10 +78,12 @@ class ValidationPipeline:
         locale = locale.lower()
         token = i18n.set_locale(locale)
         dataset_type = dataset_type.lower()
+        logger.info("Running the pipeline.", extra={"file": filepath.name})
         results = self._run(
             filepath, dataset_type, locale=locale, use_local_config=use_local_config
         )
         i18n.reset_locale(token)
+        logger.info("Compiling validation results.", extra={"file": filepath.name})
         return self._compile_results(results, dataset_type, filepath)
 
     def _run(
@@ -113,6 +118,13 @@ class ValidationPipeline:
                         severity=SeverityLevel.WARNING,
                     )
                 )
+                logger.warning(
+                    f"No dataset schema for '{dataset_type}' was found for "
+                    + f" version '{dataset_config_directory.name}'. Falling back to "
+                    + f"'{dataset.schema.dataset_type}'.",
+                    extra={"file": filepath.name},
+                )
+
             all_results.append(
                 ValidationResult(
                     rule="GetYAMLConfig",
@@ -120,6 +132,10 @@ class ValidationPipeline:
                     + f"dataset '{dataset.schema.dataset_type}'.",
                     severity=SeverityLevel.ADMIN_INFO,
                 )
+            )
+            logger.info(
+                f"Using schema version '{self.argus_schemas_version}'.",
+                extra={"file": filepath.name, "dataset type": dataset.schema.dataset_type},
             )
 
         except Exception as e:
@@ -130,17 +146,32 @@ class ValidationPipeline:
                     severity=SeverityLevel.ADMIN_ERROR,
                 )
             )
-            settings.logger.log_exception(e)
+            logger.exception(
+                "Error getting the YAML dataset config files.",
+                extra={"file": filepath.name, "dataset type": dataset_type},
+            )
             return all_results
 
         # pre-validate the schema. checks for duplicate sheet/column
         # names etc
 
         try:
+            logger.info(
+                "Validating schema.",
+                extra={
+                    "file": filepath.name,
+                    "schema": dataset.schema.dataset_type,
+                    "schema version": self.argus_schemas_version,
+                },
+            )
             validation_errors = validate_schema(dataset.schema)
 
             if validation_errors:
                 all_results.extend(validation_errors)
+                logger.error(
+                    f"Validating schema for '{dataset.schema.dataset_type}' failed.",
+                    extra={"validation errors": validation_errors, "file": filepath.name},
+                )
                 return all_results
         except Exception as e:
             all_results.append(
@@ -151,11 +182,19 @@ class ValidationPipeline:
                     details=vars(dataset.schema),
                 )
             )
-            settings.logger.log_exception(e)
+            logger.exception(
+                "Schema validation encountered an error.",
+                extra={
+                    "file": filepath.name,
+                    "dataset type": dataset.schema.dataset_type,
+                    "schema version": self.argus_schemas_version,
+                },
+            )
             return all_results
 
         # load the excel data
         try:
+            logger.info("Loading and matching Excel data.", extra={"file": filepath.name})
             loader = ExcelLoader(dataset.schema)
             dataset.data, excel_results = loader.load(
                 filepath,
@@ -183,7 +222,10 @@ class ValidationPipeline:
                     severity=SeverityLevel.ERROR,
                 )
             )
-            settings.logger.log_exception(ce)
+            logger.exception(
+                "Loading of the excel file encountered a CalamineCellError.",
+                extra={"file": filepath.name},
+            )
             return all_results
         except Exception as e:
             all_results.append(
@@ -194,10 +236,20 @@ class ValidationPipeline:
                     severity=SeverityLevel.ADMIN_ERROR,
                 )
             )
-            settings.logger.log_exception(e)
+            logger.exception(
+                "Loading of the excel file encountered an error.", extra={"file": filepath.name}
+            )
             return all_results
 
         if dataset.schema.dataset_type == settings.FALLBACK_DATASET:
+            logger.info(
+                "Building dynamic schema.",
+                extra={
+                    "file": filepath.name,
+                    "dataset type": dataset.schema.dataset_type,
+                    "schema version": self.argus_schemas_version,
+                },
+            )
             results = dataset.process_data()
             if results:
                 all_results.extend(results)
@@ -212,6 +264,14 @@ class ValidationPipeline:
         )
 
         # run each of the validators for the dataset.
+        logger.info(
+            "Running validation rules.",
+            extra={
+                "file": filepath.name,
+                "dataset type": dataset.schema.dataset_type,
+                "schema version": self.argus_schemas_version,
+            },
+        )
         for validator in dataset.validators:
             try:
                 results = validator.validate(
@@ -229,7 +289,7 @@ class ValidationPipeline:
                             details=self._get_validator_params(validator),
                         )
                     )
-            except Exception as e:
+            except Exception:
                 all_results.append(
                     ValidationResult(
                         rule=validator.name,
@@ -239,7 +299,10 @@ class ValidationPipeline:
                         details=self._get_validator_params(validator),
                     )
                 )
-                settings.logger.log_exception(e)
+                logger.exception(
+                    f"Validator '{validator.name}' encountered an error.",
+                    extra={"file": filepath.name, "validator": validator.name},
+                )
 
         return all_results
 

@@ -335,12 +335,12 @@ class RawToCleanToLogCheck(BaseValidator):
             # by CleaningLogToCleanCheck
             if self.cleaning_log_sheet is not None:
                 difference_df = difference_raw_to_clean_df.join(
-                    other=modified_rows_df,
+                    other=modified_rows_df,  # pyright: ignore[reportPossiblyUnboundVariable]
                     how="anti",
                     left_on=["uuid", self.cleaning_log_question_column],
                     right_on=[
-                        clean_log_id_columns.data_column_name,
-                        data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+                        clean_log_id_columns.data_column_name,  # pyright: ignore[reportPossiblyUnboundVariable]
+                        data_loaded_columns[self.cleaning_log_question_column].data_column_name,  # pyright: ignore[reportPossiblyUnboundVariable]
                     ],
                 ).with_columns(
                     [
