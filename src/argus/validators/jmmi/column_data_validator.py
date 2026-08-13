@@ -177,7 +177,21 @@ class JMMIColumnDataCheck(BaseValidator):
                         )
                         .select(
                             (
-                                pl.col(round_loaded_columns[self.round_column].data_column_name)
+                                pl.lit("column: '")
+                                + pl.col(round_loaded_columns[self.round_column].data_column_name)
+                                + pl.lit(
+                                    f"', {round_loaded_columns[self.country_column].data_column_name}: '"  # noqa: E501
+                                )
+                                + pl.col(round_loaded_columns[self.country_column].data_column_name)
+                                + pl.lit(
+                                    f"', {round_loaded_columns[self.month_column].data_column_name}: '"  # noqa: E501
+                                )
+                                + pl.col(round_loaded_columns[self.month_column].data_column_name)
+                                + pl.lit(
+                                    f"', {round_loaded_columns[self.year_column].data_column_name}: '"  # noqa: E501
+                                )
+                                + pl.col(round_loaded_columns[self.year_column].data_column_name)
+                                + pl.lit("'")
                             ).alias("value")
                         )
                         .group_by("value")
