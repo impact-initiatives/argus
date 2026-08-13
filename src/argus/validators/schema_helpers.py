@@ -240,7 +240,7 @@ def consolidate_messages(
                 count=len(items),
             ),
             severity=SeverityLevel.ERROR,
-            details={f"missing_{item_type}": items }#if item_type == "sheets" else column_items},
+            details={f"missing_{item_type}": items},  # if item_type == "sheets" else column_items},
         )
         return result
     elif len(results) == 1:
