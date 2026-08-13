@@ -16,13 +16,15 @@ def validator():
     return JMMIMebAnalysisCheck()
 
 
-def create_loader_data(meb_columns: dict[str, list[str | int | float]]):
+def create_loader_data(
+    meb_columns: dict[str, list[str | int | float]], clean_data_sheet="clean_data"
+):
     meb_df = pl.DataFrame(meb_columns)
 
     loaded_sheet = [
         DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
+            schema_sheet_name=clean_data_sheet,
+            data_sheet_name=clean_data_sheet,
             data=meb_df,
         ),
         DataSheetMap(
@@ -116,3 +118,17 @@ class TestColumnNames:
         do_basic_checks(results, 2)
         assert results[1].details is not None
         assert len(results[1].details["non-numeric column with numeric suffix"]) == 1
+
+    def test_missing_sheet(self, validator: BaseValidator):
+        data = create_loader_data(
+            {
+                "meb_food_local_currency": [800],
+                "meb_food_usd_xrate_official": [10],
+                "meb_energy_local_currency": [13],
+                "meb_energy_usd_xrate_official": [13],
+            },
+            clean_data_sheet="missing",
+        )
+        results = validator.validate(data)
+        do_basic_checks(results, 1)
+        assert "clean_data" in results[0].message

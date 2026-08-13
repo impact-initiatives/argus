@@ -288,9 +288,6 @@ msgstr "{count} columns were found that should not be included in the dataset. C
 msgid "jmmi_column_name_validator.standardisable_columns"
 msgstr "{count} country specific columns were found that are standardisable. Check the output for details."
 
-msgid "jmmi_column_name_validator.possible_item_columns"
-msgstr "{count} columns were found appear to be item columns. Check to see if these have been named incorrectly. Check the output for details."
-
 msgid "jmmi_meb_analysis_validator.suffix_check"
 msgstr "{no_expected} columns in the sheet '{sheet}' were expected to contain columns with the '{expected_suffix}' suffix but only {count} were found."
 
@@ -308,3 +305,11 @@ msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix.
 
 # msgid "jmmi_meb_analysis_validator.no_meb_columns"
 # msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix. Check if these columns should have this suffix or that the data is all numeric. Check output for details."
+
+msgid "jmmi_data_validator.data_issues"
+msgstr "{count} column values failed validation. Check output for details."
+
+msgid "empty_column_validator.empty_values"
+msgstr "{count} column values were empty when values were expected. Check output for details."
+
+

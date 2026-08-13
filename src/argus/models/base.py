@@ -49,6 +49,7 @@ class SchemaColumnMap(BaseModel):
     process_values: list[ProcessValueMap] = Field(default=[])
     allow_fuzzy_matching: bool = True
     required: bool = True
+    allow_empty_values: bool = True
 
     @model_validator(mode="after")
     def lowercase_all(self):
@@ -99,6 +100,10 @@ class SchemaSheetMap(BaseModel):
     def get_unique_columns(self) -> list[SchemaColumnMap]:
         """Gets all the columns markes as unique"""
         return [column for column in self.columns if column.is_unique]
+
+    def get_not_empty_columns(self) -> list[SchemaColumnMap]:
+        """Gets all the columns markes as unique"""
+        return [column for column in self.columns if not column.allow_empty_values]
 
     def combine_column_names(self, return_unique_list: bool = True) -> list[str]:
         """Creates a unique list of mandatory and unique column name options
