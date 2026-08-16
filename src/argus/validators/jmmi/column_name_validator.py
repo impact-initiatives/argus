@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path, PosixPath
+from typing import override
 
 import polars as pl
 
@@ -36,6 +37,7 @@ class JMMIColumnNameCheck(BaseValidator):
         self.country_column: str = country_column
 
     @property
+    @override
     def name(self) -> str:
         return "JMMIColumnNameCheck"
 
@@ -45,6 +47,7 @@ class JMMIColumnNameCheck(BaseValidator):
         file_list = load_file(file)[0][file.stem]
         return lower_list_items(file_list)
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float | Path
     ) -> list[ValidationResult]:

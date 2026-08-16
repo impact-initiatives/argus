@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import override
 
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
@@ -31,17 +32,19 @@ class CrossSheetRowSumCheck(BaseValidator):
                 specify the deletion log here to make sure the correct deletion count
                  is used. Dont pass it as a child sheet in this case.
         """
-        self.schema = schema
-        self.master_sheet = master_sheet
-        self.child_sheets = (
+        self.schema: BaseDatasetSchema = schema
+        self.master_sheet: str = master_sheet
+        self.child_sheets: list[str] = (
             child_sheets if child_sheets is not None else ["clean_data", "deletion_log"]
         )
-        self.master_deletion_log = master_deletion_log
+        self.master_deletion_log: str | None = master_deletion_log
 
     @property
+    @override
     def name(self) -> str:
         return "CrossSheetRowSumCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
@@ -92,7 +95,6 @@ class CrossSheetRowSumCheck(BaseValidator):
             master_schema_sheet.parent_sheet is not None
             and master_schema_sheet.parent_linking_column is not None
             and self.master_deletion_log is not None
-            and data_loaded_sheets[self.master_deletion_log] is not None
         ):
             if data_loaded_sheets[self.master_deletion_log].data.height < 1:
                 child_counts.append(

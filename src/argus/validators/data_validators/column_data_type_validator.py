@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
@@ -41,18 +43,20 @@ class DataTypeCheck(BaseValidator):
             check_sheets (List, optional): schema sheet names to check.
                 Defaults to ['clean_data'].
         """
-        self.survey_sheet = survey_sheet
-        self.check_sheets = check_sheets if check_sheets is not None else ["clean_data"]
-        self.survey_type_column = survey_type_column
-        self.survey_name_column = survey_name_column
-        self.schema = schema
-        self.process_value_map_name_numeric = "data_type_numeric_check"
-        self.process_value_map_name_temporal = "data_type_temporal_check"
+        self.survey_sheet: str = survey_sheet
+        self.check_sheets: list[str] = check_sheets if check_sheets is not None else ["clean_data"]
+        self.survey_type_column: str = survey_type_column
+        self.survey_name_column: str = survey_name_column
+        self.schema: BaseDatasetSchema = schema
+        self.process_value_map_name_numeric: str = "data_type_numeric_check"
+        self.process_value_map_name_temporal: str = "data_type_temporal_check"
 
     @property
+    @override
     def name(self) -> str:
         return "DataTypeCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:

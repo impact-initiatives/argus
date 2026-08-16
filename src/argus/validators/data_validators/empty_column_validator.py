@@ -1,3 +1,5 @@
+from typing import cast, override
+
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
@@ -7,12 +9,14 @@ from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 
 class EmptyColumnCheck(BaseValidator):
     @property
+    @override
     def name(self) -> str:
         return "EmptyColumnCheck"
 
     def __init__(self, schema: BaseDatasetSchema):
-        self.schema = schema
+        self.schema: BaseDatasetSchema = schema
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
@@ -74,8 +78,8 @@ class EmptyColumnCheck(BaseValidator):
                             )
 
         if empty_values_df.height > 0:
-            empty_rows = (
-                empty_values_df.select(pl.col("empty_values").sum()).to_series().to_list()[0]
+            empty_rows = cast(
+                int, (empty_values_df.select(pl.col("empty_values").sum()).to_series().to_list()[0])
             )
             results.append(
                 ValidationResult(

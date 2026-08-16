@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
@@ -14,12 +16,16 @@ class ColumnNameCheck(BaseValidator):
             ignore_sheets (list[str] | None, optional): List of schema sheets to ignore during.
                 Defaults to "choices" and "survey" if None is specefied.
         """
-        self.ignore_sheets = ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+        self.ignore_sheets: list[str] = (
+            ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+        )
 
     @property
+    @override
     def name(self) -> str:
         return "ColumnNameCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
@@ -40,7 +46,7 @@ class ColumnNameCheck(BaseValidator):
         """
         results: list[ValidationResult] = []
 
-        match_records = []
+        match_records: list[dict[str, str]] = []
 
         for sheet in data.loaded_sheets:
             if sheet.schema_sheet_name in self.ignore_sheets:

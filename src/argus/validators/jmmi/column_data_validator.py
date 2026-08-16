@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import override
 
 import polars as pl
 
@@ -44,9 +45,11 @@ class JMMIColumnDataCheck(BaseValidator):
         self.year_column: str = year_column
 
     @property
+    @override
     def name(self) -> str:
         return "JMMIColumnDataCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float | Path
     ) -> list[ValidationResult]:

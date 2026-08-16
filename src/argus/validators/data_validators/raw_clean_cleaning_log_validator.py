@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...common.expression_builder import create_column_difference_expression
@@ -55,22 +57,24 @@ class RawToCleanToLogCheck(BaseValidator):
             cleaning_log_change_type_column (str, optional): name of the cleaning log
                 change_type column. Defaults to 'change_type'
         """
-        self.schema = schema
-        self.clean_data_sheet = clean_data_sheet
-        self.raw_data_sheet = raw_data_sheet
-        self.cleaning_log_sheet = cleaning_log_sheet
-        self.cleaning_log_new_value_column = cleaning_log_new_value_column
-        self.cleaning_log_old_value_column = cleaning_log_old_value_column
-        self.cleaning_log_question_column = cleaning_log_question_column
-        self.cleaning_log_change_type_column = cleaning_log_change_type_column
+        self.schema: BaseDatasetSchema = schema
+        self.clean_data_sheet: str = clean_data_sheet
+        self.raw_data_sheet: str = raw_data_sheet
+        self.cleaning_log_sheet: str | None = cleaning_log_sheet
+        self.cleaning_log_new_value_column: str = cleaning_log_new_value_column
+        self.cleaning_log_old_value_column: str = cleaning_log_old_value_column
+        self.cleaning_log_question_column: str = cleaning_log_question_column
+        self.cleaning_log_change_type_column: str = cleaning_log_change_type_column
         # the ProcessValueMap that contains the list of possible values needed in
         #  cleaning_log_change_type_column
-        self.process_value_map_name = "cleaning_log_validation"
+        self.process_value_map_name: str = "cleaning_log_validation"
 
     @property
+    @override
     def name(self) -> str:
         return "RawToCleanToLogCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:

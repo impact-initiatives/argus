@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...loaders.base import DataSheetMap
@@ -10,12 +12,14 @@ from ..data_helpers import get_data_loaded_columns, get_data_loaded_sheets
 
 class MandatoryColumnsCheck(BaseValidator):
     @property
+    @override
     def name(self) -> str:
         return "MandatoryColumnsCheck"
 
     def __init__(self, schema: BaseDatasetSchema):
-        self.schema = schema
+        self.schema: BaseDatasetSchema = schema
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
@@ -33,7 +37,7 @@ class MandatoryColumnsCheck(BaseValidator):
 
         def _get_loaded_columns(schema_columns: list[SchemaColumnMap], loaded_sheet: DataSheetMap):
             search_items = {key.standard_name: loaded_sheet for key in schema_columns}
-            result, columns = get_data_loaded_columns(search_items, self.name)
+            result, _ = get_data_loaded_columns(search_items, self.name)
             if result is not None:
                 result.sheet_name = loaded_sheet.data_sheet_name
 
@@ -90,7 +94,7 @@ class MandatoryColumnsCheck(BaseValidator):
             check_data=False,
         )
         # if optional sheets have been loaded, check their columns
-        result_optional, data_loaded_sheets_optional = get_data_loaded_sheets(
+        _, data_loaded_sheets_optional = get_data_loaded_sheets(
             data=data,
             sheet_names=self.schema.get_loaded_sheets_standard_names(required=False),
             rule=self.name,

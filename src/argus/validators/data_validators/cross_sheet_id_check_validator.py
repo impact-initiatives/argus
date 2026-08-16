@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
@@ -29,19 +31,21 @@ class CrossSheetIdCheck(BaseValidator):
             is_in (bool, optional): determins if the child ids should (true) or
                 should not (false) be in the matser sheet
         """
-        self.master_sheet = master_sheet
-        self.child_sheets = (
+        self.master_sheet: str = master_sheet
+        self.child_sheets: list[str] = (
             child_sheets
             if child_sheets is not None
             else ["clean_data", "deletion_log", "cleaning_log"]
         )
-        self.schema = schema
-        self.is_in = is_in
+        self.schema: BaseDatasetSchema = schema
+        self.is_in: bool = is_in
 
     @property
+    @override
     def name(self) -> str:
         return "CrossSheetIdCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:

@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...common.list_matching import filter_list
@@ -21,13 +23,15 @@ class NaNDataCheck(BaseValidator):
             sheets (List[str], optional): list of sheets to be checked.
                 Defaults to ['clean_data'].
         """
-        self.check_sheets = check_sheets if check_sheets is not None else ["clean_data"]
-        self.schema = schema
+        self.check_sheets: list[str] = check_sheets if check_sheets is not None else ["clean_data"]
+        self.schema: BaseDatasetSchema = schema
 
     @property
+    @override
     def name(self) -> str:
         return "NaNDataCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:

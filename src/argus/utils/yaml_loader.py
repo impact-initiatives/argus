@@ -1,6 +1,5 @@
 import zipfile
 from pathlib import Path
-from typing import Any
 
 import requests
 import yaml
@@ -16,7 +15,7 @@ def download_config(download_dir: str | Path = "dataset_config"):
     Also lowers all folders and file names.
     """
 
-    # 1. Setup Download Directory
+    # Setup Download Directory
     base_path = Path(download_dir)
     base_path.mkdir(parents=True, exist_ok=True)
 
@@ -29,7 +28,7 @@ def download_config(download_dir: str | Path = "dataset_config"):
 
     tag_name = release_data["tag_name"]
 
-    # 2. Check if this version has already been processed
+    # Check if this version has already been processed
     versioned_target: Path = base_path / tag_name
     if versioned_target.exists():
         yaml_files = list(versioned_target.rglob("*.yaml")) + list(versioned_target.rglob("*.yml"))
@@ -56,9 +55,6 @@ def download_config(download_dir: str | Path = "dataset_config"):
         with zipfile.ZipFile(archive_path, "r") as zip_ref:
             namelist = zip_ref.namelist()
 
-            # Optional: Pre-filter to avoid processing irrelevant files if performance matters
-            # But keeping it inside the loop allows better error handling per file
-
             for file_info in namelist:
                 # Prevent path traversal attacks using the original path string
                 dest_original = versioned_target / file_info
@@ -71,7 +67,6 @@ def download_config(download_dir: str | Path = "dataset_config"):
                 target_rel_path = Path(file_info.lower())
 
                 # Strip the GitHub root folder (e.g., "owner-repo-hash/")
-                # Note: We strip from the lowercased path now
                 parts = target_rel_path.parts
 
                 # GitHub archives usually have one root folder.
@@ -124,7 +119,7 @@ def load_file(file_path: str | Path):
         raise ValueError("YAML root must be a dictionary.")
 
     # 1. Load Import Definitions
-    definitions: dict[str, Any] = {}
+    definitions: dict[str, str] = {}
     imports = raw_data.pop("_imports", [])
 
     for imp_path in imports:

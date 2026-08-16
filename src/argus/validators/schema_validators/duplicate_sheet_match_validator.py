@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...common.list_matching import duplicate_list_items
@@ -10,12 +12,14 @@ class DuplicateSheetMatchCheck(BaseValidator):
     """Checks to see if a schema sheet was matched to multiple excel sheets."""
 
     def __init__(self, schema: BaseDatasetSchema):
-        self.schema = schema
+        self.schema: BaseDatasetSchema = schema
 
     @property
+    @override
     def name(self) -> str:
         return "DuplicateSheetMatchCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
@@ -33,7 +37,7 @@ class DuplicateSheetMatchCheck(BaseValidator):
         provided_sheets.extend(data.get_unloaded_sheet_mapped_names())
         # duplicates should be a unique list
         duplicates = duplicate_list_items(provided_sheets)
-        matches = []
+        matches: list[dict[str, str | list[str]]] = []
 
         if duplicates:
             for item in duplicates:
