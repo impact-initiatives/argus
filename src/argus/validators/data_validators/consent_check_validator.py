@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
@@ -36,16 +38,18 @@ class ConsentCheck(BaseValidator):
             schema_consent_column (str, optional): column in raw_data that gives
                 consent value. Defaults to 'consent'.
         """
-        self.raw_data_sheet = raw_data_sheet
-        self.clean_data_sheet = clean_data_sheet
-        self.schema = schema
-        self.schema_consent_column = schema_consent_column
-        self.process_value_map_name = "consent_check_validation"
+        self.raw_data_sheet: str = raw_data_sheet
+        self.clean_data_sheet: str = clean_data_sheet
+        self.schema: BaseDatasetSchema = schema
+        self.schema_consent_column: str = schema_consent_column
+        self.process_value_map_name: str = "consent_check_validation"
 
     @property
+    @override
     def name(self) -> str:
         return "ConsentCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:

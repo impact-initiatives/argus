@@ -216,11 +216,17 @@ def consolidate_messages(
         ValidationResult | None: returns a consolidated result or None if no results
     """
     items: list[str] = []
+    # column_items: dict[str, list[str]] = {}
 
     if len(results) > 1:
         for result in results:
             if result.column_name is not None and item_type == "columns":
                 items.append(result.column_name)
+                # if result.sheet_name is not None:
+                #     if result.sheet_name in column_items:
+                #         column_items[result.sheet_name].append(result.column_name)
+                #     else:
+                #         column_items[result.sheet_name] = [result.column_name]
 
             if result.sheet_name is not None and item_type == "sheets":
                 items.append(result.sheet_name)
@@ -234,7 +240,7 @@ def consolidate_messages(
                 count=len(items),
             ),
             severity=SeverityLevel.ERROR,
-            details={f"missing_{item_type}": items},
+            details={f"missing_{item_type}": items},  # if item_type == "sheets" else column_items},
         )
         return result
     elif len(results) == 1:

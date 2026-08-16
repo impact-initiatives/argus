@@ -1,3 +1,5 @@
+from typing import override
+
 import polars as pl
 
 from ...common.list_matching import filter_list, match_list_to_list
@@ -20,13 +22,17 @@ class PiiDataCheck(BaseValidator):
             ignore_sheets (list[str] | None, optional): List of schema sheets to ignore during.
                 Defaults to "choices" and "survey" if None is specefied.
         """
-        self.schema = schema
-        self.ignore_sheets = ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+        self.schema: BaseDatasetSchema = schema
+        self.ignore_sheets: list[str] = (
+            ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+        )
 
     @property
+    @override
     def name(self) -> str:
         return "PiiDataCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
@@ -51,7 +57,7 @@ class PiiDataCheck(BaseValidator):
         results: list[ValidationResult] = []
         pii_columns = get_pii_columns()
 
-        match_records = []
+        match_records: list[dict[str, str]] = []
 
         for sheet in data.loaded_sheets:
             if sheet.schema_sheet_name in self.ignore_sheets:
@@ -91,9 +97,7 @@ class PiiDataCheck(BaseValidator):
                 )
 
             # scan column data
-            result, id_column = get_data_sheet_id(
-                sheet.data_sheet_name, self.schema, sheet, self.name
-            )
+            _, id_column = get_data_sheet_id(sheet.data_sheet_name, self.schema, sheet, self.name)
 
             if not id_column:
                 id_column = DataColumnMap(

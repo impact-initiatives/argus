@@ -16,13 +16,14 @@ from ..validators.data_validators import (
     CrossSheetIdCheck,
     CrossSheetRowSumCheck,
     DataTypeCheck,
+    EmptyColumnCheck,
     NaNDataCheck,
     PiiDataCheck,
     RawToCleanToLogCheck,
     SurveyChoicesCheck,
     UniqueColumnCheck,
 )
-from ..validators.jmmi import JMMIColumnNameCheck, JMMIMebAnalysisCheck
+from ..validators.jmmi import JMMIColumnDataCheck, JMMIColumnNameCheck, JMMIMebAnalysisCheck
 from ..validators.schema_validators import (
     ColumnNameCheck,
     DuplicateSheetMatchCheck,
@@ -49,8 +50,10 @@ VALIDATOR_REGISTRY = {
     "MandatoryColumnsCheck": MandatoryColumnsCheck,
     "MissingSheetsCheck": MissingSheetsCheck,
     "UnexpectedSheetsCheck": UnexpectedSheetsCheck,
+    "EmptyColumnCheck": EmptyColumnCheck,
     "JMMIColumnNameCheck": JMMIColumnNameCheck,
     "JMMIMebAnalysisCheck": JMMIMebAnalysisCheck,
+    "JMMIColumnDataCheck": JMMIColumnDataCheck,
 }
 
 

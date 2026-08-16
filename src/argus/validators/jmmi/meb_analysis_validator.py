@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import override
 
 import polars as pl
 
@@ -19,16 +20,18 @@ class JMMIMebAnalysisCheck(BaseValidator):
 
         self.meb_analysis_sheet: str = meb_analysis_sheet
         self.clean_data_sheet: str = clean_data_sheet
-        self.numeric_column_suffix_check_list = (
+        self.numeric_column_suffix_check_list: list[str] = (
             numeric_column_suffix_check_list
             if numeric_column_suffix_check_list is not None
             else ["currency", "official", "parallel", "year"]
         )
 
     @property
+    @override
     def name(self) -> str:
         return "JMMIMebAnalysisCheck"
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float | Path
     ) -> list[ValidationResult]:

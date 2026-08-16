@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path, PosixPath
+from typing import override
 
 import polars as pl
 
@@ -9,7 +10,6 @@ from ...loaders.base_excel_loader import ExcelLoaderData
 from ...utils.yaml_loader import load_file
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 from ...validators.data_helpers import (
-    get_data_loaded_column,
     get_data_loaded_sheets,
 )
 
@@ -37,6 +37,7 @@ class JMMIColumnNameCheck(BaseValidator):
         self.country_column: str = country_column
 
     @property
+    @override
     def name(self) -> str:
         return "JMMIColumnNameCheck"
 
@@ -46,6 +47,7 @@ class JMMIColumnNameCheck(BaseValidator):
         file_list = load_file(file)[0][file.stem]
         return lower_list_items(file_list)
 
+    @override
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float | Path
     ) -> list[ValidationResult]:
@@ -100,8 +102,6 @@ class JMMIColumnNameCheck(BaseValidator):
         missing_prefix_or_suffix: list[dict[str, str]] = []
         # B003
         standardisable_country_columns: list[dict[str, str]] = []
-        # columns that look like they should follow standardised checks
-        possible_item_columns: list[dict[str, str]] = []
         pattern = r"^([a-zA-Z0-9_]+)(?:[^a-zA-Z0-9_]+(.+))?$"
         # E001
         invalid_columns: list[dict[str, str]] = []
@@ -144,16 +144,6 @@ class JMMIColumnNameCheck(BaseValidator):
             return results
 
         clean_data_sheet_columns = data_loaded_sheets[self.clean_data_sheet].original_column_names
-
-        result, country_loaded_column = get_data_loaded_column(
-            data_loaded_sheets[self.clean_data_sheet], self.country_column, self.name
-        )
-
-        if result is not None:
-            results.append(result)
-            return results
-        else:
-            assert country_loaded_column is not None
 
         for column in clean_data_sheet_columns:
             parts = ColumnParts()
@@ -374,21 +364,6 @@ class JMMIColumnNameCheck(BaseValidator):
                     ),
                     severity=SeverityLevel.ERROR,
                     details=standardisable_country_columns_df.to_dict(as_series=False),
-                )
-            )
-
-        if possible_item_columns:
-            possible_item_columns_df = pl.DataFrame(possible_item_columns)
-
-            results.append(
-                ValidationResult(
-                    rule=self.name,
-                    message=self._(
-                        "jmmi_column_name_validator.possible_item_columns",
-                        count=possible_item_columns_df.height,
-                    ),
-                    severity=SeverityLevel.WARNING,
-                    details=possible_item_columns_df.to_dict(as_series=False),
                 )
             )
 

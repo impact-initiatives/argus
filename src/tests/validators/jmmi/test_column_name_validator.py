@@ -20,13 +20,13 @@ def validator():
     return JMMIColumnNameCheck()
 
 
-def create_loader_data(column: str):
+def create_loader_data(column: str, clean_data_sheet="clean_data"):
     df = pl.DataFrame({column: [1, 2, 3, 4, 5], "country": ["SSD", "SSD", "SSD", "SSD", "SSD"]})
 
     loaded_sheet = [
         DataSheetMap(
-            schema_sheet_name="clean_data",
-            data_sheet_name="clean_data",
+            schema_sheet_name=clean_data_sheet,
+            data_sheet_name=clean_data_sheet,
             column_map=[DataColumnMap(schema_column_name="country", data_column_name="country")],
             data=df,
             original_column_names=["country", column],
@@ -220,3 +220,14 @@ class TestColumnNames:
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 2
             assert results[0].details["issue"][0] == "coulmn must be removed"
+
+    def test_missing_sheet(self, validator: BaseValidator):
+        data = create_loader_data(
+            "chicken_meat_availability_in_3_months_item", clean_data_sheet="missing"
+        )
+        with patch.object(
+            JMMIColumnNameCheck, "_load_file", side_effect=make_fake_load_file(MOCK_FILE_DATA)
+        ):
+            results = validator.validate(data, dataset_config_directory=Path("./some/location"))
+            do_basic_checks(results, 1)
+            assert "clean_data" in results[0].message

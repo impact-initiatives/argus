@@ -26,7 +26,7 @@ def do_basic_checks(results: list[ValidationResult], expected: int):
     assert len(error_counter(results)) == expected
 
 
-def build_excel_data(sheet_details: dict[str, list[tuple[str, list[str | int | float]]]]):
+def build_excel_data(sheet_details: dict[str, list[tuple[str, list[str | int | float | None]]]]):
     """Create ExcelLoaderData with matching columns"""
     loaded_sheets: list[DataSheetMap] = []
     for sheet, columns in sheet_details.items():
