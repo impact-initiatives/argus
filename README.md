@@ -53,7 +53,8 @@ uv run main.py --dataset-type other_dataset "path/to/excel/file.xlsx"
    "metadata": {
       "dataset_type": str,
       "validation_date": datetime,
-      "version": str,
+      "argus_version": str,
+      "argus_schemas_version": str,
       "file_name": str
    },
 }

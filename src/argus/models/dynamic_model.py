@@ -782,10 +782,12 @@ class DynamicDataset(BaseDataset):
             return matching_columns
 
         for column in data.columns:
-            if column in settings.IGNORE_COLUMNS_FOR_VALIDATION:
+            if column in settings.IGNORE_COLUMNS_FOR_VALIDATION or data[column].dtype.is_temporal():
                 # some other columns, often from kobo, will show as unique
                 # but these are not wanted
+                # exclude temportal columns as unique column candidates
                 continue
+
             # Check if the number of unique values equals the total row count
             unique_count = data[column].n_unique()
             total_count = len(data)
