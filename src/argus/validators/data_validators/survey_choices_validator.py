@@ -95,6 +95,7 @@ class SurveyChoicesCheck(BaseValidator):
         # kobo quesiton types to find
         column_selector = r"select_one|select_multiple"
         # pre-validation
+        missing_choices: set[str] = set()
 
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data,
@@ -261,7 +262,12 @@ class SurveyChoicesCheck(BaseValidator):
             for question in filtered_questions_select_multiple:
                 column_has_difference = f"{question}_has_difference"
 
-                valid_choices: list[str] = choices_dict[survey_question_choices_dict[question]]
+                try:
+                    valid_choices: list[str] = choices_dict[survey_question_choices_dict[question]]
+                except KeyError:
+                    missing_choices.add(survey_question_choices_dict[question])
+                    filtered_questions.remove(question)
+                    continue
 
                 question_data_type = data_loaded_sheets[sheet].data.schema.get(question)
                 if question_data_type is not None:
@@ -298,7 +304,14 @@ class SurveyChoicesCheck(BaseValidator):
 
             for question in filtered_questions_select_one:
                 column_has_difference = f"{question}_has_difference"
-                valid_choices: list[str] = choices_dict[survey_question_choices_dict[question]]
+
+                try:
+                    valid_choices: list[str] = choices_dict[survey_question_choices_dict[question]]
+                except KeyError:
+                    missing_choices.add(survey_question_choices_dict[question])
+                    filtered_questions.remove(question)
+                    continue
+
                 question_data_type = data_loaded_sheets[sheet].data.schema.get(question)
                 if question_data_type is not None:
                     valid_choices = normalise_list(valid_choices, question_data_type)
@@ -380,6 +393,21 @@ class SurveyChoicesCheck(BaseValidator):
                             severity=SeverityLevel.ERROR,
                             sheet_name=sheet,
                             details=difference_df.to_dict(as_series=False),
+                        )
+                    )
+
+                if missing_choices:
+                    results.append(
+                        ValidationResult(
+                            rule=self.name,
+                            message=self._(
+                                "survey_choices_validator.missing_choices",
+                                count=len(missing_choices),
+                                survey_sheet=self.survey_sheet,
+                                choices_sheet=self.choices_sheet,
+                            ),
+                            severity=SeverityLevel.ERROR,
+                            details={"missing_choices": missing_choices},
                         )
                     )
 

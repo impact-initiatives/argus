@@ -368,3 +368,35 @@ class TestDataType:
         assert len(result[0].details["uuid"]) == 2
         assert result[1].details is not None
         assert len(result[1].details["uuid"]) == 1
+
+    def test_date_as_numeric(
+        self,
+    ):
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"]},
+            process_details={
+                "data_type_numeric_check": ["integer", "decimal"],
+                "data_type_temporal_check": ["date"],
+            },
+            process_sheet="survey",
+            process_column="type",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("question3", [31231, 45456, 789789]),
+                ],
+                "survey": [
+                    ("type", ["date"]),
+                    ("name", ["question3"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 3
+        assert "non-temporal values" in result[0].message

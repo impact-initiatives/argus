@@ -113,7 +113,10 @@ msgstr "There were {count} differences found between the '{clean_sheet}' sheet a
 
 #: src/argus/validators/data_validators/survey_choices_validator.py:368
 msgid "survey_choices_validator.invalid_values"
-msgstr "There were {count} values found in the {data_sheet} sheet that were not reflected in the {choices_sheet} sheet. Check the output for details."
+msgstr "There were {count} values found in the '{data_sheet}' sheet that were not reflected in the {choices_sheet} sheet. Check the output for details."
+
+msgid "survey_choices_validator.missing_choices"
+msgstr "There were {count} questions listed in the '{survey_sheet}' sheet as 'select one' or 'select multiple' but had no choices listed in the '{choices_sheet}' sheet. Check the output for details."
 
 #: src/argus/validators/data_validators/unique_column_validator.py:72
 msgid "unique_column_validator.non_unique"

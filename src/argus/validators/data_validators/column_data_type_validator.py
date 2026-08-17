@@ -265,14 +265,39 @@ class DataTypeCheck(BaseValidator):
                     # this is used as a filter on the dataframe
                     # if the column is numeric (likely utc) then this will
                     # currently also throw an error
+
+                    # This was split into two expressions as to_datetime threw an error for numeric
+                    # values:
+                    # incorrect_values_df = check_df.filter(pl.col("value").is_not_null()).filter(
+                    #     (check_df.schema["value"].is_numeric())
+                    #     | (
+                    #         pl.col("value")
+                    #         .str.to_datetime(strict=False, ambiguous='null')
+                    #         # .cast(pl.Datetime, strict=False)
+                    #         .is_null()
+                    #     )
+
+                    # get numeric values first
                     incorrect_values_df = check_df.filter(pl.col("value").is_not_null()).filter(
-                        (check_df.schema["value"].is_numeric())
-                        | (
-                            pl.col("value")
-                            .str.to_datetime(strict=False)
-                            # .cast(pl.Datetime, strict=False)
-                            .is_null()
-                        )
+                        check_df.schema["value"].is_numeric()
+                        | pl.col("value").cast(pl.Float64, strict=False).is_not_null()
+                    )
+
+                    # filter numeric values out then try converting to datetime to
+                    # get non datetime values
+                    incorrect_values_non_numeric_df = check_df.filter(
+                        pl.col("value").is_not_null()
+                        & (not check_df.schema["value"].is_numeric())
+                        & pl.col("value").cast(pl.Float64, strict=False).is_null()
+                    ).filter(
+                        pl.col("value")
+                        .cast(pl.String)
+                        .str.to_datetime(strict=False, ambiguous="null")
+                        .is_null()
+                    )
+
+                    incorrect_values_df = pl.concat(
+                        [incorrect_values_df, incorrect_values_non_numeric_df]
                     )
 
                     if incorrect_values_df.height > 0:
