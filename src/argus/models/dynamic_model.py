@@ -342,7 +342,7 @@ class DynamicDataset(BaseDataset):
                         if details.classification == SheetClassification.CLEAN_DATA_SHEET:
                             _ = self.schema.add_mandatory_column_to_sheet(
                                 sheet,
-                                SchemaColumnMap(standard_name="weight"),
+                                SchemaColumnMap(standard_name="weight", required=False),
                             )
 
                 # in the rare case that a child sheet only has at most one record for each parent
