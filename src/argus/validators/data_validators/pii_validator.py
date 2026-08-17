@@ -77,7 +77,7 @@ class PiiDataCheck(BaseValidator):
                             "sheet": sheet.data_sheet_name,
                             "column": item,
                             "match_type": "literal",
-                            "match_values": item,
+                            "matched_value": item,
                         }
                         for item in literal_matches
                     ]
@@ -90,7 +90,7 @@ class PiiDataCheck(BaseValidator):
                             "sheet": sheet.data_sheet_name,
                             "column": item.schema_name,
                             "match_type": "fuzzy",
-                            "match_values": str(item.matches),
+                            "matched_value": str(item.matches),
                         }
                         for item in fuzzy_matched_values
                     ]
@@ -105,7 +105,7 @@ class PiiDataCheck(BaseValidator):
                 )
                 melted_df = filtered_df.with_row_index(id_column.data_column_name).unpivot(
                     index=id_column.data_column_name,
-                    variable_name="column_name",
+                    variable_name="column",
                     value_name="value",
                 )
             else:
@@ -113,7 +113,7 @@ class PiiDataCheck(BaseValidator):
                 # unpivot to make showing the results easier
                 melted_df = filtered_df.unpivot(
                     index=id_column.data_column_name,
-                    variable_name="column_name",
+                    variable_name="column",
                     value_name="value",
                 )
 
@@ -130,7 +130,7 @@ class PiiDataCheck(BaseValidator):
 
             # format results for output
             final_df = filtered_df.unpivot(
-                index=[id_column.data_column_name, "column_name"],
+                index=[id_column.data_column_name, "column"],
                 on=match_cols,
                 variable_name="pii_type_raw",
                 value_name="matched_value",
@@ -138,9 +138,13 @@ class PiiDataCheck(BaseValidator):
             # unpivot will add extra rows so remove those that havent actually matched
             final_df = final_df.filter(pl.col("matched_value").is_not_null())
 
-            final_df = final_df.with_columns(
-                pl.col("pii_type_raw").str.replace("match_", "").alias("pii_type")
-            ).select([id_column.data_column_name, "column_name", "pii_type", "matched_value"])
+            final_df = (
+                final_df.with_columns(
+                    pl.col("pii_type_raw").str.replace("match_", "").alias("pii_type")
+                )
+                .select([id_column.data_column_name, "column", "pii_type", "matched_value"])
+                .with_columns(pl.lit(sheet.data_sheet_name).alias("sheet"))
+            )
 
             if final_df.height > 0:
                 results.append(
