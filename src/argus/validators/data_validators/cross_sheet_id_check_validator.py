@@ -128,6 +128,7 @@ class CrossSheetIdCheck(BaseValidator):
                     right_on=master_id_columns.data_column_name,
                 )
                 .to_series()
+                .unique()
                 .to_list()
             )
             if missing_ids:
