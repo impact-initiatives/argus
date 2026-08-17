@@ -63,6 +63,9 @@ class Settings(BaseSettings):
         "88",
         "888",
     ]
+    # min length a number has to be for pii phone number check
+    MIN_PHONE_LENGTH: int = 6
+
     # limits the output of each of the validation results. set below 0 to ignore.
     LIMIT_DETAILS_THRESHOLD: int = -1
 

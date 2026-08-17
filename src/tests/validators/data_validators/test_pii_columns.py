@@ -77,6 +77,14 @@ class TestPiiColumns:
         assert filtered_results[0].details["pii_type"][0] == "phone"
         assert filtered_results[0].details["matched_value"][0] == "0557456783"
 
+    def test_phone_number_too_short(self, valid_schema: BaseDatasetSchema):
+        data = build_excel_data({"raw_data": [("some_column", ["1", "2", "3", "4", "01235"])]})
+        validator = get_validator(valid_schema)
+        result = validator.validate(data)
+
+        filtered_results = error_counter(result)
+        do_basic_checks(filtered_results, 0)
+
     def test_phone_number_match_id_column(self, valid_schema: BaseDatasetSchema):
         data = build_excel_data(
             {

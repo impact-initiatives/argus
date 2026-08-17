@@ -9,7 +9,7 @@ PII_PATTERNS = {
     "email": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
     # This is limited. Currently looking for numbers starting
     # with a + or 0. Does not match decimals
-    "phone": r"^(?=.{6,}$)(\+|0)[\d\s\-\(\)\+]+$",
+    "phone": r"^(\+|0)[\d\s\-\(\)\+]+$",
 }
 
 PII_PATTERN_EXPRESSIONS = [

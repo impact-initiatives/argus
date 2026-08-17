@@ -143,6 +143,13 @@ class PiiDataCheck(BaseValidator):
                     pl.col("pii_type_raw").str.replace("match_", "").alias("pii_type")
                 )
                 .select([id_column.data_column_name, "column", "pii_type", "matched_value"])
+                .filter(
+                    (
+                        (pl.col("matched_value").str.len_chars() > settings.MIN_PHONE_LENGTH)
+                        & (pl.col("pii_type") == "phone")
+                    )
+                    | (pl.col("pii_type") != "phone")
+                )
                 .with_columns(pl.lit(sheet.data_sheet_name).alias("sheet"))
             )
 
