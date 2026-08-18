@@ -357,13 +357,19 @@ class DynamicDataset(BaseDataset):
                 if details.id_column is not None:
                     _ = self.schema.add_mandatory_column_to_sheet(
                         sheet,
-                        SchemaColumnMap(standard_name=details.id_column, is_unique=True),
+                        SchemaColumnMap(
+                            standard_name=details.id_column,
+                            is_unique=True,
+                            allow_empty_values=False,
+                        ),
                     )
 
                 if details.parent_linking_column is not None:
                     _ = self.schema.add_mandatory_column_to_sheet(
                         sheet,
-                        SchemaColumnMap(standard_name=details.parent_linking_column),
+                        SchemaColumnMap(
+                            standard_name=details.parent_linking_column, allow_empty_values=False
+                        ),
                     )
 
                 if (
