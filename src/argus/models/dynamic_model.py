@@ -465,7 +465,7 @@ class DynamicDataset(BaseDataset):
                 else:
                     # only log this for sheets we are expecting an id for
                     df_unique_cols = pl.DataFrame({"columns": unique_columns}).with_columns(
-                        pl.lit(sheet).alias("sheet")
+                        pl.lit(sheet.data_sheet_name).alias("sheet")
                     )
                     results.append(
                         ValidationResult(
@@ -808,7 +808,7 @@ class DynamicDataset(BaseDataset):
                 continue
 
             # Check if the number of unique values equals the total row count
-            unique_count = data[column].n_unique()
+            unique_count = data.n_unique(subset=[column])
             total_count = len(data)
 
             if unique_count == total_count:

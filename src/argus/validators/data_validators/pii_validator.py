@@ -167,7 +167,7 @@ class PiiDataCheck(BaseValidator):
             results.append(
                 ValidationResult(
                     rule=self.name,
-                    message=self._("pii_validator.pii_columns"),
+                    message=self._("pii_validator.pii_columns", count=len(match_records)),
                     severity=SeverityLevel.WARNING,
                     details=pl.DataFrame(match_records).to_dict(as_series=False),
                 )

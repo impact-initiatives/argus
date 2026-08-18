@@ -101,7 +101,7 @@ msgstr "The sheet '{sheet}' contains possible pii data. Check the output for det
 
 #: src/argus/validators/data_validators/pii_validator.py:148
 msgid "pii_validator.pii_columns"
-msgstr "Possible Pii columns were found. Check the output for details."
+msgstr "{count} possible Pii columns were found. Check the output for details."
 
 #: src/argus/validators/data_validators/raw_clean_cleaning_log_validator.py:346
 msgid "raw_clean_cleaning_log_validator.cleaning_log_diff"
