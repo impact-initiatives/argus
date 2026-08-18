@@ -7,7 +7,12 @@ import polars as pl
 
 from argus.locales.il8n import _
 
-from ..common.list_matching import filter_list, get_set_overlap, match_list, unique_list
+from ..common.list_matching import (
+    filter_list,
+    get_set_overlap,
+    match_list,
+    unique_list,
+)
 from ..config import settings
 from ..loaders.base_excel_loader import BaseExcelLoader
 from ..models.base import (
@@ -459,6 +464,9 @@ class DynamicDataset(BaseDataset):
                     self.sheet_matching[sheet.data_sheet_name].id_column = unique_columns[0]
                 else:
                     # only log this for sheets we are expecting an id for
+                    df_unique_cols = pl.DataFrame({"columns": unique_columns}).with_columns(
+                        pl.lit(sheet).alias("sheet")
+                    )
                     results.append(
                         ValidationResult(
                             rule=rule,
@@ -469,7 +477,7 @@ class DynamicDataset(BaseDataset):
                             ),
                             severity=SeverityLevel.ERROR,
                             sheet_name=sheet.data_sheet_name,
-                            details={"unique_columns": unique_columns},
+                            details=df_unique_cols.to_dict(as_series=False),
                         )
                     )
 
@@ -620,7 +628,7 @@ class DynamicDataset(BaseDataset):
                         }
                         for key, m in self.sheet_matching.items()
                     ]
-                ).to_dict(),
+                ).to_dict(as_series=False),
             )
         )
 
@@ -764,6 +772,17 @@ class DynamicDataset(BaseDataset):
             matching_columns: list[str] = match_list(columns, settings.COMMON_ID_COLUMN_NAMES)
             if len(matching_columns) == 1:
                 return matching_columns
+            elif len(matching_columns) > 1:
+                # get the first match from COMMON_ID_COLUMN_NAMES
+                # COMMON_ID_COLUMN_NAMES is ordered
+                return next(
+                    (
+                        [item]
+                        for item in settings.COMMON_ID_COLUMN_NAMES
+                        if item in matching_columns
+                    ),
+                    [],
+                )
 
             # look for modified columns from ID_FILTER_NAMES that are often renamed
             # that should be ignored
