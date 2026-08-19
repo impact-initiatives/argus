@@ -104,10 +104,10 @@ def create_column_difference_expression(
                     .then(
                         pl.coalesce(
                             [
-                                stripped.str.to_datetime(strict=False),
-                                stripped.str.strptime(
-                                    pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.f%z", strict=False
-                                ),
+                                # stripped.str.to_datetime(strict=False),
+                                # stripped.str.strptime(
+                                #     pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.f%z", strict=False
+                                # ),
                                 stripped.str.strptime(
                                     pl.Datetime, format="%Y-%m-%d %H:%M:%S%.f", strict=False
                                 ),

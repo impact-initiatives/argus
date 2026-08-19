@@ -493,6 +493,10 @@ class DynamicDataset(BaseDataset):
         for log_sheet in self.sorted_sheets.cleaning_log_sheets:
             match_log_sheet = self.sheet_matching[log_sheet]
 
+            best_parent = None
+            best_score = -1
+            best_linking_log_column = None
+
             for clean_sheet in self.sorted_sheets.clean_sheets:
                 match_clean_sheet = self.sheet_matching[clean_sheet]
                 if match_clean_sheet.id_column_set is None:
@@ -500,9 +504,11 @@ class DynamicDataset(BaseDataset):
                 if match_clean_sheet.id_column is None:
                     continue
 
-                best_parent = None
-                best_score = -1
-                best_linking_log_column = None
+                if len(self.sorted_sheets.cleaning_log_sheets) == 1:
+                    best_parent = None
+                    best_score = -1
+                    best_linking_log_column = None
+
 
                 # find a linking column
                 linking_log_columns = self._find_linking_column(
@@ -526,24 +532,39 @@ class DynamicDataset(BaseDataset):
                             .unique()
                             .to_list()
                         )
-                        combined_score = self._get_similarity_score(
-                            linking_log_column,
-                            log_set,
-                            match_clean_sheet.id_column,
-                            match_clean_sheet.id_column_set,
-                        )
+
+                        if len(self.sorted_sheets.cleaning_log_sheets) == 1:
+                            combined_score = self._get_similarity_score(
+                                linking_log_column,
+                                log_set,
+                                match_clean_sheet.id_column,
+                                match_clean_sheet.id_column_set,
+                            )
+                        else:
+                            combined_score = self._get_similarity_score(
+                                log_sheet,
+                                log_set,
+                                clean_sheet,
+                                match_clean_sheet.id_column_set,
+                            )
 
                         if combined_score > best_score:
                             best_score = combined_score
                             best_parent = clean_sheet
                             best_linking_log_column = linking_log_column
-                    # if there was a good enough score then assume its a parent
-                    if best_score > min_matching_score and best_parent is not None:
+
+                    if best_score > min_matching_score and best_parent is not None and len(self.sorted_sheets.cleaning_log_sheets) == 1:
                         self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
                         if best_linking_log_column is not None:
                             self.sheet_matching[log_sheet].log_id_column.append(
                                 best_linking_log_column
                             )
+            if best_score > min_matching_score and best_parent is not None and len(self.sorted_sheets.cleaning_log_sheets) > 1:
+                self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
+                if best_linking_log_column is not None:
+                    self.sheet_matching[log_sheet].log_id_column.append(
+                        best_linking_log_column
+                    )
 
         self._match_child_parent(self.sorted_sheets.raw_sheets)
         self._match_child_parent(self.sorted_sheets.clean_sheets)

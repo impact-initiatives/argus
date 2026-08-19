@@ -218,7 +218,8 @@ class DataTypeCheck(BaseValidator):
 
                     if incorrect_values_df.height > 0:
                         incorrect_values_df = incorrect_values_df.with_columns(
-                            pl.lit(sheet).alias("sheet")
+                            pl.lit(sheet).alias("sheet"),
+                            pl.lit("value should be numeric").alias("issue"),
                         )
                         results.append(
                             ValidationResult(
@@ -302,7 +303,8 @@ class DataTypeCheck(BaseValidator):
 
                     if incorrect_values_df.height > 0:
                         incorrect_values_df = incorrect_values_df.with_columns(
-                            pl.lit(sheet).alias("sheet")
+                            pl.lit(sheet).alias("sheet"),
+                            pl.lit("value should be temporal (eg: date)").alias("issue"),
                         )
                         results.append(
                             ValidationResult(
