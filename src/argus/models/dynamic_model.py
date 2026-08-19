@@ -314,6 +314,32 @@ class DynamicDataset(BaseDataset):
                 )
             )
 
+        # if an id column from a child sheet is not found in the only cleaning log sheet
+        if len(self.sorted_sheets.cleaning_log_sheets) == 1:
+            no_matched_log = [
+                {
+                    "sheet": sheet,
+                    "id_column": match_data.id_column,
+                    "issue": "column not found in"
+                    + f" {self.sorted_sheets.cleaning_log_sheets[0]}",
+                }
+                for sheet, match_data in self.sheet_matching.items()
+                if match_data.classification == SheetClassification.CLEAN_DATA_SHEET
+                and match_data.linked_cleaning_log is None
+            ]
+            if no_matched_log:
+                results.append(
+                    ValidationResult(
+                        rule=rule,
+                        message=_(
+                            "dynamic_model.build_validators.no_matched_log",
+                            count=len(no_matched_log),
+                        ),
+                        severity=SeverityLevel.ERROR,
+                        details=pl.DataFrame(no_matched_log).to_dict(as_series=False),
+                    )
+                )
+
         return results
 
     def build_schema(self) -> tuple[list[ValidationResult], str | None]:
@@ -504,11 +530,12 @@ class DynamicDataset(BaseDataset):
                 if match_clean_sheet.id_column is None:
                     continue
 
+                # one cleaning log with multiple id columns
+                # so reset this for each clean sheet
                 if len(self.sorted_sheets.cleaning_log_sheets) == 1:
                     best_parent = None
                     best_score = -1
                     best_linking_log_column = None
-
 
                 # find a linking column
                 linking_log_columns = self._find_linking_column(
@@ -534,6 +561,7 @@ class DynamicDataset(BaseDataset):
                         )
 
                         if len(self.sorted_sheets.cleaning_log_sheets) == 1:
+                            # match column names when onle one cleaning log
                             combined_score = self._get_similarity_score(
                                 linking_log_column,
                                 log_set,
@@ -541,6 +569,7 @@ class DynamicDataset(BaseDataset):
                                 match_clean_sheet.id_column_set,
                             )
                         else:
+                            # match sheet names when multiple cleaning logs
                             combined_score = self._get_similarity_score(
                                 log_sheet,
                                 log_set,
@@ -553,18 +582,26 @@ class DynamicDataset(BaseDataset):
                             best_parent = clean_sheet
                             best_linking_log_column = linking_log_column
 
-                    if best_score > min_matching_score and best_parent is not None and len(self.sorted_sheets.cleaning_log_sheets) == 1:
+                    # one cleaning log with multiple id columns
+                    if (
+                        best_score > min_matching_score
+                        and best_parent is not None
+                        and len(self.sorted_sheets.cleaning_log_sheets) == 1
+                    ):
                         self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
                         if best_linking_log_column is not None:
                             self.sheet_matching[log_sheet].log_id_column.append(
                                 best_linking_log_column
                             )
-            if best_score > min_matching_score and best_parent is not None and len(self.sorted_sheets.cleaning_log_sheets) > 1:
+            # multiple cleaning logs with one id column
+            if (
+                best_score > min_matching_score
+                and best_parent is not None
+                and len(self.sorted_sheets.cleaning_log_sheets) > 1
+            ):
                 self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
                 if best_linking_log_column is not None:
-                    self.sheet_matching[log_sheet].log_id_column.append(
-                        best_linking_log_column
-                    )
+                    self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
 
         self._match_child_parent(self.sorted_sheets.raw_sheets)
         self._match_child_parent(self.sorted_sheets.clean_sheets)
