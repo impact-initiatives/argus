@@ -1,3 +1,4 @@
+from ast import alias
 from typing import override
 
 import polars as pl
@@ -196,8 +197,10 @@ class CleaningLogToCleanCheck(BaseValidator):
                     message=self._(
                         "cleaning_log_to_clean_validator.no_changes",
                         values=", ".join(f"'{item}'" for item in schema_change_type_values.values),
-                        sheet = self.cleaning_log_sheet,
-                        column = data_loaded_columns[self.cleaning_log_change_type_column].data_column_name
+                        sheet=self.cleaning_log_sheet,
+                        column=data_loaded_columns[
+                            self.cleaning_log_change_type_column
+                        ].data_column_name,
                     ),
                     sheet_name=self.cleaning_log_sheet,
                     severity=SeverityLevel.ERROR,
@@ -216,8 +219,13 @@ class CleaningLogToCleanCheck(BaseValidator):
         multiple_change_df = (
             modified_rows_df.filter(multiple_change_mask)
             .sort(clean_log_id_columns.data_column_name)
+            .select(
+                pl.col(clean_log_id_columns.data_column_name).alias("uuid"),
+                data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+            )
             .with_columns(
                 [
+                    pl.lit(clean_log_id_columns.data_column_name).alias("uuid_column_name"),
                     pl.lit(
                         f"multiple changes for same {self.cleaning_log_question_column} and"
                         + f" {clean_log_id_columns.data_column_name}"
@@ -234,9 +242,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                     rule=self.name,
                     message=self._(
                         "cleaning_log_to_clean_validator.multiple_changes",
-                        count=multiple_change_df.select(
-                            clean_log_id_columns.data_column_name
-                        ).n_unique(),
+                        count=multiple_change_df.select(pl.col("uuid_column_name")).n_unique(),
                     ),
                     severity=SeverityLevel.WARNING,
                     details=multiple_change_df.to_dict(as_series=False),
@@ -254,7 +260,8 @@ class CleaningLogToCleanCheck(BaseValidator):
                 ).cast(pl.Utf8)
             )
             .select(
-                clean_log_id_columns.data_column_name,
+                pl.col(clean_log_id_columns.data_column_name).alias("uuid"),
+                pl.lit(clean_log_id_columns.data_column_name).alias("uuid_column_name"),
                 data_loaded_columns[self.cleaning_log_new_value_column].data_column_name,
                 data_loaded_columns[self.cleaning_log_old_value_column].data_column_name,
                 data_loaded_columns[self.cleaning_log_change_type_column].data_column_name,
@@ -509,15 +516,14 @@ class CleaningLogToCleanCheck(BaseValidator):
             # select the columns because they are all present in the merged DF
             difference_df = merged_df.select(
                 [
-                    pl.col(clean_log_id_columns.data_column_name).alias(
-                        clean_log_id_columns.data_column_name
-                    ),
+                    pl.col(clean_log_id_columns.data_column_name).alias("uuid"),
                     pl.col(data_loaded_columns[self.cleaning_log_question_column].data_column_name),
-                    pl.col(f"{self.cleaning_log_sheet}_value"),
-                    pl.col(f"{self.clean_data_sheet}_value"),
+                    pl.col(f"{self.cleaning_log_sheet}_value").alias("cleaning_log_value"),
+                    pl.col(f"{self.clean_data_sheet}_value").alias("clean_data_value"),
                 ]
             ).with_columns(
                 [
+                    pl.lit(clean_log_id_columns.data_column_name).alias("uuid_column_name"),
                     pl.lit(f"change not reflected in {self.clean_data_sheet} sheet").alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                     pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
