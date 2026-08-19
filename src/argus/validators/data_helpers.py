@@ -4,6 +4,7 @@ from argus.locales.il8n import _
 
 from ..common.list_matching import get_set_overlap, match_sheet_columns, match_sheet_columns_ids
 from ..common.schema_matching import get_matching_unique_columns
+from ..config import settings
 from ..loaders.base import DataColumnMap, DataSheetMap
 from ..loaders.base_excel_loader import ExcelLoaderData
 from ..models.base_dataset_schemas import BaseDatasetSchema
@@ -485,7 +486,7 @@ def check_id_column_overlap(
     target_sheet: str,
     data_loaded_sheets: dict[str, DataSheetMap],
     rule: str,
-    min_overlap: float = 0.9,
+    min_overlap: float = settings.MIN_COLUMN_MATCHING_OVERLAP,
 ) -> ValidationResult | None:
     """Compares the intersection of two columns and calculates their overlap.
     Useful for verifying that id columns that have been matched through their

@@ -42,6 +42,8 @@ class Settings(BaseSettings):
         "row_index",
     }
 
+    MIN_COLUMN_MATCHING_OVERLAP: float = 0.85
+
     ID_FILTER_NAMES: set[str] = {"start", "end"}  # , "_index"
 
     # these are ordered in preference in case a process using them need
