@@ -71,6 +71,9 @@ msgstr "There are questions listed in '{cleaning_log_sheet}' that were not found
 msgid "cleaning_log_to_clean_validator.differences"
 msgstr "There were {count} differences found in the '{cleaning_log_sheet}' sheet that were not reflected in the '{clean_data_sheet}' sheet. Check the output for details."
 
+msgid "cleaning_log_to_clean_validator.no_changes"
+msgstr "No changes were found in the '{sheet}' sheet. Check that changes are recorded in the '{column}' column using one of these values: {values}."
+
 #: src/argus/validators/data_validators/column_data_type_validator.py:217
 msgid "column_data_type_validator.numeric_check"
 msgstr "{count} non-numeric values were found in '{sheet}' when numeric values were expected. Check the output for details."

@@ -189,6 +189,22 @@ class CleaningLogToCleanCheck(BaseValidator):
             )
         )
 
+        if modified_rows_df.height == 0:
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "cleaning_log_to_clean_validator.no_changes",
+                        values=", ".join(f"'{item}'" for item in schema_change_type_values.values),
+                        sheet = self.cleaning_log_sheet,
+                        column = data_loaded_columns[self.cleaning_log_change_type_column].data_column_name
+                    ),
+                    sheet_name=self.cleaning_log_sheet,
+                    severity=SeverityLevel.ERROR,
+                )
+            )
+            return results
+
         # Compares the cleaning log to clean_data
 
         # records where the same question was updated more than once for the same id
