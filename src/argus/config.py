@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     # for dynamic model creation
     CLEAN_DATA_SHEET_SEARCH_TERMS: list[str] = ["clean_data"]
     CLEANING_LOG_SHEET_SEARCH_TERMS: list[str] = ["cleaning_log"]
+    DELETION_LOG_SHEET_SEARCH_TERMS: list[str] = ["deletion_log"]
     RAW_DATA_SHEET_SEARCH_TERMS: list[str] = ["raw_data"]
 
     # for the NaNCheck validator
@@ -86,6 +87,8 @@ class Settings(BaseSettings):
     FALLBACK_PROGRAMME: str = "other"
     FALLBACK_DATASET: str = "other_dataset"
     FALLBACK_LOCALE: str = "en"
+
+    DATASETS_USING_DYNAMIC_LOADING: list[str] = ["msna_dataset"]
 
     ARGUS_VERSION_FILE: str = Field(alias="ARGUS_VERSION_FILE", default="/app/argus_version.txt")
 
