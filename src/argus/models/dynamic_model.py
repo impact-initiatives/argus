@@ -11,6 +11,7 @@ from ..common.list_matching import (
     filter_list,
     get_set_overlap,
     match_list,
+    match_list_to_list,
     unique_list,
 )
 from ..config import settings
@@ -761,15 +762,17 @@ class DynamicDataset(BaseDataset):
             list[str] : returns possible name matches if found
         """
         possible_columns: list[str] = []
-        #  Exact match
-        if parent_id_column in child_columns:
-            possible_columns.append(parent_id_column)
-            # return parent_id_col
+
+        literal_matches, alt_matches = match_list_to_list(child_columns, [parent_id_column], True)
 
         # Partial match
-        alt_matches = [column for column in child_columns if parent_id_column in column]
         if alt_matches:
-            possible_columns.extend(alt_matches)
+            for alt_match in alt_matches:
+                possible_columns.append(alt_match.schema_name)
+
+        #  Exact match
+        if literal_matches:
+            possible_columns.extend(literal_matches)
 
         # check common names
         if allow_common_names:
