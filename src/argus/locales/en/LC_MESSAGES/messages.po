@@ -267,6 +267,9 @@ msgstr "No possible sheets for 'raw_data' were found."
 msgid "dynamic_model.build_validators.cleaning_log"
 msgstr "No possible sheets for 'cleaning_log' were found."
 
+msgid "dynamic_model.build_validators.deletion_log"
+msgstr "No possible sheets for 'deletion_log' were found."
+
 msgid "dynamic_model.build_validators.no_matched_log"
 msgstr "{count} sheets could not be linked to the 'cleaning_log' sheet. Check that the 'cleaning_log' sheet contains the ID columns for the for these sheets if there are cleaning log records for these sheets. Check the output for details."
 

@@ -18,7 +18,7 @@ def valid_dataset():
     """Create a UniqueColumn validator instance"""
     dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
     result = find_dataset_files(
-        dataset_config_dir, "jmmi_dataset", "en", "schema.yaml", "validators.yaml"
+        dataset_config_dir, "other_dataset", "en", "schema.yaml", "validators.yaml"
     )
     assert result is not None
     dataset: DynamicDataset = DynamicDataset(
@@ -69,6 +69,18 @@ def valid_excel_data():
         }
     )
 
+    df_deletion_log_main = pl.DataFrame(
+        {
+            "uuid": [5],
+        }
+    )
+
+    df_deletion_log_child = pl.DataFrame(
+        {
+            "child_id": [5],
+        }
+    )
+
     loaded_sheets = [
         DataSheetMap(
             schema_sheet_name="main_clean_data",
@@ -95,8 +107,16 @@ def valid_excel_data():
             auto_loaded=True,
         ),
         DataSheetMap(
-            schema_sheet_name="deletion_log",
-            data_sheet_name="deletion_log",
+            schema_sheet_name="child_deletion_log",
+            data_sheet_name="child_deletion_log",
+            data=df_deletion_log_child,
+            auto_loaded=True,
+        ),
+        DataSheetMap(
+            schema_sheet_name="main_deletion_log",
+            data_sheet_name="main_deletion_log",
+            data=df_deletion_log_main,
+            auto_loaded=True,
         ),
         DataSheetMap(
             schema_sheet_name="survey",
@@ -172,6 +192,18 @@ def invalid_excel_data():
         }
     )
 
+    df_deletion_log_main = pl.DataFrame(
+        {
+            "uuid": [5],
+        }
+    )
+
+    df_deletion_log_child = pl.DataFrame(
+        {
+            "child_id": [5],
+        }
+    )
+
     loaded_sheets = [
         DataSheetMap(
             schema_sheet_name="main_clean_data",
@@ -198,8 +230,16 @@ def invalid_excel_data():
             auto_loaded=True,
         ),
         DataSheetMap(
-            schema_sheet_name="deletion_log",
-            data_sheet_name="deletion_log",
+            schema_sheet_name="child_deletion_log",
+            data_sheet_name="child_deletion_log",
+            data=df_deletion_log_child,
+            auto_loaded=True,
+        ),
+        DataSheetMap(
+            schema_sheet_name="main_deletion_log",
+            data_sheet_name="main_deletion_log",
+            data=df_deletion_log_main,
+            auto_loaded=True,
         ),
         DataSheetMap(
             schema_sheet_name="survey",

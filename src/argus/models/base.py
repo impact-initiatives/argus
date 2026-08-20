@@ -11,6 +11,7 @@ class SheetClassification(StrEnum):
     CLEAN_DATA_SHEET = auto()
     RAW_DATA_SHEET = auto()
     CLEANING_LOG_SHEET = auto()
+    DELETION_LOG_SHEET = auto()
     UNKNOWN = auto()
 
 
@@ -24,9 +25,11 @@ class DynamicSheetMatching:
     parent_linking_column: str | None = None
     children: list[str] = field(default_factory=list)
     linked_cleaning_log: str | None = None
+    linked_deletion_log: str | None = None
     linked_raw_sheet: str | None = None
     linked_clean_sheet: str | None = None
-    log_id_column: list[str] = field(default_factory=list)
+    cleaning_log_id_column: list[str] = field(default_factory=list)
+    deletion_log_id_column: list[str] = field(default_factory=list)
 
 
 class ProcessValueMap(BaseModel):

@@ -18,6 +18,24 @@ CONSENT_COLUMN: SchemaColumnMap = SchemaColumnMap(
 )
 
 
+def create_deletion_log_sheet(standard_name: str, id_column: str | None):
+    sheet: SchemaSheetMap = SchemaSheetMap(
+        standard_name=standard_name,
+        allow_fuzzy_matching=False,
+        columns=[
+            SchemaColumnMap(
+                standard_name="reason_deletion",
+                alternate_names=["reason", "rationale", "explanation"],
+            )
+        ],
+    )
+
+    if id_column is not None:
+        _ = sheet.add_column(SchemaColumnMap(standard_name=id_column, is_unique=True))
+
+    return sheet
+
+
 def create_cleaning_log_sheet(
     standard_name: str,
     id_column: str | None,
