@@ -41,7 +41,7 @@ class ValidationPipeline:
         )
 
         if result:
-            if result["dataset_type"] != settings.FALLBACK_DATASET or result["dataset_type"] not in settings.DATASETS_USING_DYNAMIC_LOADING:
+            if result["dataset_type"] != settings.FALLBACK_DATASET:
                 dataset = BaseDataset(
                     schema_path=result[schema_file], validator_path=result[validator_file]
                 )

@@ -1,4 +1,3 @@
-from ast import alias
 from typing import override
 
 import polars as pl
