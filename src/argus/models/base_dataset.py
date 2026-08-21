@@ -24,5 +24,5 @@ class BaseDataset:
         return self.resolver.resolve_validators(self.validator_path, self.schema)
 
     @abstractmethod
-    def process_data(self) -> list[ValidationResult]:
+    def process_data(self, **kwargs: int | str | float | Path) -> list[ValidationResult]:
         pass

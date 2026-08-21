@@ -250,7 +250,7 @@ class ValidationPipeline:
                     "schema version": self.argus_schemas_version,
                 },
             )
-            results = dataset.process_data()
+            results = dataset.process_data(dataset_config_directory=dataset_config_directory)
             if results:
                 all_results.extend(results)
 

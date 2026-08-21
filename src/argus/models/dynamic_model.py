@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import override
 
 import polars as pl
+
+from argus.utils.yaml_loader import load_file
 
 from ..common.list_matching import (
     filter_list,
@@ -34,7 +36,6 @@ from ..validators.data_validators import (
     SurveyChoicesCheck,
 )
 from .base_dataset_schemas import BaseDatasetSchema
-from .defaults import CONSENT_COLUMN, create_cleaning_log_sheet, create_deletion_log_sheet
 
 
 @dataclass(slots=True)
@@ -78,11 +79,19 @@ class DynamicDataset(BaseDataset):
         self.schema: BaseDatasetSchema = self.get_schema()
         self.sheet_matching: dict[str, DynamicSheetMatching] = {}
         self.sorted_sheets: SortedSheets = SortedSheets()
+        self.schema_defaults: dict
 
     @override
-    def process_data(self) -> list[ValidationResult]:
+    def process_data(self, **kwargs: int | str | float | Path) -> list[ValidationResult]:
         """Runs all the steps."""
         all_results: list[ValidationResult] = []
+
+        # for loading the base deletion and cleaning log sheets
+        dataset_config_directory = kwargs["dataset_config_directory"]
+        if type(dataset_config_directory) is PosixPath:
+            self.schema_defaults, _ = load_file(
+                dataset_config_directory / "common/schema_defaults.yaml"
+            )
 
         results = self.match_data()
         if results:
@@ -368,27 +377,30 @@ class DynamicDataset(BaseDataset):
         for sheet, details in self.sheet_matching.items():
             if details.classification != SheetClassification.UNKNOWN:
                 # cleaning and deletion logs require other columns
-                # TODO: change this to use the default logs stored in the yaml files.
+                # load them from the base defaults.
                 if details.classification == SheetClassification.CLEANING_LOG_SHEET:
-                    new_sheet = create_cleaning_log_sheet(
-                        standard_name=sheet, id_column=None, id_column_alt=None
+                    cleaning_sheet = SchemaSheetMap.model_validate(
+                        self.schema_defaults["definitions"]["cleaning_log_base"]
                     )
-                    new_sheet.parent_linking_column = details.parent_linking_column
-                    new_sheet.parent_sheet = details.parent_sheet
-                    _ = self.schema.add_loaded_sheet(new_sheet)
+                    cleaning_sheet.standard_name = sheet
+                    cleaning_sheet.parent_linking_column = details.parent_linking_column
+                    cleaning_sheet.parent_sheet = details.parent_sheet
+
+                    _ = self.schema.add_loaded_sheet(cleaning_sheet)
 
                 elif details.classification == SheetClassification.DELETION_LOG_SHEET:
+                    deletion_sheet = SchemaSheetMap.model_validate(
+                        self.schema_defaults["definitions"]["deletion_log_base"]
+                    )
+                    deletion_sheet.standard_name = sheet
                     if len(details.log_id_column) == 1:
                         # should only be one based on current matching logic
-                        new_sheet = create_deletion_log_sheet(
-                            standard_name=sheet, id_column=details.log_id_column[0]
-                        )
-                        new_sheet.parent_linking_column = details.parent_linking_column
-                        new_sheet.parent_sheet = details.parent_sheet
-                    else:
-                        new_sheet = create_deletion_log_sheet(standard_name=sheet, id_column=None)
+                        deletion_sheet.parent_linking_column = details.parent_linking_column
+                        deletion_sheet.parent_sheet = details.parent_sheet
+                        # id column added to schema below
+                        details.id_column = details.log_id_column[0]
 
-                    _ = self.schema.add_loaded_sheet(new_sheet)
+                    _ = self.schema.add_loaded_sheet(deletion_sheet)
 
                 else:
                     new_sheet = self.schema.add_loaded_sheet(
@@ -437,9 +449,13 @@ class DynamicDataset(BaseDataset):
                     and details.parent_sheet is None
                 ):
                     consent_sheet = sheet
+                    consent_column = SchemaColumnMap.model_validate(
+                        self.schema_defaults["definitions"]["consent_column"]
+                    )
+
                     _ = self.schema.add_column_to_sheet(
                         sheet,
-                        CONSENT_COLUMN,
+                        consent_column,
                     )
                 if (
                     details.classification == SheetClassification.CLEANING_LOG_SHEET
