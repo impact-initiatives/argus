@@ -117,14 +117,15 @@ class JMMIColumnDataCheck(BaseValidator):
                 )
 
                 if invalid_country_df.height > 0:
+                    invalid_country_issue_message = self._(
+                        "jmmi_data_validator.data_issues.invalid_country.issue",
+                        column=country_loaded_column.data_column_name,
+                    )
                     invalid_country_df = invalid_country_df.with_columns(
                         [
                             pl.lit(sheet_name).alias("sheet"),
                             pl.lit(country_loaded_column.data_column_name).alias("column"),
-                            pl.lit(
-                                f"'{country_loaded_column.data_column_name}' should be 3 uppercase"
-                                + " letters"
-                            ).alias("issue"),
+                            pl.lit(invalid_country_issue_message).alias("issue"),
                         ]
                     )
 
@@ -149,6 +150,13 @@ class JMMIColumnDataCheck(BaseValidator):
                 if result is not None:
                     results.append(result)
                 else:
+                    invalid_round_issue_message = self._(
+                        "jmmi_data_validator.data_issues.invalid_round.issue",
+                        main_column=round_loaded_columns[self.round_column].data_column_name,
+                        start_column=round_loaded_columns[self.country_column].data_column_name,
+                        contain_column=round_loaded_columns[self.month_column].data_column_name,
+                        end_column=round_loaded_columns[self.year_column].data_column_name,
+                    )
                     invalid_round_df = (
                         sheet_data.data.filter(
                             # First 3 characters must equal country column
@@ -204,15 +212,7 @@ class JMMIColumnDataCheck(BaseValidator):
                             pl.lit(round_loaded_columns[self.round_column].data_column_name).alias(
                                 "column"
                             ),
-                            pl.lit(
-                                f"'{round_loaded_columns[self.round_column].data_column_name}' must"
-                                + " start with"
-                                + f" '{round_loaded_columns[self.country_column].data_column_name}'"
-                                + ", contains"
-                                + f" '{round_loaded_columns[self.month_column].data_column_name}'"
-                                + ", and end with"
-                                + f" '{round_loaded_columns[self.year_column].data_column_name}'"
-                            ).alias("issue"),
+                            pl.lit(invalid_round_issue_message).alias("issue"),
                         )
                     )
 

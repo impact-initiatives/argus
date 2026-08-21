@@ -215,6 +215,11 @@ class CleaningLogToCleanCheck(BaseValidator):
             data_loaded_columns[self.cleaning_log_question_column].data_column_name,
         ).is_duplicated()
 
+        multiple_change_issue_message = self._(
+            "cleaning_log_to_clean_validator.multiple_changes.issue",
+            question_column=self.cleaning_log_question_column,
+            id_column=clean_log_id_columns.data_column_name,
+        )
         multiple_change_df = (
             modified_rows_df.filter(multiple_change_mask)
             .sort(clean_log_id_columns.data_column_name)
@@ -225,10 +230,7 @@ class CleaningLogToCleanCheck(BaseValidator):
             .with_columns(
                 [
                     pl.lit(clean_log_id_columns.data_column_name).alias("uuid_column_name"),
-                    pl.lit(
-                        f"multiple changes for same {self.cleaning_log_question_column} and"
-                        + f" {clean_log_id_columns.data_column_name}"
-                    ).alias("issue"),
+                    pl.lit(multiple_change_issue_message).alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                     pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                 ]
@@ -249,6 +251,15 @@ class CleaningLogToCleanCheck(BaseValidator):
             )
 
         # scan cleaning log for old value = new value
+        same_value_issue_message = self._(
+            "cleaning_log_to_clean_validator.same_value.issue",
+            new_value_column=data_loaded_columns[
+                self.cleaning_log_new_value_column
+            ].data_column_name,
+            old_value_column=data_loaded_columns[
+                self.cleaning_log_old_value_column
+            ].data_column_name,
+        )
         same_value_df = (
             modified_rows_df.filter(
                 pl.col(
@@ -267,7 +278,7 @@ class CleaningLogToCleanCheck(BaseValidator):
             )
             .with_columns(
                 [
-                    pl.lit("same value for new value and old value").alias("issue"),
+                    pl.lit(same_value_issue_message).alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                 ]
             )
@@ -320,6 +331,12 @@ class CleaningLogToCleanCheck(BaseValidator):
         )
 
         # questions in cleaning log not iin clean data
+        missing_questions_issue_message = self._(
+            "cleaning_log_to_clean_validator.missing_questions.issue",
+            column=data_loaded_columns[self.cleaning_log_question_column].data_column_name,
+            sheet=self.clean_data_sheet,
+        )
+
         missing_quesitons = filter_list(
             questions, data_loaded_sheets[self.clean_data_sheet].data.columns
         )
@@ -332,10 +349,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                 }
             ).with_columns(
                 [
-                    pl.lit(
-                        f"{data_loaded_columns[self.cleaning_log_question_column].data_column_name}"
-                        + f" not found in {self.clean_data_sheet} sheet"
-                    ).alias("issue"),
+                    pl.lit(missing_questions_issue_message).alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                     pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                 ]
@@ -513,6 +527,10 @@ class CleaningLogToCleanCheck(BaseValidator):
             )
 
             # select the columns because they are all present in the merged DF
+            differences_issue_message = self._(
+                "cleaning_log_to_clean_validator.differences.issue",
+                sheet=self.clean_data_sheet,
+            )
             difference_df = merged_df.select(
                 [
                     pl.col(clean_log_id_columns.data_column_name).alias("uuid"),
@@ -523,7 +541,7 @@ class CleaningLogToCleanCheck(BaseValidator):
             ).with_columns(
                 [
                     pl.lit(clean_log_id_columns.data_column_name).alias("uuid_column_name"),
-                    pl.lit(f"change not reflected in {self.clean_data_sheet} sheet").alias("issue"),
+                    pl.lit(differences_issue_message).alias("issue"),
                     pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                     pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                 ]

@@ -5,8 +5,6 @@ from typing import override
 
 import polars as pl
 
-from argus.locales.il8n import _
-
 from ..common.list_matching import (
     filter_list,
     get_set_overlap,
@@ -16,6 +14,7 @@ from ..common.list_matching import (
 )
 from ..config import settings
 from ..loaders.base_excel_loader import BaseExcelLoader
+from ..locales.il8n import _
 from ..models.base import (
     DynamicSheetMatching,
     SchemaColumnMap,
@@ -337,8 +336,10 @@ class DynamicDataset(BaseDataset):
                 {
                     "sheet": sheet,
                     "id_column": match_data.id_column,
-                    "issue": "column not found in"
-                    + f" {self.sorted_sheets.cleaning_log_sheets[0]}",
+                    "issue": _(
+                        "dynamic_model.build_validators.no_matched_log.issue",
+                        sheet=self.sorted_sheets.cleaning_log_sheets[0],
+                    ),
                 }
                 for sheet, match_data in self.sheet_matching.items()
                 if match_data.classification == SheetClassification.CLEAN_DATA_SHEET

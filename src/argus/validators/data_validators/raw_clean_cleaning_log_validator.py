@@ -338,6 +338,10 @@ class RawToCleanToLogCheck(BaseValidator):
             # if the actual values are incorrect that should be picked up
             # by CleaningLogToCleanCheck
             if self.cleaning_log_sheet is not None:
+                difference_issue_message = self._(
+                    "raw_clean_cleaning_log_validator.cleaning_log_diff.issue",
+                    sheet=self.cleaning_log_sheet,
+                )
                 difference_df = difference_raw_to_clean_df.join(
                     other=modified_rows_df,  # pyright: ignore[reportPossiblyUnboundVariable]
                     how="anti",
@@ -348,7 +352,7 @@ class RawToCleanToLogCheck(BaseValidator):
                     ],
                 ).with_columns(
                     [
-                        pl.lit(f"change not reflected in {self.cleaning_log_sheet}").alias("issue"),
+                        pl.lit(difference_issue_message).alias("issue"),
                         pl.lit(self.cleaning_log_sheet).alias("cleaning_log sheet"),
                         pl.lit(self.clean_data_sheet).alias("clean_data sheet"),
                         pl.lit(self.raw_data_sheet).alias("raw_data sheet"),

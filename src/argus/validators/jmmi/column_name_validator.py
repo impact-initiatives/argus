@@ -185,7 +185,9 @@ class JMMIColumnNameCheck(BaseValidator):
                         "sheet": self.clean_data_sheet,
                         "column": column,
                         "value": f"prefix: {parts.country_code}, suffix: {parts.suffix}",
-                        "issue": "missing prefix or suffix",
+                        "issue": self._(
+                            "jmmi_column_name_validator.missing_prefix_or_suffix.issue"
+                        ),
                     }
                 )
 
@@ -230,7 +232,9 @@ class JMMIColumnNameCheck(BaseValidator):
                                 "sheet": self.clean_data_sheet,
                                 "column": column,
                                 "value": parts.post_suffix,
-                                "issue": "item not in goods dictionary",
+                                "issue": self._(
+                                    "jmmi_column_name_validator.items_not_in_dictionary.issue"
+                                ),
                             }
                         )
                     parts.remaining_text = parts.remaining_text.replace(parts.post_suffix + "_", "")
@@ -247,7 +251,9 @@ class JMMIColumnNameCheck(BaseValidator):
                             "sheet": self.clean_data_sheet,
                             "column": column,
                             "value": parts.remaining_text,
-                            "issue": "variable not in column name dictionary",
+                            "issue": self._(
+                                "jmmi_column_name_validator.variables_not_in_dictionary.issue"
+                            ),
                         }
                     )
 
@@ -258,7 +264,9 @@ class JMMIColumnNameCheck(BaseValidator):
                             "sheet": self.clean_data_sheet,
                             "column": column,
                             "value": parts.remaining_text,
-                            "issue": "item not in goods dictionary",
+                            "issue": self._(
+                                "jmmi_column_name_validator.items_not_in_dictionary.issue"
+                            ),
                         }
                     )
 
@@ -275,7 +283,9 @@ class JMMIColumnNameCheck(BaseValidator):
                             "column": column,
                             "value": f"standardised column: {parts.column_variable_prefix + '_'}"
                             + f"{parts.column_variable}",
-                            "issue": "column contains standardised items and variables",
+                            "issue": self._(
+                                "jmmi_column_name_validator.standardisable_columns.issue"
+                            ),
                         }
                     )
 
@@ -296,7 +306,7 @@ class JMMIColumnNameCheck(BaseValidator):
                     "sheet": self.clean_data_sheet,
                     "column": column,
                     "value": "",
-                    "issue": "coulmn must be removed",
+                    "issue": self._("jmmi_column_name_validator.invalid_columns.issue"),
                 }
             )
         for column in invalid_columns_raw_data:
@@ -305,7 +315,7 @@ class JMMIColumnNameCheck(BaseValidator):
                     "sheet": self.raw_data_sheet,
                     "column": column,
                     "value": "",
-                    "issue": "coulmn must be removed",
+                    "issue": self._("jmmi_column_name_validator.invalid_columns.issue"),
                 }
             )
 

@@ -59,17 +59,29 @@ msgstr "{count} optional sheets were not found. Check if these sheets are requir
 msgid "cleaning_log_to_clean_validator.multiple_changes"
 msgstr "{count} Ids had multiple changes for the same question. These were not validated. Check the output for details."
 
+msgid "cleaning_log_to_clean_validator.multiple_changes.issue"
+msgstr "Multiple changes for the same '{question_column}' and '{id_column}'."
+
 #: src/argus/validators/data_validators/cleaning_log_to_clean_validator.py:232
 msgid "cleaning_log_to_clean_validator.same_value"
 msgstr "{count} row/s had '{old_value_column}' equal '{new_value_column}'. Check the output for details."
+
+msgid "cleaning_log_to_clean_validator.same_value.issue"
+msgstr "Same value for '{old_value_column}' and '{new_value_column}'."
 
 #: src/argus/validators/data_validators/cleaning_log_to_clean_validator.py:281
 msgid "cleaning_log_to_clean_validator.missing_questions"
 msgstr "There are questions listed in '{cleaning_log_sheet}' that were not found in '{clean_data_sheet}'. See output for details."
 
+msgid "cleaning_log_to_clean_validator.missing_questions.issue"
+msgstr "'{column}' not found in '{sheet}' sheet."
+
 #: src/argus/validators/data_validators/cleaning_log_to_clean_validator.py:459
 msgid "cleaning_log_to_clean_validator.differences"
 msgstr "There were {count} differences found in the '{cleaning_log_sheet}' sheet that were not reflected in the '{clean_data_sheet}' sheet. Check the output for details."
+
+msgid "cleaning_log_to_clean_validator.differences.issue"
+msgstr "Change not reflected in '{sheet}' sheet."
 
 msgid "cleaning_log_to_clean_validator.no_changes"
 msgstr "No changes were found in the '{sheet}' sheet. Check that changes are recorded in the '{column}' column using one of these values: {values}."
@@ -78,9 +90,15 @@ msgstr "No changes were found in the '{sheet}' sheet. Check that changes are rec
 msgid "column_data_type_validator.numeric_check"
 msgstr "{count} non-numeric values were found in '{sheet}' when numeric values were expected. Check the output for details."
 
+msgid "column_data_type_validator.numeric_check.issue"
+msgstr "Value should be numeric."
+
 #: src/argus/validators/data_validators/column_data_type_validator.py:274
 msgid "column_data_type_validator.temporal_check"
 msgstr "{count} non-temporal values were found in '{sheet}' when temporal values were expected. Check the output for details."
+
+msgid "column_data_type_validator.temporal_check.issue"
+msgstr "Value should be temporal. Eg: a date.."
 
 #: src/argus/validators/data_validators/consent_check_validator.py:155
 msgid "consent_check_validator.consent_check"
@@ -109,6 +127,9 @@ msgstr "{count} possible Pii columns were found. Check the output for details."
 #: src/argus/validators/data_validators/raw_clean_cleaning_log_validator.py:346
 msgid "raw_clean_cleaning_log_validator.cleaning_log_diff"
 msgstr "There were {count} differences found in the '{clean_sheet}' sheet that were not reflected in the '{log_sheet}' sheet. Check the output for details."
+
+msgid "raw_clean_cleaning_log_validator.cleaning_log_diff.issue"
+msgstr "Change not reflected in '{sheet}'."
 
 #: src/argus/validators/data_validators/raw_clean_cleaning_log_validator.py:363
 msgid "raw_clean_cleaning_log_validator.diff_no_cleaning_log"
@@ -218,7 +239,6 @@ msgstr "Excel sheet '{excel_sheet}' was fuzzy matched with {count} schema sheets
 msgid "base_excel_loader.match_excel_sheet_to_schema.matching_term"
 msgstr "Excel sheet '{excel_sheet}' was matched with schema sheet '{schema_sheet}' using the matching term '{matching_term}'."
 
-
 #: src/argus/loaders/base_excel_loader.py:225
 msgid "base_excel_loader.check_duplicate_columns"
 msgstr "Excel sheet '{excel_sheet}' has {count} duplicate column names and could not be loaded. Check the output for details."
@@ -276,6 +296,9 @@ msgstr "No possible sheets for 'deletion_log' were found."
 msgid "dynamic_model.build_validators.no_matched_log"
 msgstr "{count} sheets could not be linked to the 'cleaning_log' sheet. Check that the 'cleaning_log' sheet contains the ID columns for the for these sheets if there are cleaning log records for these sheets. Check the output for details."
 
+msgid "dynamic_model.build_validators.no_matched_log.issue"
+msgstr "Column not found in '{sheet}'."
+
 #: src/argus/models/dynamic_model.py:483
 msgid "dynamic_model.match_data.id_columns"
 msgstr "Expected one unique ID column for sheet '{sheet}' but {count} were found."
@@ -291,17 +314,32 @@ msgstr "{count} raw data sheets did not match to a parent. There should only be 
 msgid "jmmi_column_name_validator.items_not_in_dictionary"
 msgstr "{count} columns listed items not in the JMMI goods dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."
 
+msgid "jmmi_column_name_validator.items_not_in_dictionary.issue"
+msgstr "Item not in goods dictionary."
+
 msgid "jmmi_column_name_validator.missing_prefix_or_suffix"
 msgstr "{count} country specific variables were missing either a prefix or suffix. Check the output for details."
+
+msgid "jmmi_column_name_validator.missing_prefix_or_suffix.issue"
+msgstr "Missing prefix or suffix."
 
 msgid "jmmi_column_name_validator.variables_not_in_dictionary"
 msgstr "{count} columns contained variables not in the JMMI standard column names dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."
 
+msgid "jmmi_column_name_validator.variables_not_in_dictionary.issue"
+msgstr "Variable not in column name dictionary."
+
 msgid "jmmi_column_name_validator.invalid_columns"
 msgstr "{count} columns were found that should not be included in the dataset. Check the output for details."
 
+msgid "jmmi_column_name_validator.invalid_columns.issue"
+msgstr "Column must be removed."
+
 msgid "jmmi_column_name_validator.standardisable_columns"
 msgstr "{count} country specific columns were found that are standardisable. Check the output for details."
+
+msgid "jmmi_column_name_validator.standardisable_columns.issue"
+msgstr "Column contains standardised items and variables."
 
 msgid "jmmi_meb_analysis_validator.suffix_check"
 msgstr "{no_expected} columns in the sheet '{sheet}' were expected to contain columns with the '{expected_suffix}' suffix but only {count} were found."
@@ -323,6 +361,12 @@ msgstr "{count} non-numeric columns in the sheet '{sheet}' had a numeric suffix.
 
 msgid "jmmi_data_validator.data_issues"
 msgstr "{count} column values failed validation. Check output for details."
+
+msgid "jmmi_data_validator.data_issues.invalid_country.issue"
+msgstr "{column} should be 3 uppercase letters."
+
+msgid "jmmi_data_validator.data_issues.invalid_round.issue"
+msgstr "'{main_column}' must start with '{start_column}', contain '{contain_column}' and end with '{end_column}'."
 
 msgid "empty_column_validator.empty_values"
 msgstr "{count} column values were empty when values were expected. Check output for details."
