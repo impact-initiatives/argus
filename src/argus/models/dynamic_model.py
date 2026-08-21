@@ -367,18 +367,18 @@ class DynamicDataset(BaseDataset):
                     _ = self.schema.add_loaded_sheet(new_sheet)
 
                 elif details.classification == SheetClassification.DELETION_LOG_SHEET:
-                    if len(details.deletion_log_id_column) == 1:
+                    if len(details.log_id_column) == 1:
                         # should only be one based on current matching logic
                         new_sheet = create_deletion_log_sheet(
-                            standard_name=sheet, id_column=details.deletion_log_id_column[0]
+                            standard_name=sheet, id_column=details.log_id_column[0]
                         )
                     else:
                         new_sheet = create_deletion_log_sheet(standard_name=sheet, id_column=None)
 
                     _ = self.schema.add_loaded_sheet(new_sheet)
 
-                    if len(details.deletion_log_id_column) > 1:
-                        for column in details.deletion_log_id_column:
+                    if len(details.log_id_column) > 1:
+                        for column in details.log_id_column:
                             _ = self.schema.add_mandatory_column_to_sheet(
                                 sheet, SchemaColumnMap(standard_name=column)
                             )
@@ -436,9 +436,9 @@ class DynamicDataset(BaseDataset):
                     )
                 if (
                     details.classification == SheetClassification.CLEANING_LOG_SHEET
-                    and details.cleaning_log_id_column
+                    and details.log_id_column
                 ):
-                    for column in details.cleaning_log_id_column:
+                    for column in details.log_id_column:
                         _ = self.schema.add_mandatory_column_to_sheet(
                             sheet, SchemaColumnMap(standard_name=column)
                         )
@@ -488,6 +488,7 @@ class DynamicDataset(BaseDataset):
                 id_column=None,
                 id_column_set=None,
                 parent_sheet=None,
+                base_sheet_name=sheet.data_sheet_name,
             )
 
             # categorise the sheet based on simple name matching
@@ -497,18 +498,38 @@ class DynamicDataset(BaseDataset):
                 self.sheet_matching[
                     sheet.data_sheet_name
                 ].classification = SheetClassification.CLEANING_LOG_SHEET
+                self.sheet_matching[
+                    sheet.data_sheet_name
+                ].base_sheet_name = self._remove_match_term(
+                    sheet.data_sheet_name, settings.CLEANING_LOG_SHEET_SEARCH_TERMS
+                )
             elif any(term in sheet_name_lower for term in settings.CLEAN_DATA_SHEET_SEARCH_TERMS):
                 self.sheet_matching[
                     sheet.data_sheet_name
                 ].classification = SheetClassification.CLEAN_DATA_SHEET
+                self.sheet_matching[
+                    sheet.data_sheet_name
+                ].base_sheet_name = self._remove_match_term(
+                    sheet.data_sheet_name, settings.CLEAN_DATA_SHEET_SEARCH_TERMS
+                )
             elif any(term in sheet_name_lower for term in settings.RAW_DATA_SHEET_SEARCH_TERMS):
                 self.sheet_matching[
                     sheet.data_sheet_name
                 ].classification = SheetClassification.RAW_DATA_SHEET
+                self.sheet_matching[
+                    sheet.data_sheet_name
+                ].base_sheet_name = self._remove_match_term(
+                    sheet.data_sheet_name, settings.RAW_DATA_SHEET_SEARCH_TERMS
+                )
             elif any(term in sheet_name_lower for term in settings.DELETION_LOG_SHEET_SEARCH_TERMS):
                 self.sheet_matching[
                     sheet.data_sheet_name
                 ].classification = SheetClassification.DELETION_LOG_SHEET
+                self.sheet_matching[
+                    sheet.data_sheet_name
+                ].base_sheet_name = self._remove_match_term(
+                    sheet.data_sheet_name, settings.DELETION_LOG_SHEET_SEARCH_TERMS
+                )
 
             # try to find a unique column
             # store the set of unique values for later processing
@@ -578,9 +599,9 @@ class DynamicDataset(BaseDataset):
                     continue
 
                 combined_score = self._get_similarity_score(
-                    clean_sheet,
+                    match_clean_sheet.base_sheet_name,
                     match_clean_sheet.id_column_set,
-                    raw_sheet,
+                    match_raw_sheet.base_sheet_name,
                     match_raw_sheet.id_column_set,
                 )
 
@@ -660,7 +681,7 @@ class DynamicDataset(BaseDataset):
                             "linked_raw_sheet": m.linked_raw_sheet,
                             "linked_clean_sheet": m.linked_clean_sheet,
                             "linked_deletion_log": m.linked_deletion_log,
-                            "log_id_column": m.cleaning_log_id_column,
+                            "log_id_column": m.log_id_column,
                         }
                         for key, m in self.sheet_matching.items()
                     ]
@@ -771,18 +792,11 @@ class DynamicDataset(BaseDataset):
                 to be considered.
         """
         for log_sheet in log_sheets:
-            match_log_sheet = self.sheet_matching[log_sheet]
+            match_sheet_log = self.sheet_matching[log_sheet]
 
             best_parent = None
             best_score = -1
             best_linking_log_column = None
-
-            log_sheet_basic = self._remove_match_term(
-                log_sheet,
-                settings.CLEANING_LOG_SHEET_SEARCH_TERMS
-                if log_type == "cleaning"
-                else settings.DELETION_LOG_SHEET_SEARCH_TERMS,
-            )
 
             for match_sheet in match_sheets:
                 match_sheet_data = self.sheet_matching[match_sheet]
@@ -800,13 +814,13 @@ class DynamicDataset(BaseDataset):
 
                 # find a linking column
                 linking_log_columns = self._find_linking_column(
-                    match_log_sheet.data.columns, match_sheet_data.id_column, True
+                    match_sheet_log.data.columns, match_sheet_data.id_column, True
                 )
                 # compare names and overlapping id values
                 if linking_log_columns:
                     for linking_log_column in linking_log_columns:
                         log_set = set(
-                            match_log_sheet.data.select(linking_log_column)
+                            match_sheet_log.data.select(linking_log_column)
                             .filter(
                                 pl.any_horizontal(
                                     pl.col(linking_log_column)
@@ -833,14 +847,9 @@ class DynamicDataset(BaseDataset):
                             # match sheet names when multiple logs
                             # remove search terms from sheet names to improve matching
                             combined_score = self._get_similarity_score(
-                                log_sheet_basic,
+                                match_sheet_log.base_sheet_name,
                                 log_set,
-                                self._remove_match_term(
-                                    match_sheet,
-                                    settings.CLEAN_DATA_SHEET_SEARCH_TERMS
-                                    if log_type == "cleaning"
-                                    else settings.RAW_DATA_SHEET_SEARCH_TERMS,
-                                ),
+                                match_sheet_data.base_sheet_name,
                                 match_sheet_data.id_column_set,
                             )
 
@@ -858,13 +867,13 @@ class DynamicDataset(BaseDataset):
                         if log_type == "cleaning":
                             self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
                             if best_linking_log_column is not None:
-                                self.sheet_matching[log_sheet].cleaning_log_id_column.append(
+                                self.sheet_matching[log_sheet].log_id_column.append(
                                     best_linking_log_column
                                 )
                         elif log_type == "deletion":
                             self.sheet_matching[best_parent].linked_deletion_log = log_sheet
                             if best_linking_log_column is not None:
-                                self.sheet_matching[log_sheet].deletion_log_id_column.append(
+                                self.sheet_matching[log_sheet].log_id_column.append(
                                     best_linking_log_column
                                 )
 
@@ -873,15 +882,11 @@ class DynamicDataset(BaseDataset):
                 if log_type == "cleaning":
                     self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
                     if best_linking_log_column is not None:
-                        self.sheet_matching[log_sheet].cleaning_log_id_column.append(
-                            best_linking_log_column
-                        )
+                        self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
                 elif log_type == "deletion":
                     self.sheet_matching[best_parent].linked_deletion_log = log_sheet
                     if best_linking_log_column is not None:
-                        self.sheet_matching[log_sheet].deletion_log_id_column.append(
-                            best_linking_log_column
-                        )
+                        self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
 
     def _match_child_parent(self, sheets: list[str]):
         """Attempt to match child parent sheets based on finding possible

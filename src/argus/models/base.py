@@ -18,6 +18,7 @@ class SheetClassification(StrEnum):
 @dataclass(slots=True)
 class DynamicSheetMatching:
     data: pl.DataFrame
+    base_sheet_name: str
     id_column: str | None
     id_column_set: set[str | int | float] | None
     classification: SheetClassification = SheetClassification.UNKNOWN
@@ -28,8 +29,7 @@ class DynamicSheetMatching:
     linked_deletion_log: str | None = None
     linked_raw_sheet: str | None = None
     linked_clean_sheet: str | None = None
-    cleaning_log_id_column: list[str] = field(default_factory=list)
-    deletion_log_id_column: list[str] = field(default_factory=list)
+    log_id_column: list[str] = field(default_factory=list)
 
 
 class ProcessValueMap(BaseModel):
