@@ -22,6 +22,13 @@ class CrossSheetRowSumCheck(BaseValidator):
         """
         Checks to see if master_sheet rows equals the sum of child sheet rows
 
+        Note:
+        this can produce "incorrect" counts if there is only one deletion log
+        for multiple clean/raw sheets when a child record has been deleted
+        but the parent record was not deleted.
+
+        Ideally, each clean/raw data sheet will have its own deletion log.
+
         Args:
             master_sheet (str, optional): Sheet to make sure that child ids are in.
                 Defaults to 'raw_data'.

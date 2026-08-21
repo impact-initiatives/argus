@@ -189,6 +189,14 @@ class DynamicDataset(BaseDataset):
                     rowsum_sheets.append(details.linked_clean_sheet)
                     if details.linked_deletion_log is not None:
                         rowsum_sheets.append(details.linked_deletion_log)
+                    elif (
+                        len(self.sorted_sheets.deletion_log_sheets) == 1
+                        and len(self.sorted_sheets.raw_sheets) > 1
+                    ):
+                        # one deletion log for multiple sheets. likely to produce
+                        # incorrect calculations if child sheets have removed records
+                        # but the parent was not removed.
+                        master_deletion_log = self.sorted_sheets.deletion_log_sheets[0]
 
                     id_check_sheets.append(details.linked_clean_sheet)
                     clean_sheet = self.sheet_matching[details.linked_clean_sheet]
