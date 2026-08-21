@@ -46,10 +46,36 @@ class ExcelLoader(BaseExcelLoader):
             excel_sheet = excel_file.load_sheet(
                 sheet_name, whitespace_as_null=True, skip_whitespace_tail_rows=True
             )
+
             # check hidden sheets
             if excel_sheet.visible != "visible":
                 data.hidden_sheets.append(sheet_name)
             data_df: pl.DataFrame = excel_sheet.to_polars()
+
+            # check un-named columns (likely should be removed)
+            # remove these as they will cause problems
+            unnamed_columns = [
+                {"sheet": sheet_name, "column_index": column.index, "name": column.name}
+                for column in excel_sheet.selected_columns
+                if "__UNNAMED__" in column.name
+            ]
+
+            if unnamed_columns:
+                data_df = data_df.drop([column["name"] for column in unnamed_columns])
+                results.append(
+                    ValidationResult(
+                        rule="Unnamed sheet columns",
+                        message=self._(
+                            "excel_loader._load_excel_sheet.unnamed_columns",
+                            sheet=sheet_name,
+                            count=len(unnamed_columns),
+                        ),
+                        severity=SeverityLevel.WARNING,
+                        sheet_name=sheet_name,
+                        details=pl.DataFrame(unnamed_columns).to_dict(as_series=False),
+                    )
+                )
+
             result = self.check_duplicate_columns(data_df.columns, excel_sheet_name)
             # if there are duplicates then the rename function below will fail
             if result is not None:
@@ -70,7 +96,9 @@ class ExcelLoader(BaseExcelLoader):
                             data=data_df,
                             column_map=column_matches,
                             original_column_names=[
-                                item.name for item in excel_sheet.available_columns()
+                                item.name
+                                for item in excel_sheet.available_columns()
+                                if item.name not in [column["name"] for column in unnamed_columns]
                             ],
                         )
                     )
@@ -98,7 +126,9 @@ class ExcelLoader(BaseExcelLoader):
                         data=data_df,
                         auto_loaded=True,
                         original_column_names=[
-                            item.name for item in excel_sheet.available_columns()
+                            item.name
+                            for item in excel_sheet.available_columns()
+                            if item.name not in [column["name"] for column in unnamed_columns]
                         ],
                     )
                 )

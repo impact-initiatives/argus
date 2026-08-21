@@ -227,6 +227,9 @@ msgstr "Excel sheet '{excel_sheet}' has {count} duplicate column names and could
 msgid "excel_loader._load_excel_sheet.sheet_not_found"
 msgstr "The schema sheet {sheet} was not found."
 
+msgid "excel_loader._load_excel_sheet.unnamed_columns"
+msgstr "{count} columns in the excel sheet {sheet} did not have names and were removed. Check if these coulmns should be part of the dataset or not. Check the output for details."
+
 #: src/argus/loaders/excel_loader.py:214
 msgid "excel_loader.load.multiple_matches"
 msgstr "Excel sheet {sheet} was matched with multiple schema sheets. This will lead to validation errors about excel sheets not being found."
