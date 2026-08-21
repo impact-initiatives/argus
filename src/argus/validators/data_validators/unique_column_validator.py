@@ -34,6 +34,7 @@ class UniqueColumnCheck(BaseValidator):
         duplicated_ids_df: pl.DataFrame = pl.DataFrame(
             [
                 pl.Series("value", [], dtype=pl.String),
+                pl.Series("count", [], dtype=pl.UInt32),
                 pl.Series("sheet", [], dtype=pl.String),
                 pl.Series("column", [], dtype=pl.String),
             ]
@@ -58,9 +59,11 @@ class UniqueColumnCheck(BaseValidator):
                             )
                             .select(pl.col(mapped_column.data_column_name).cast(pl.String))
                             .rename({mapped_column.data_column_name: "value"})
+                            .group_by("value")
+                            .having(pl.len() > 1)
+                            .len("count")
                         )
-                        unique_duplicated_row_count = unique_duplicated_rows_df.n_unique()
-                        if unique_duplicated_row_count > 0:
+                        if unique_duplicated_rows_df.height > 0:
                             # store for output
                             unique_duplicated_rows_df = (
                                 unique_duplicated_rows_df.unique().with_columns(
@@ -78,7 +81,7 @@ class UniqueColumnCheck(BaseValidator):
                                         "unique_column_validator.non_unique",
                                         column=mapped_column.data_column_name,
                                         sheet=loaded_sheet_info.data_sheet_name,
-                                        count=unique_duplicated_row_count,
+                                        count=unique_duplicated_rows_df.height,
                                     ),
                                     severity=SeverityLevel.ERROR,
                                     sheet_name=loaded_sheet_info.schema_sheet_name,
