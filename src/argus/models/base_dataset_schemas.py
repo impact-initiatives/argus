@@ -129,7 +129,7 @@ class BaseDatasetSchema(BaseModel):
             self.schema_unloaded_sheets.append(sheet)
             return sheet
 
-    def add_mandatory_column_to_sheet(
+    def add_column_to_sheet(
         self, sheet_standard_name: str, column: SchemaColumnMap
     ) -> SchemaSheetMap | None:
         """Adds a mandatory column to an existing sheet.

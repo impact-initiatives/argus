@@ -366,6 +366,8 @@ class DynamicDataset(BaseDataset):
         results: list[ValidationResult] = []
         for sheet, details in self.sheet_matching.items():
             if details.classification != SheetClassification.UNKNOWN:
+                # cleaning and deletion logs require other columns
+                # TODO: change this to use the default logs stored in the yaml files.
                 if details.classification == SheetClassification.CLEANING_LOG_SHEET:
                     new_sheet = create_cleaning_log_sheet(
                         standard_name=sheet, id_column=None, id_column_alt=None
@@ -387,12 +389,6 @@ class DynamicDataset(BaseDataset):
 
                     _ = self.schema.add_loaded_sheet(new_sheet)
 
-                    if len(details.log_id_column) > 1:
-                        for column in details.log_id_column:
-                            _ = self.schema.add_mandatory_column_to_sheet(
-                                sheet, SchemaColumnMap(standard_name=column)
-                            )
-
                 else:
                     new_sheet = self.schema.add_loaded_sheet(
                         SchemaSheetMap(
@@ -403,12 +399,12 @@ class DynamicDataset(BaseDataset):
                     )
                     # columns always required for parent clean/raw sheets
                     if details.parent_sheet is None:
-                        _ = self.schema.add_mandatory_column_to_sheet(
+                        _ = self.schema.add_column_to_sheet(
                             sheet,
                             SchemaColumnMap(standard_name="_id", allow_fuzzy_matching=False),
                         )
                         if details.classification == SheetClassification.CLEAN_DATA_SHEET:
-                            _ = self.schema.add_mandatory_column_to_sheet(
+                            _ = self.schema.add_column_to_sheet(
                                 sheet,
                                 SchemaColumnMap(standard_name="weight", required=False),
                             )
@@ -418,7 +414,7 @@ class DynamicDataset(BaseDataset):
                 # i dont think this matters as far as the validation goes(?) but it should
                 # be the first column created so that the unique flag is set
                 if details.id_column is not None:
-                    _ = self.schema.add_mandatory_column_to_sheet(
+                    _ = self.schema.add_column_to_sheet(
                         sheet,
                         SchemaColumnMap(
                             standard_name=details.id_column,
@@ -428,7 +424,7 @@ class DynamicDataset(BaseDataset):
                     )
 
                 if details.parent_linking_column is not None:
-                    _ = self.schema.add_mandatory_column_to_sheet(
+                    _ = self.schema.add_column_to_sheet(
                         sheet,
                         SchemaColumnMap(
                             standard_name=details.parent_linking_column, allow_empty_values=False
@@ -440,16 +436,18 @@ class DynamicDataset(BaseDataset):
                     and details.parent_sheet is None
                 ):
                     consent_sheet = sheet
-                    _ = self.schema.add_mandatory_column_to_sheet(
+                    _ = self.schema.add_column_to_sheet(
                         sheet,
                         CONSENT_COLUMN,
                     )
                 if (
                     details.classification == SheetClassification.CLEANING_LOG_SHEET
-                    and details.log_id_column
-                ):
+                    or details.classification == SheetClassification.DELETION_LOG_SHEET
+                ) and details.log_id_column:
+                    # its possible some of these columns will have been added already
+                    # but if they have they will not be added again
                     for column in details.log_id_column:
-                        _ = self.schema.add_mandatory_column_to_sheet(
+                        _ = self.schema.add_column_to_sheet(
                             sheet, SchemaColumnMap(standard_name=column)
                         )
 
