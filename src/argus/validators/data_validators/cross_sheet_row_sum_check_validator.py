@@ -23,7 +23,7 @@ class CrossSheetRowSumCheck(BaseValidator):
         Checks to see if master_sheet rows equals the sum of child sheet rows
 
         Note:
-        this can produce "incorrect" counts if there is only one deletion log
+        Using master_deletion_log can produce "incorrect" counts if there is only one deletion log
         for multiple clean/raw sheets when a child record has been deleted
         but the parent record was not deleted.
 

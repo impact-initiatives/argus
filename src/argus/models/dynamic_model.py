@@ -380,6 +380,8 @@ class DynamicDataset(BaseDataset):
                         new_sheet = create_deletion_log_sheet(
                             standard_name=sheet, id_column=details.log_id_column[0]
                         )
+                        new_sheet.parent_linking_column = details.parent_linking_column
+                        new_sheet.parent_sheet = details.parent_sheet
                     else:
                         new_sheet = create_deletion_log_sheet(standard_name=sheet, id_column=None)
 
@@ -500,7 +502,7 @@ class DynamicDataset(BaseDataset):
             )
 
             # categorise the sheet based on simple name matching
-            # deletion logs are part of the DynamicDatasetSchema already
+            # remove the matching term to make linking the sheets easier and more accurate
             sheet_name_lower = sheet.data_sheet_name.lower()
             if any(term in sheet_name_lower for term in settings.CLEANING_LOG_SHEET_SEARCH_TERMS):
                 self.sheet_matching[
@@ -546,6 +548,7 @@ class DynamicDataset(BaseDataset):
             if self.sheet_matching[sheet.data_sheet_name].classification in [
                 SheetClassification.CLEAN_DATA_SHEET,
                 SheetClassification.RAW_DATA_SHEET,
+                # SheetClassification.DELETION_LOG_SHEET
             ]:
                 unique_columns: list[str] = self._find_unique_column(sheet.data)
                 if len(unique_columns) == 1:
@@ -871,30 +874,36 @@ class DynamicDataset(BaseDataset):
                         best_score > min_matching_score
                         and best_parent is not None
                         and len(log_sheets) == 1
+                        and best_linking_log_column is not None
                     ):
+                        self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
+                        if len(match_sheets) == 1:
+                            self.sheet_matching[log_sheet].parent_sheet = best_parent
+                            self.sheet_matching[
+                                log_sheet
+                            ].parent_linking_column = best_linking_log_column
+
                         if log_type == "cleaning":
                             self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
-                            if best_linking_log_column is not None:
-                                self.sheet_matching[log_sheet].log_id_column.append(
-                                    best_linking_log_column
-                                )
                         elif log_type == "deletion":
                             self.sheet_matching[best_parent].linked_deletion_log = log_sheet
-                            if best_linking_log_column is not None:
-                                self.sheet_matching[log_sheet].log_id_column.append(
-                                    best_linking_log_column
-                                )
 
             # multiple cleaning logs with one id column
-            if best_score > min_matching_score and best_parent is not None and len(log_sheets) > 1:
+            if (
+                best_score > min_matching_score
+                and best_parent is not None
+                and len(log_sheets) > 1
+                and best_linking_log_column is not None
+            ):
+                self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
+                self.sheet_matching[log_sheet].parent_sheet = best_parent
+                self.sheet_matching[log_sheet].parent_linking_column = best_linking_log_column
+
                 if log_type == "cleaning":
                     self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
-                    if best_linking_log_column is not None:
-                        self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
+
                 elif log_type == "deletion":
                     self.sheet_matching[best_parent].linked_deletion_log = log_sheet
-                    if best_linking_log_column is not None:
-                        self.sheet_matching[log_sheet].log_id_column.append(best_linking_log_column)
 
     def _match_child_parent(self, sheets: list[str]):
         """Attempt to match child parent sheets based on finding possible

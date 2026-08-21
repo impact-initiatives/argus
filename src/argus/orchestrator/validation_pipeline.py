@@ -254,6 +254,15 @@ class ValidationPipeline:
             if results:
                 all_results.extend(results)
 
+            all_results.append(
+                ValidationResult(
+                    rule="ExcelFileLoading",
+                    message="Data mapping after dynamic data matching.",
+                    severity=SeverityLevel.ADMIN_INFO,
+                    details=self._excel_loader_to_dict(dataset.data),
+                )
+            )
+
         all_results.append(
             ValidationResult(
                 rule="Schema Details",
