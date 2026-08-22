@@ -374,33 +374,38 @@ class DynamicDataset(BaseDataset):
         consent_sheet = None
         loader = BaseExcelLoader()
         results: list[ValidationResult] = []
+        cleaning_sheet_base = SchemaSheetMap.model_validate(
+            self.schema_defaults["definitions"]["cleaning_log_base"]
+        )
+        deletion_sheet_base = SchemaSheetMap.model_validate(
+            self.schema_defaults["definitions"]["deletion_log_base"]
+        )
+
         for sheet, details in self.sheet_matching.items():
             if details.classification != SheetClassification.UNKNOWN:
                 # cleaning and deletion logs require other columns
                 # load them from the base defaults.
-                if details.classification == SheetClassification.CLEANING_LOG_SHEET:
-                    cleaning_sheet = SchemaSheetMap.model_validate(
-                        self.schema_defaults["definitions"]["cleaning_log_base"]
-                    )
-                    cleaning_sheet.standard_name = sheet
-                    cleaning_sheet.parent_linking_column = details.parent_linking_column
-                    cleaning_sheet.parent_sheet = details.parent_sheet
+                if (
+                    details.classification == SheetClassification.CLEANING_LOG_SHEET
+                    or details.classification == SheetClassification.DELETION_LOG_SHEET
+                ):
+                    new_sheet = None
+                    if details.classification == SheetClassification.CLEANING_LOG_SHEET:
+                        new_sheet = cleaning_sheet_base.model_copy(deep=True)
 
-                    _ = self.schema.add_loaded_sheet(cleaning_sheet)
+                    elif details.classification == SheetClassification.DELETION_LOG_SHEET:
+                        new_sheet = deletion_sheet_base.model_copy(deep=True)
+                        if len(details.log_id_column) == 1:
+                            # should only be one based on current matching logic
+                            # id column added to schema below
+                            details.id_column = details.log_id_column[0]
 
-                elif details.classification == SheetClassification.DELETION_LOG_SHEET:
-                    deletion_sheet = SchemaSheetMap.model_validate(
-                        self.schema_defaults["definitions"]["deletion_log_base"]
-                    )
-                    deletion_sheet.standard_name = sheet
-                    if len(details.log_id_column) == 1:
-                        # should only be one based on current matching logic
-                        deletion_sheet.parent_linking_column = details.parent_linking_column
-                        deletion_sheet.parent_sheet = details.parent_sheet
-                        # id column added to schema below
-                        details.id_column = details.log_id_column[0]
+                    assert new_sheet is not None
+                    new_sheet.standard_name = sheet
+                    new_sheet.parent_linking_column = details.parent_linking_column
+                    new_sheet.parent_sheet = details.parent_sheet
 
-                    _ = self.schema.add_loaded_sheet(deletion_sheet)
+                    _ = self.schema.add_loaded_sheet(new_sheet)
 
                 else:
                     new_sheet = self.schema.add_loaded_sheet(
