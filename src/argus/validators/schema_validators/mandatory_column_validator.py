@@ -44,7 +44,10 @@ class MandatoryColumnsCheck(BaseValidator):
             return result
 
         def _process_results(
-            results: list[ValidationResult], severity: SeverityLevel, message_key: str
+            results: list[ValidationResult],
+            severity: SeverityLevel,
+            message_key: str,
+            item_type: str,
         ):
             column_dict: list[dict[str, str]] = []
 
@@ -77,7 +80,7 @@ class MandatoryColumnsCheck(BaseValidator):
             column_df = pl.DataFrame(column_dict).to_dict(as_series=False)
             result = ValidationResult(
                 rule=self.name,
-                message=self._(message_key, count=len(results)),
+                message=self._(message_key, count=len(results), item_type=item_type),
                 severity=severity,
                 details=column_df,
             )
@@ -112,8 +115,9 @@ class MandatoryColumnsCheck(BaseValidator):
                 ValidationResult(
                     rule=self.name,
                     message=self._(
-                        "mandatory_column_validator.missing_sheets",
+                        "mandatory_column_validator.missing_item",
                         count=len(result.details["missing_sheets"]),
+                        item_type="sheets",
                     ),
                     severity=SeverityLevel.ERROR,
                     details=result.details,
@@ -146,7 +150,8 @@ class MandatoryColumnsCheck(BaseValidator):
             result = _process_results(
                 results_required,
                 SeverityLevel.ERROR,
-                "mandatory_column_validator.mandatory_columns",
+                "mandatory_column_validator.missing_item",
+                item_type="columns",
             )
             results.append(result)
 
@@ -155,6 +160,7 @@ class MandatoryColumnsCheck(BaseValidator):
                 results_optional,
                 SeverityLevel.WARNING,
                 "mandatory_column_validator.optional_columns",
+                item_type="",
             )
             results.append(result)
 

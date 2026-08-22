@@ -173,7 +173,10 @@ class DynamicDataset(BaseDataset):
                         ValidationResult(
                             rule=rule,
                             message=_(
-                                "dynamic_model.build_validators.RawToCleanToLog", sheet=sheet
+                                "dynamic_model.build_validators.missing_sheet",
+                                sheet=sheet,
+                                sheet_type="raw",
+                                rule="RawToCleanToLog",
                             ),
                             severity=SeverityLevel.ERROR,
                             sheet_name=sheet,
@@ -222,7 +225,10 @@ class DynamicDataset(BaseDataset):
                         ValidationResult(
                             rule=rule,
                             message=_(
-                                "dynamic_model.build_validators.CrossSheetRowSumCheck", sheet=sheet
+                                "dynamic_model.build_validators.missing_sheet",
+                                sheet=sheet,
+                                sheet_type="sheets",
+                                rule="CrossSheetRowSumCheck",
                             ),
                             severity=SeverityLevel.ERROR,
                             sheet_name=sheet,
@@ -256,7 +262,10 @@ class DynamicDataset(BaseDataset):
                         ValidationResult(
                             rule=rule,
                             message=_(
-                                "dynamic_model.build_validators.CrossSheetIdCheck", sheet=sheet
+                                "dynamic_model.build_validators.missing_sheet",
+                                sheet=sheet,
+                                sheet_type="clean",
+                                rule="CrossSheetIdCheck",
                             ),
                             severity=SeverityLevel.ERROR,
                             sheet_name=sheet,
@@ -270,7 +279,10 @@ class DynamicDataset(BaseDataset):
                     ValidationResult(
                         rule=rule,
                         message=_(
-                            "dynamic_model.build_validators.ConsentCheck", sheet=consent_sheet
+                            "dynamic_model.build_validators.missing_sheet",
+                            sheet=consent_sheet,
+                            sheet_type="clean",
+                            rule="ConsentCheck",
                         ),
                         severity=SeverityLevel.ERROR,
                         sheet_name=consent_sheet,
@@ -308,7 +320,7 @@ class DynamicDataset(BaseDataset):
             results.append(
                 ValidationResult(
                     rule=rule,
-                    message=_("dynamic_model.build_validators.clean_data"),
+                    message=_("dynamic_model.build_validators.no_sheets", sheet="clean_data"),
                     severity=SeverityLevel.ERROR,
                 )
             )
@@ -317,7 +329,7 @@ class DynamicDataset(BaseDataset):
             results.append(
                 ValidationResult(
                     rule=rule,
-                    message=_("dynamic_model.build_validators.raw_data"),
+                    message=_("dynamic_model.build_validators.no_sheets", sheet="raw_data"),
                     severity=SeverityLevel.ERROR,
                 )
             )
@@ -325,7 +337,7 @@ class DynamicDataset(BaseDataset):
             results.append(
                 ValidationResult(
                     rule=rule,
-                    message=_("dynamic_model.build_validators.cleaning_log"),
+                    message=_("dynamic_model.build_validators.no_sheets", sheet="cleaning_log"),
                     severity=SeverityLevel.ERROR,
                 )
             )
@@ -334,7 +346,7 @@ class DynamicDataset(BaseDataset):
             results.append(
                 ValidationResult(
                     rule=rule,
-                    message=_("dynamic_model.build_validators.deletion_log"),
+                    message=_("dynamic_model.build_validators.no_sheets", sheet="deletion_log"),
                     severity=SeverityLevel.ERROR,
                 )
             )
@@ -586,7 +598,7 @@ class DynamicDataset(BaseDataset):
                         ValidationResult(
                             rule=rule,
                             message=_(
-                                "dynamic_model.match_data.id_columns",
+                                "helpers.number_unique_columns",
                                 sheet=sheet.data_sheet_name,
                                 count=len(unique_columns),
                             ),
@@ -666,8 +678,9 @@ class DynamicDataset(BaseDataset):
                     ValidationResult(
                         rule=rule,
                         message=_(
-                            "dynamic_model.match_data.clean_data_parents",
+                            "dynamic_model.match_data.no_parent",
                             count=len(clean_parent_sheets),
+                            sheet_type="clean_data",
                         ),
                         severity=SeverityLevel.ERROR,
                         details={"Unmatched clean data sheets": clean_parent_sheets},
@@ -686,8 +699,9 @@ class DynamicDataset(BaseDataset):
                     ValidationResult(
                         rule=rule,
                         message=_(
-                            "dynamic_model.match_data.raw_data_parents",
+                            "dynamic_model.match_data.no_parent",
                             count=len(raw_parent_sheets),
+                            sheet_type="raw_data",
                         ),
                         severity=SeverityLevel.ERROR,
                         details={"Unmatched raw data sheets": raw_parent_sheets},

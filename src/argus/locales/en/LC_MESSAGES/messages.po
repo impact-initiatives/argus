@@ -33,15 +33,11 @@ msgstr "{count} sheets had column names that appear to be labels instead of vari
 msgid "duplicate_sheet_match_validator.duplicate_sheets"
 msgstr "{count} sheets were mapped to the same schema sheet. There should be at most a 1-1 mapping for each sheet."
 
-#: src/argus/validators/schema_validators/mandatory_column_validator.py:79
-msgid "mandatory_column_validator.mandatory_columns"
-msgstr "{count} excel columns were expected but not found. See output for details."
-
 msgid "mandatory_column_validator.optional_columns"
-msgstr "{count} excel columns were optional but not found. Check to see if these columns should be included. See output for details."
+msgstr "{count} data columns were optional but not found. Check to see if these columns should be included. See output for details."
 
-msgid "mandatory_column_validator.missing_sheets"
-msgstr "{count} excel sheets were expected but not found. See output for details."
+msgid "mandatory_column_validator.missing_item"
+msgstr "{count} data {item_type} were expected but not found. See output for details."
 
 #: src/argus/validators/schema_validators/missing_sheets_validator.py:56
 msgid "missing_sheets_validator.missing_sheets"
@@ -146,36 +142,24 @@ msgstr "There were {count} questions listed in the '{survey_sheet}' sheet as 'se
 msgid "unique_column_validator.non_unique"
 msgstr "For column '{column}' in sheet '{sheet}' {count} non unique values were found. This column should contain unique values. Check the output for details."
 
-#: src/argus/validators/schema_helpers.py:25
-msgid "schema_helpers.get_schema_id_column"
-msgstr "Expected 1 ID column for sheet '{sheet}' but {count} were found."
-
 #: src/argus/validators/schema_helpers.py:64
 msgid "schema_helpers.get_schema_process_value"
 msgstr "process_values were expected for column '{column}' for process '{process}' but were not found."
 
 #: src/argus/validators/schema_helpers.py:132
-msgid "schema_helpers.get_schema_loaded_column"
-msgstr "A column for '{column}' in schema sheet '{sheet}' is expected."
+msgid "helpers.get_loaded_column"
+msgstr "A column for '{column}' in {sheet_type} sheet '{sheet}' is expected."
 
 #: src/argus/validators/schema_helpers.py:192
-msgid "schema_helpers.get_schema_loaded_sheet"
-msgstr "A schema sheet for '{sheet}' is expected."
+msgid "helpers.get_loaded_sheet"
+msgstr "A {sheet_type} sheet for '{sheet}' is expected."
 
 msgid "schema_helpers.missing_items"
 msgstr "{count} {item_source} {item_type} were expected but not found. Check the output for details."
 
-#: src/argus/validators/data_helpers.py:30
-msgid "data_helpers.get_data_loaded_sheet"
-msgstr "An excel sheet for '{sheet}' is expected."
-
-#: src/argus/validators/data_helpers.py:88
-msgid "data_helpers.get_data_loaded_column"
-msgstr "A column for '{column}' in sheet '{sheet}' is expected."
-
 #: src/argus/validators/data_helpers.py:156
-msgid "data_helpers.get_data_sheet_id.no_unique"
-msgstr "A unique id column for '{sheet}' is expected but none were found."
+msgid "helpers.number_unique_columns"
+msgstr "Expected one unique id column for '{sheet}' but {count} were found."
 
 #: src/argus/validators/data_helpers.py:166
 msgid "data_helpers.get_data_sheet_id.count_invalid"
@@ -243,10 +227,6 @@ msgstr "Excel sheet '{excel_sheet}' was matched with schema sheet '{schema_sheet
 msgid "base_excel_loader.check_duplicate_columns"
 msgstr "Excel sheet '{excel_sheet}' has {count} duplicate column names and could not be loaded. Check the output for details."
 
-#: src/argus/loaders/excel_loader.py:166
-msgid "excel_loader._load_excel_sheet.sheet_not_found"
-msgstr "The schema sheet {sheet} was not found."
-
 msgid "excel_loader._load_excel_sheet.unnamed_columns"
 msgstr "{count} columns in the excel sheet {sheet} did not have names and were removed. Check if these coulmns should be part of the dataset or not. Check the output for details."
 
@@ -259,39 +239,16 @@ msgid "dynamic_model.build_validators.CleaningLogToClean"
 msgstr "No linked cleaning log data sheet for the sheet '{sheet}' was found so the 'CleaningLogToClean' and 'CrossSheetIdCheck' rules could not be run."
 
 #: src/argus/models/dynamic_model.py:180
-msgid "dynamic_model.build_validators.RawToCleanToLog"
-msgstr "No linked raw sheet for the sheet '{sheet}' was found so the 'RawToCleanToLog' rule could not be run."
-
-#: src/argus/models/dynamic_model.py:223
-msgid "dynamic_model.build_validators.CrossSheetRowSumCheck"
-msgstr "No linked sheets for the raw data sheet '{sheet}' was found so the 'CrossSheetRowSumCheck' rule could not be run."
-
-#: src/argus/models/dynamic_model.py:258
-msgid "dynamic_model.build_validators.CrossSheetIdCheck"
-msgstr "No linked clean sheet for the raw data sheet '{sheet}' was found so the 'CrossSheetIdCheck' rule could not be run."
-
-#: src/argus/models/dynamic_model.py:273
-msgid "dynamic_model.build_validators.ConsentCheck"
-msgstr "No linked clean sheet for the raw data sheet '{sheet}' was found so the 'ConsentCheck' rule could not be run."
+msgid "dynamic_model.build_validators.missing_sheet"
+msgstr "No linked {sheet_type} sheet for the sheet '{sheet}' was found so the '{rule}' rule could not be run."
 
 #: src/argus/models/dynamic_model.py:293
 msgid "dynamic_model.build_validators.consent"
 msgstr "No possible raw_data sheet for 'consent' column was found."
 
 #: src/argus/models/dynamic_model.py:310
-msgid "dynamic_model.build_validators.clean_data"
-msgstr "No possible sheets for 'clean_data' were found."
-
-#: src/argus/models/dynamic_model.py:320
-msgid "dynamic_model.build_validators.raw_data"
-msgstr "No possible sheets for 'raw_data' were found."
-
-#: src/argus/models/dynamic_model.py:329
-msgid "dynamic_model.build_validators.cleaning_log"
-msgstr "No possible sheets for 'cleaning_log' were found."
-
-msgid "dynamic_model.build_validators.deletion_log"
-msgstr "No possible sheets for 'deletion_log' were found."
+msgid "dynamic_model.build_validators.no_sheets"
+msgstr "No possible sheets for '{sheet}' were found."
 
 msgid "dynamic_model.build_validators.no_matched_log"
 msgstr "{count} sheets could not be linked to the 'cleaning_log' sheet. Check that the 'cleaning_log' sheet contains the ID columns for the for these sheets if there are cleaning log records for these sheets. Check the output for details."
@@ -299,17 +256,9 @@ msgstr "{count} sheets could not be linked to the 'cleaning_log' sheet. Check th
 msgid "dynamic_model.build_validators.no_matched_log.issue"
 msgstr "Column not found in '{sheet}'."
 
-#: src/argus/models/dynamic_model.py:483
-msgid "dynamic_model.match_data.id_columns"
-msgstr "Expected one unique ID column for sheet '{sheet}' but {count} were found."
-
 #: src/argus/models/dynamic_model.py:601
-msgid "dynamic_model.match_data.clean_data_parents"
-msgstr "{count} clean data sheets did not match to a parent. There should only be 1 clean data sheet without a parent."
-
-#: src/argus/models/dynamic_model.py:619
-msgid "dynamic_model.match_data.raw_data_parents"
-msgstr "{count} raw data sheets did not match to a parent. There should only be 1 raw data sheet without a parent."
+msgid "dynamic_model.match_data.no_parent"
+msgstr "{count} {sheet_type} sheets did not match to a parent. There should only be 1 {sheet_type} sheet without a parent."
 
 msgid "jmmi_column_name_validator.items_not_in_dictionary"
 msgstr "{count} columns listed items not in the JMMI goods dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."

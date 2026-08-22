@@ -110,8 +110,7 @@ class ExcelLoader(BaseExcelLoader):
                         ValidationResult(
                             rule="Getting Schema Sheet",
                             message=self._(
-                                "excel_loader._load_excel_sheet.sheet_not_found",
-                                sheet=l_mapped_name,
+                                "helpers.get_loaded_sheet", sheet=l_mapped_name, sheet_type="excel"
                             ),
                             severity=SeverityLevel.ERROR,
                             sheet_name=l_mapped_name,
