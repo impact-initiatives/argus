@@ -48,7 +48,7 @@ class Settings(BaseSettings):
 
     # these are ordered in preference in case a process using them need
     # to preference them
-    COMMON_ID_COLUMN_NAMES: set[str] = {"person_id", "_uuid", "uuid"}  # ,
+    COMMON_ID_COLUMN_NAMES: list[str] = ["person_id", "_uuid", "uuid"]  # ,
 
     # for dynamic model creation
     CLEAN_DATA_SHEET_SEARCH_TERMS: list[str] = ["clean_data"]

@@ -140,7 +140,7 @@ msgstr "There were {count} questions listed in the '{survey_sheet}' sheet as 'se
 
 #: src/argus/validators/data_validators/unique_column_validator.py:72
 msgid "unique_column_validator.non_unique"
-msgstr "For column '{column}' in sheet '{sheet}' {count} non unique values were found. This column should contain unique values. Check the output for details."
+msgstr "{count} non unique values were found for columns that should contain unique values. Check the output for details."
 
 #: src/argus/validators/schema_helpers.py:64
 msgid "schema_helpers.get_schema_process_value"

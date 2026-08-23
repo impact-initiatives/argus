@@ -3,6 +3,7 @@ from typing import cast, override
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
+from ...models.base import SheetClassification
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 
@@ -40,6 +41,8 @@ class EmptyColumnCheck(BaseValidator):
         )
 
         for sheet in self.schema.schema_loaded_sheets:
+            if sheet.classification == SheetClassification.RAW_DATA_SHEET:
+                continue
             not_empty_columns = sheet.get_not_empty_columns()
             if not not_empty_columns:
                 continue

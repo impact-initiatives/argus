@@ -12,6 +12,7 @@ class SheetClassification(StrEnum):
     RAW_DATA_SHEET = auto()
     CLEANING_LOG_SHEET = auto()
     DELETION_LOG_SHEET = auto()
+    OTHER = auto()
     UNKNOWN = auto()
 
 
@@ -72,6 +73,7 @@ class SchemaColumnMap(BaseModel):
 
 class SchemaSheetMap(BaseModel):
     standard_name: str
+    classification: SheetClassification = SheetClassification.OTHER
     alternate_names: list[str] = Field(default=[])
     columns: list[SchemaColumnMap] = Field(default=[])
     parent_sheet: str | None = None

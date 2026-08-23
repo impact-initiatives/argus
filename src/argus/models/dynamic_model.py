@@ -416,6 +416,7 @@ class DynamicDataset(BaseDataset):
                     new_sheet.standard_name = sheet
                     new_sheet.parent_linking_column = details.parent_linking_column
                     new_sheet.parent_sheet = details.parent_sheet
+                    new_sheet.classification = details.classification
 
                     _ = self.schema.add_loaded_sheet(new_sheet)
 
@@ -425,6 +426,7 @@ class DynamicDataset(BaseDataset):
                             standard_name=sheet,
                             parent_sheet=details.parent_sheet,
                             parent_linking_column=details.parent_linking_column,
+                            classification=details.classification,
                         )
                     )
                     # columns always required for parent clean/raw sheets

@@ -3,6 +3,7 @@ from typing import override
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
+from ...models.base import SheetClassification
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
 
@@ -41,6 +42,8 @@ class UniqueColumnCheck(BaseValidator):
         )
 
         for sheet in self.schema.schema_loaded_sheets:
+            if sheet.classification == SheetClassification.RAW_DATA_SHEET:
+                continue
             unique_columns = sheet.get_unique_columns()
             if not unique_columns:
                 continue
@@ -74,19 +77,17 @@ class UniqueColumnCheck(BaseValidator):
                             duplicated_ids_df = pl.concat(
                                 [duplicated_ids_df, unique_duplicated_rows_df]
                             )
-                            results.append(
-                                ValidationResult(
-                                    rule=self.name,
-                                    message=self._(
-                                        "unique_column_validator.non_unique",
-                                        column=mapped_column.data_column_name,
-                                        sheet=loaded_sheet_info.data_sheet_name,
-                                        count=unique_duplicated_rows_df.height,
-                                    ),
-                                    severity=SeverityLevel.ERROR,
-                                    sheet_name=loaded_sheet_info.schema_sheet_name,
-                                    details=unique_duplicated_rows_df.to_dict(as_series=False),
-                                )
-                            )
+        if duplicated_ids_df.height > 0:
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "unique_column_validator.non_unique",
+                        count=duplicated_ids_df.select(pl.col("count").sum()).item(),
+                    ),
+                    severity=SeverityLevel.ERROR,
+                    details=duplicated_ids_df.to_dict(as_series=False),
+                )
+            )
 
         return results
