@@ -100,9 +100,10 @@ def get_schema_loaded_column(
         result = ValidationResult(
             rule=rule,
             message=_(
-                "schema_helpers.get_schema_loaded_column",
+                "helpers.get_loaded_column",
                 column=column,
                 sheet=loaded_sheet.standard_name,
+                sheet_type="schema",
             ),
             severity=SeverityLevel.ERROR,
             sheet_name=loaded_sheet.standard_name,
@@ -161,7 +162,7 @@ def get_schema_loaded_sheet(
     if not schema_sheet:
         result = ValidationResult(
             rule=rule,
-            message=_("schema_helpers.get_schema_loaded_sheet", sheet=sheet_name),
+            message=_("helpers.get_loaded_sheet", sheet=sheet_name, sheet_type="schema"),
             severity=SeverityLevel.ERROR,
             sheet_name=sheet_name,
         )

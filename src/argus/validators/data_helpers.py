@@ -33,7 +33,7 @@ def get_data_loaded_sheet(
     if loaded_sheet is None:
         result = ValidationResult(
             rule=rule,
-            message=_("data_helpers.get_data_loaded_sheet", sheet=sheet_name),
+            message=_("helpers.get_loaded_sheet", sheet=sheet_name, sheet_type="data"),
             severity=SeverityLevel.ERROR,
             sheet_name=sheet_name,
         )
@@ -96,9 +96,10 @@ def get_data_loaded_column(
         result = ValidationResult(
             rule=rule,
             message=_(
-                "data_helpers.get_data_loaded_column",
+                "helpers.get_loaded_column",
                 column=column_name,
                 sheet=loaded_sheet.data_sheet_name,
+                sheet_type="data",
             ),
             severity=SeverityLevel.ERROR,
             sheet_name=loaded_sheet.data_sheet_name,
@@ -165,9 +166,7 @@ def get_data_sheet_id(
     if not ids:
         result = ValidationResult(
             rule=rule,
-            message=_(
-                "data_helpers.get_data_sheet_id.no_unique", sheet=loaded_sheet.data_sheet_name
-            ),
+            message=_("helpers.number_unique_columns", sheet=loaded_sheet.data_sheet_name, count=0),
             severity=SeverityLevel.ERROR,
             sheet_name=loaded_sheet.data_sheet_name,
         )
