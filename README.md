@@ -141,14 +141,14 @@ locale = "en"
 dataset_type = "other_dataset"
 schema_file = "schema.yaml"
 validator_file = "validators.yaml"
-dataset_config_dir = download_config("config_directory")
+dataset_config_directory = download_config("config_directory")
 result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
 
 dataset = DynamicDataset(schema_path=result[schema_file], validator_path=result[validator_file])
 loader = ExcelLoader(dataset.schema)
 dataset.data, loader_results = loader.load("path/to/excel/file.xlsx", load_all_sheets=True)
 
-dataset.process_data()
+dataset.process_data(dataset_config_directory = dataset_config_directory)
 
 # run the required rule setting the appropriate parameters
 results = CrossSheetIdCheck(dataset.schema).validate(dataset.data)
