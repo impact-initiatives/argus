@@ -5,8 +5,6 @@ from typing import override
 
 import polars as pl
 
-from argus.utils.yaml_loader import load_file
-
 from ..common.list_matching import (
     filter_list,
     get_set_overlap,
@@ -25,6 +23,7 @@ from ..models.base import (
     SheetClassification,
 )
 from ..models.base_dataset import BaseDataset
+from ..utils.yaml_loader import load_file
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
 from ..validators.data_validators import (
     CleaningLogToCleanCheck,

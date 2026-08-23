@@ -148,7 +148,7 @@ dataset = DynamicDataset(schema_path=result[schema_file], validator_path=result[
 loader = ExcelLoader(dataset.schema)
 dataset.data, loader_results = loader.load("path/to/excel/file.xlsx", load_all_sheets=True)
 
-dataset.process_data(dataset_config_directory = dataset_config_directory)
+dataset.process_data(dataset_config_directory=dataset_config_directory)
 
 # run the required rule setting the appropriate parameters
 results = CrossSheetIdCheck(dataset.schema).validate(dataset.data)

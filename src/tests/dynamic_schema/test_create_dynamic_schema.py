@@ -1,3 +1,5 @@
+from pathlib import Path, PosixPath
+
 import polars as pl
 import pytest
 
@@ -16,15 +18,18 @@ from tests.helpers import admin_error_counter, error_counter
 @pytest.fixture
 def valid_dataset():
     """Create a UniqueColumn validator instance"""
-    dataset_config_dir = download_config(settings.DATASET_CONFIG_DIR)
+    dataset_config_directory = download_config(settings.DATASET_CONFIG_DIR)
     result = find_dataset_files(
-        dataset_config_dir, "other_dataset", "en", "schema.yaml", "validators.yaml"
+        dataset_config_directory, "other_dataset", "en", "schema.yaml", "validators.yaml"
     )
     assert result is not None
     dataset: DynamicDataset = DynamicDataset(
         schema_path=result["schema.yaml"], validator_path=result["validators.yaml"]
     )
-    return dataset
+    return {
+        "dataset": dataset,
+        "dataset_config_directory": dataset_config_directory,
+    }
 
 
 @pytest.fixture
@@ -273,16 +278,25 @@ def invalid_excel_data():
 
 
 class TestDynamicSchema:
-    def test_valid_data(self, valid_dataset: DynamicDataset, valid_excel_data: ExcelLoaderData):
-        valid_dataset.data = valid_excel_data
-        results = valid_dataset.process_data()
+    def test_valid_data(
+        self,
+        valid_dataset: dict[str, DynamicDataset | Path],
+        valid_excel_data: ExcelLoaderData,
+    ):
+
+        dataset = valid_dataset["dataset"]
+        dataset_config_directory = valid_dataset["dataset_config_directory"]
+        assert isinstance(dataset_config_directory, PosixPath)
+        assert isinstance(dataset, DynamicDataset)
+        dataset.data = valid_excel_data
+        results = dataset.process_data(dataset_config_directory=dataset_config_directory)
         assert len(error_counter(results)) == 0
 
         assert (
             len(
                 [
                     item
-                    for item, value in valid_dataset.sheet_matching.items()
+                    for item, value in dataset.sheet_matching.items()
                     if value.classification == SheetClassification.CLEANING_LOG_SHEET
                 ]
             )
@@ -293,7 +307,7 @@ class TestDynamicSchema:
             len(
                 [
                     item
-                    for item, value in valid_dataset.sheet_matching.items()
+                    for item, value in dataset.sheet_matching.items()
                     if value.classification == SheetClassification.CLEAN_DATA_SHEET
                 ]
             )
@@ -304,16 +318,23 @@ class TestDynamicSchema:
             len(
                 [
                     item
-                    for item, value in valid_dataset.sheet_matching.items()
+                    for item, value in dataset.sheet_matching.items()
                     if value.classification == SheetClassification.RAW_DATA_SHEET
                 ]
             )
             == 2
         )
 
-    def test_invalid_data(self, valid_dataset: DynamicDataset, invalid_excel_data: ExcelLoaderData):
-        valid_dataset.data = invalid_excel_data
-        results = valid_dataset.process_data()
+    def test_invalid_data(
+        self, valid_dataset: dict[str, DynamicDataset | Path], invalid_excel_data: ExcelLoaderData
+    ):
+        dataset = valid_dataset["dataset"]
+        dataset_config_directory = valid_dataset["dataset_config_directory"]
+        assert isinstance(dataset_config_directory, PosixPath)
+        assert isinstance(dataset, DynamicDataset)
+
+        dataset.data = invalid_excel_data
+        results = dataset.process_data(dataset_config_directory=dataset_config_directory)
         assert len(admin_error_counter(results)) == 0
         assert len(error_counter(results)) == 8
 
@@ -321,7 +342,7 @@ class TestDynamicSchema:
             len(
                 [
                     item
-                    for item, value in valid_dataset.sheet_matching.items()
+                    for item, value in dataset.sheet_matching.items()
                     if value.classification == SheetClassification.CLEANING_LOG_SHEET
                 ]
             )
@@ -332,7 +353,7 @@ class TestDynamicSchema:
             len(
                 [
                     item
-                    for item, value in valid_dataset.sheet_matching.items()
+                    for item, value in dataset.sheet_matching.items()
                     if value.classification == SheetClassification.CLEAN_DATA_SHEET
                 ]
             )
@@ -343,7 +364,7 @@ class TestDynamicSchema:
             len(
                 [
                     item
-                    for item, value in valid_dataset.sheet_matching.items()
+                    for item, value in dataset.sheet_matching.items()
                     if value.classification == SheetClassification.RAW_DATA_SHEET
                 ]
             )
