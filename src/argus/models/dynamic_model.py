@@ -11,6 +11,7 @@ from ..common.list_matching import (
     filter_list,
     get_set_overlap,
     match_list,
+    match_list_by_terms,
     match_list_to_list,
     unique_list,
 )
@@ -797,6 +798,11 @@ class DynamicDataset(BaseDataset):
         if literal_matches:
             possible_columns.extend(literal_matches)
 
+        # more leniant partial match (ignores length difference)
+        alt_matches = [column for column in child_columns if parent_id_column in column]
+        if alt_matches:
+            possible_columns.extend(alt_matches)
+
         # check common names
         if allow_common_names:
             matching_columns: list[str] = match_list(child_columns, settings.COMMON_ID_COLUMN_NAMES)
@@ -993,6 +999,11 @@ class DynamicDataset(BaseDataset):
     def _find_unique_column(self, data: pl.DataFrame) -> list[str]:
         """Attempts to find unique columns in a dataframe
 
+        Note: completely and partially unique columns used to be treated differently
+        but this was merged as sometimes the expected column had duplicates which
+        then resulted in the incorrect column being selected. Instead, additional
+        preferential additional matching is performed.
+
         Args:
             data (pl.DataFrame): dataframe to check
 
@@ -1000,10 +1011,11 @@ class DynamicDataset(BaseDataset):
             list[str] : returns unique columns if found
         """
         unique_columns: list[str] = []
-        majority_unique_columns: list[str] = []
 
         def _additional_matching(columns: list[str]) -> list[str]:
             """Perform some additional checks to find possible unique columns"""
+
+            # exact matches
             matching_columns: list[str] = match_list(columns, settings.COMMON_ID_COLUMN_NAMES)
             if len(matching_columns) == 1:
                 return matching_columns
@@ -1018,6 +1030,15 @@ class DynamicDataset(BaseDataset):
                     ),
                     [],
                 )
+
+            # partial match
+            matching_columns = match_list_by_terms(columns, settings.COMMON_ID_COLUMN_NAMES)
+            if len(matching_columns) == 1:
+                return matching_columns
+            elif len(matching_columns) > 1:
+                # get the first match
+                # COMMON_ID_COLUMN_NAMES is ordered so get the first match
+                return [matching_columns[0]]
 
             # look for modified columns from ID_FILTER_NAMES that are often renamed
             # that should be ignored
@@ -1046,27 +1067,18 @@ class DynamicDataset(BaseDataset):
             unique_count = data.n_unique(subset=[column])
             total_count = len(data)
 
-            if unique_count == total_count:
-                unique_columns.append(column)
-            elif unique_count / total_count > 0.95:
+            if unique_count == total_count or unique_count / total_count > 0.95:
                 # sometimes there can be a few duplicates
                 # (which there shouldnt and will cause validation errors later)
                 # but still try to find the correct column if no unique ones are found
-                majority_unique_columns.append(column)
+                unique_columns.append(column)
 
         unique_columns_len = len(unique_columns)
-        majority_unique_columns_len = len(majority_unique_columns)
         if unique_columns_len == 1:
             return unique_columns
         elif unique_columns_len > 1:
             # try to match to common names if more than one match
             alt_match = _additional_matching(unique_columns)
-            if alt_match:
-                return alt_match
-        elif majority_unique_columns_len == 1:
-            return majority_unique_columns
-        elif majority_unique_columns_len > 1:
-            alt_match = _additional_matching(majority_unique_columns)
             if alt_match:
                 return alt_match
 

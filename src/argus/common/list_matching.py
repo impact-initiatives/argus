@@ -95,6 +95,14 @@ def filter_list(source: list[str], target: list[str] | set[str]) -> list[str]:
     return [item for item in source if item not in target]
 
 
+def match_list_by_terms(source: list[str] | set[str], target: list[str] | set[str]):
+    """Returns items in source that contain an item in target in their value
+    Eg: if source = "edu_person_id" and target = "person_id", edu_person_id
+    would be returned
+    """
+    return unique_list([column for term in target for column in source if term in column])
+
+
 def filter_list_with_tolerance(
     source: str,
     target: list[str],
