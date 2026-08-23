@@ -246,6 +246,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                         count=multiple_change_df.select(pl.col("uuid_column_name")).n_unique(),
                     ),
                     severity=SeverityLevel.WARNING,
+                    sheet_name=self.cleaning_log_sheet,
                     details=multiple_change_df.to_dict(as_series=False),
                 )
             )
@@ -298,6 +299,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                         ].data_column_name,
                     ),
                     severity=SeverityLevel.WARNING,
+                    sheet_name=self.cleaning_log_sheet,
                     details=same_value_df.to_dict(as_series=False),
                 )
             )
@@ -365,6 +367,7 @@ class CleaningLogToCleanCheck(BaseValidator):
                         clean_data_sheet=data_loaded_sheets[self.clean_data_sheet].data_sheet_name,
                     ),
                     severity=SeverityLevel.WARNING,
+                    sheet_name=self.cleaning_log_sheet,
                     details=missing_quesitons_df.to_dict(as_series=False),
                 )
             )
