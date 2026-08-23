@@ -171,7 +171,8 @@ class TestColumnNames:
             assert results[0].details is not None
             assert len(results[0].details["sheet"]) == 1
             assert (
-                results[0].details["issue"][0] == "Column contains standardised items and variables."
+                results[0].details["issue"][0]
+                == "Column contains standardised items and variables."
             )
 
     def test_valid_unknown_item(self, validator: BaseValidator):
