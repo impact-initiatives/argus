@@ -29,7 +29,12 @@ def normalise_list(items: list[str], dtype: DataType) -> list[str]:
 
 
 def create_column_difference_expression(
-    column_1: str, column_2: str, data_type_1: DataType, data_type_2: DataType
+    column_1: str,
+    column_2: str,
+    data_type_1: DataType,
+    data_type_2: DataType,
+    float_precision_dp: int = 3,
+    datetime_precision: str = "1m",
 ) -> Expr:
     """Builds an expression that compares the values between two dataframe columns.
 
@@ -48,6 +53,8 @@ def create_column_difference_expression(
         column_2 (str): name of second column to compare
         data_type_1 (DataType): data type of first column
         data_type_2 (DataType): data type of second column
+        float_precision_dp (int): rounds float values to n decimal places
+        datetime_precision (str): truncates datetimes to the provided level
     """
 
     def normalize_to_null_if_empty(expression: Expr, data_type: DataType) -> Expr:
@@ -86,7 +93,7 @@ def create_column_difference_expression(
         # use the str.to_datetime logic here if strings are involved
         def to_dt(column_expr: Expr, column_dtype: DataType):
             if column_dtype.is_temporal():
-                return column_expr.cast(pl.Datetime, strict=False)
+                return column_expr.cast(pl.Datetime, strict=False).dt.truncate(datetime_precision)
             elif column_dtype == pl.String:
                 # need to do additional checking when string. Sometimes the datetimes are
                 # in the correct format but the column datatype is string. One common problem is
@@ -129,10 +136,10 @@ def create_column_difference_expression(
                     .otherwise(None)
                 )
 
-                return parsed_formats
+                return parsed_formats.dt.truncate(datetime_precision)
             else:
                 # if a float (possibly utc) or other is returned
-                return pl.lit(None).cast(pl.Datetime)
+                return pl.lit(None).cast(pl.Datetime).dt.truncate(datetime_precision)
 
         column_1_normalised = to_dt(pl.col(column_1), data_type_1)
         column_2_normalised = to_dt(pl.col(column_2), data_type_2)
@@ -189,8 +196,9 @@ def create_column_difference_expression(
                     .then(None)
                     .otherwise(pl.col(column))
                     .cast(pl.Float64, strict=False)
+                    .round(float_precision_dp)
                 )
-                .otherwise(pl.col(column).cast(pl.Float64, strict=False))
+                .otherwise(pl.col(column).cast(pl.Float64, strict=False).round(float_precision_dp))
             )
 
         column_1_normalised = cast_to_float(column_1, data_type_1)
