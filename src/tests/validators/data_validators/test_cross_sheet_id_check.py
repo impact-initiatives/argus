@@ -120,7 +120,7 @@ class TestCrossSheetIdCheck:
         do_basic_checks(result, 1)
         filterd_results = error_counter(result)
         assert filterd_results[0].details is not None
-        assert filterd_results[0].details["uuid"][0] == 90
+        assert filterd_results[0].details["uuid"][0] == "90"
 
     def test_master_extra_id_column(
         self,
@@ -214,3 +214,44 @@ class TestCrossSheetIdCheck:
         result = valid_schema_validator.validate(data)
 
         do_basic_checks(result, 1)
+
+    def test_valid_data_ignore_all(
+        self,
+        valid_schema_validator: BaseValidator,
+    ):
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4, 5])],
+                "clean_data": [("uuid", [2, 3, 4, 5])],
+                "deletion_log": [("uuid", [1])],
+                "cleaning_log": [
+                    ("uuid", ["all"]),
+                    ("uuid", ["1"]),
+                    ("uuid", ["1"]),
+                    ("uuid", ["1"]),
+                    ("uuid", ["2"]),
+                ],
+            }
+        )
+        result = valid_schema_validator.validate(data)
+
+        do_basic_checks(result, 0)
+
+    def test_invalid_id_all(
+        self,
+        valid_schema_validator: BaseValidator,
+    ):
+        data = build_excel_data(
+            {
+                "raw_data": [("uuid", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])],
+                "clean_data": [("uuid", ["2", "3", "4", "5", "6", "7", "8", "9", "10", "all"])],
+                "deletion_log": [("uuid", [1])],
+                "cleaning_log": [("uuid", [5])],
+            }
+        )
+        result = valid_schema_validator.validate(data)
+
+        do_basic_checks(result, 1)
+        filterd_results = error_counter(result)
+        assert filterd_results[0].details is not None
+        assert filterd_results[0].details["uuid"][0] == "all"

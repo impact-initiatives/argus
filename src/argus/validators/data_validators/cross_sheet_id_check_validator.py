@@ -3,8 +3,10 @@ from typing import override
 import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
+from ...models.base import SheetClassification
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
+from ...validators.schema_helpers import get_schema_loaded_sheet
 from ..data_helpers import (
     get_data_loaded_sheet,
     get_data_loaded_sheets,
@@ -19,6 +21,7 @@ class CrossSheetIdCheck(BaseValidator):
         master_sheet: str = "raw_data",
         child_sheets: list[str] | None = None,
         is_in: bool = True,
+        filter_values: list[str] | None = None,
     ):
         """Checks to see if ids from child sheet/s are present in a master/parent sheet
 
@@ -30,6 +33,9 @@ class CrossSheetIdCheck(BaseValidator):
                 master_sheet. Defaults to ['clean_data', 'deletion_log', 'cleaning_log']
             is_in (bool, optional): determins if the child ids should (true) or
                 should not (false) be in the matser sheet
+            filter_values (list[str] | None): excludes uuid records from a child sheet from
+                the checks. Currently used for filtering out "all" from the cleaning log.
+                Defaults to ["all"]
         """
         self.master_sheet: str = master_sheet
         self.child_sheets: list[str] = (
@@ -39,6 +45,8 @@ class CrossSheetIdCheck(BaseValidator):
         )
         self.schema: BaseDatasetSchema = schema
         self.is_in: bool = is_in
+        # used to filter out "all" in the cleaning log id column, for example
+        self.filter_values: list[str] = filter_values if filter_values is not None else ["all"]
 
     @property
     @override
@@ -87,6 +95,15 @@ class CrossSheetIdCheck(BaseValidator):
                 # no data in sheet. eg empty deletion log
                 continue
 
+            result, child_schema_sheet = get_schema_loaded_sheet(
+                self.schema, child_loaded_sheet.schema_sheet_name, self.name
+            )
+            if result is not None:
+                results.append(result)
+                continue
+
+            assert child_schema_sheet is not None
+
             result, child_data_id_columns, master_id_columns = get_id_linking_columns(
                 schema=self.schema,
                 data_loaded_sheets=data_loaded_sheets | {sheet: child_loaded_sheet},
@@ -104,24 +121,37 @@ class CrossSheetIdCheck(BaseValidator):
             # is a cleaning log sheet as it contains ids from multiple
             # clean data sheets (loops)
             missing_ids = (
-                child_loaded_sheet.data.select(child_data_id_columns.data_column_name)
+                child_loaded_sheet.data.select(
+                    pl.col(child_data_id_columns.data_column_name).cast(pl.String)
+                )
                 .filter(
                     (
                         pl.col(child_data_id_columns.data_column_name)
-                        .cast(pl.Utf8)
                         .str.strip_chars(" ")
                         .is_not_null()
                     )
+                    & (pl.col(child_data_id_columns.data_column_name).str.strip_chars(" ") != "")
                     & (
-                        pl.col(child_data_id_columns.data_column_name)
-                        .cast(pl.Utf8)
-                        .str.strip_chars(" ")
-                        != ""
+                        (
+                            (
+                                pl.col(child_data_id_columns.data_column_name)
+                                .is_in(self.filter_values)
+                                .not_()
+                            )
+                            & (
+                                child_schema_sheet.classification
+                                in [SheetClassification.CLEANING_LOG_SHEET]
+                            )
+                        )
+                        | (
+                            child_schema_sheet.classification
+                            not in [SheetClassification.CLEANING_LOG_SHEET]
+                        )
                     )
                 )
                 .join(
                     other=data_loaded_sheets[self.master_sheet].data.select(
-                        master_id_columns.data_column_name
+                        pl.col(master_id_columns.data_column_name).cast(pl.String)
                     ),
                     how=join_type,
                     left_on=child_data_id_columns.data_column_name,

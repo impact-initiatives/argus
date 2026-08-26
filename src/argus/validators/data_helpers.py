@@ -510,10 +510,18 @@ def check_id_column_overlap(
     """
     result = None
     source_set = set(
-        data_loaded_sheets[source_sheet].data.select(source_column).to_series().unique().to_list()
+        data_loaded_sheets[source_sheet]
+        .data.select(pl.col(source_column).cast(pl.String))
+        .to_series()
+        .unique()
+        .to_list()
     )
     target_set = set(
-        data_loaded_sheets[target_sheet].data.select(target_column).to_series().unique().to_list()
+        data_loaded_sheets[target_sheet]
+        .data.select(pl.col(target_column).cast(pl.String))
+        .to_series()
+        .unique()
+        .to_list()
     )
     overlap = get_set_overlap(source_set, target_set)
 
