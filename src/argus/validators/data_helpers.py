@@ -393,7 +393,7 @@ def get_id_linking_columns(
         expected=1,
     )
 
-    if result_target is None or result_source is None:
+    if result_target is not None or result_source is not None:
         # if one of the sheets does not have a unique column then attempt
         # some exacpt name matching
         result_match, matching_columns = get_matching_columns(
