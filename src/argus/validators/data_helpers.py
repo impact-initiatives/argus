@@ -313,6 +313,7 @@ def get_id_linking_columns(
     source_sheet: str,
     target_sheet: str,
     rule: str,
+    min_overlap: float = settings.MIN_COLUMN_MATCHING_OVERLAP,
 ) -> (
     tuple[list[ValidationResult], None, None]
     | tuple[list[ValidationResult], DataColumnMap, DataColumnMap]
@@ -392,7 +393,7 @@ def get_id_linking_columns(
         expected=1,
     )
 
-    if result_target is not None or result_source is not None:
+    if result_target is None or result_source is None:
         # if one of the sheets does not have a unique column then attempt
         # some exacpt name matching
         result_match, matching_columns = get_matching_columns(
@@ -440,6 +441,7 @@ def get_id_linking_columns(
         else:
             source_sheet_id_column = matching_columns[0][0]
             target_sheet_id_column = matching_columns[0][1]
+
     else:
         source_sheet_id_column = source_sheet_id_column[0]
         target_sheet_id_column = target_sheet_id_column[0]
@@ -455,6 +457,7 @@ def get_id_linking_columns(
         target_sheet=target_sheet,
         data_loaded_sheets=data_loaded_sheets,
         rule=rule,
+        min_overlap=min_overlap,
     )
 
     if result_overlap is not None:

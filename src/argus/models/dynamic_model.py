@@ -257,6 +257,17 @@ class DynamicDataset(BaseDataset):
                             child_sheets=id_check_sheets,
                         )
                     )
+
+                    if clean_sheet.linked_cleaning_log is not None and details.linked_deletion_log:
+                        self.validators.append(
+                            CrossSheetIdCheck(
+                                schema=self.schema,
+                                master_sheet=clean_sheet.linked_cleaning_log,
+                                child_sheets=[details.linked_deletion_log],
+                                is_in=False,
+                            )
+                        )
+
                 else:
                     results.append(
                         ValidationResult(
@@ -408,7 +419,6 @@ class DynamicDataset(BaseDataset):
                     elif details.classification == SheetClassification.DELETION_LOG_SHEET:
                         new_sheet = deletion_sheet_base.model_copy(deep=True)
                         if len(details.log_id_column) == 1:
-                            # should only be one based on current matching logic
                             # id column added to schema below
                             details.id_column = details.log_id_column[0]
 
