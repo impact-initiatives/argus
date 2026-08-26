@@ -101,8 +101,17 @@ msgid "consent_check_validator.consent_check"
 msgstr "There were {count} row/s in '{sheet}'that did not provide consent. Check the output for details."
 
 #: src/argus/validators/data_validators/cross_sheet_id_check_validator.py:130
-msgid "cross_sheet_id_check_validator.id_check"
+msgid "cross_sheet_id_check_validator.id_check_isnotin"
 msgstr "{count} Id values for sheet '{child_sheet}' and column '{child_column}' were not found in sheet '{master_sheet}' column '{master_column}'. Check output for details."
+
+msgid "cross_sheet_id_check_validator.id_check_isin"
+msgstr "{count} Id values for sheet '{child_sheet}' and column '{child_column}' were found in sheet '{master_sheet}' column '{master_column}'. Check output for details."
+
+msgid "cross_sheet_id_check_validator.id_check_isin.issue"
+msgstr "source_sheet uuid should not be in target_sheet."
+
+msgid "cross_sheet_id_check_validator.id_check_isnotin.issue"
+msgstr "uuid found in source_sheet but not in target_sheet."
 
 #: src/argus/validators/data_validators/cross_sheet_row_sum_check_validator.py:150
 msgid "cross_sheet_row_sum_check_validator.row_sum"

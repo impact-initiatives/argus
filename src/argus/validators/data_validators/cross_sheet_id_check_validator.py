@@ -2,6 +2,7 @@ from typing import override
 
 import polars as pl
 
+from ...config import settings
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base import SheetClassification
 from ...models.base_dataset_schemas import BaseDatasetSchema
@@ -71,7 +72,14 @@ class CrossSheetIdCheck(BaseValidator):
         """
         results: list[ValidationResult] = []
 
-        join_type = "anti" if self.is_in else "semi"
+        if self.is_in:
+            join_type = "anti"
+            issue_message = self._("cross_sheet_id_check_validator.id_check_isnotin.issue")
+        else:
+            join_type = "semi"
+            issue_message = self._("cross_sheet_id_check_validator.id_check_isin.issue")
+
+        # join_type = "anti" if self.is_in else "semi"
 
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data, sheet_names=[self.master_sheet], rule=self.name
@@ -110,6 +118,7 @@ class CrossSheetIdCheck(BaseValidator):
                 source_sheet=sheet,
                 target_sheet=self.master_sheet,
                 rule=self.name,
+                min_overlap=settings.MIN_COLUMN_MATCHING_OVERLAP if self.is_in else 0.0,
             )
             results.extend(result)
             if child_data_id_columns is None or master_id_columns is None:
@@ -165,10 +174,11 @@ class CrossSheetIdCheck(BaseValidator):
                 missing_df = pl.DataFrame({"uuid": missing_ids}).with_columns(
                     [
                         pl.lit(child_data_id_columns.data_column_name).alias("uuid_column_name"),
-                        pl.lit(child_loaded_sheet.data_sheet_name).alias("found_in_sheet"),
+                        pl.lit(child_loaded_sheet.data_sheet_name).alias("source_sheet"),
                         pl.lit(data_loaded_sheets[self.master_sheet].data_sheet_name).alias(
-                            "missing_in_sheet"
+                            "target_sheet"
                         ),
+                        pl.lit(issue_message).alias("issue"),
                     ]
                 )
 
@@ -176,7 +186,9 @@ class CrossSheetIdCheck(BaseValidator):
                     ValidationResult(
                         rule=self.name,
                         message=self._(
-                            "cross_sheet_id_check_validator.id_check",
+                            "cross_sheet_id_check_validator.id_check_isnotin"
+                            if self.is_in
+                            else "cross_sheet_id_check_validator.id_check_isin",
                             count=len(missing_ids),
                             child_sheet=child_loaded_sheet.data_sheet_name,
                             child_column=child_data_id_columns.data_column_name,
