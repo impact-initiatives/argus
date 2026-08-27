@@ -105,14 +105,43 @@ class DynamicDataset(BaseDataset):
         # to ensure the complete schema is referenced
         self.validators: list[BaseValidator] = self.get_validators()
 
-        results = self.build_validators(consent_sheet)
+        if "dataset" in self.schema.dataset_type:
+            results = self.build_dataset_validators(consent_sheet=consent_sheet)
+        else:
+            results = self.build_analysis_validators()
 
         if results:
             all_results.extend(results)
 
         return all_results
 
-    def build_validators(self, consent_sheet: str | None) -> list[ValidationResult]:
+    def build_analysis_validators(self) -> list[ValidationResult]:
+        results: list[ValidationResult] = []
+        rule = "DynamicSchemaCreation_build_validators"
+
+        if self.sorted_sheets.clean_sheets:
+            self.validators.append(
+                DataTypeCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
+            )
+
+            self.validators.append(
+                SurveyChoicesCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
+            )
+            self.validators.append(
+                NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
+            )
+        else:
+            results.append(
+                ValidationResult(
+                    rule=rule,
+                    message=_("dynamic_model.build_validators.no_sheets", sheet="clean_data"),
+                    severity=SeverityLevel.ERROR,
+                )
+            )
+
+        return results
+
+    def build_dataset_validators(self, consent_sheet: str | None) -> list[ValidationResult]:
         """builds a list of validators matched to use the dynamically created schema.
 
         Current assumptions:

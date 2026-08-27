@@ -9,7 +9,7 @@ from argus.loaders.base import (
 )
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.models.base import SheetClassification
-from argus.models.dynamic_model import DynamicDataset
+from argus.models.dynamic_schema import DynamicDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from tests.helpers import admin_error_counter, error_counter

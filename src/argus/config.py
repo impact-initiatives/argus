@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     Path(DATASET_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
 
     FALLBACK_PROGRAMME: str = "other"
-    FALLBACK_DATASET: str = "other_dataset"
+    FALLBACK_OUTPUT: str = "dataset"
     FALLBACK_LOCALE: str = "en"
 
     DATASETS_USING_DYNAMIC_LOADING: list[str] = ["msna_dataset"]

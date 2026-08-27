@@ -15,7 +15,7 @@ from ..loaders.base_excel_loader import ExcelLoaderData
 from ..loaders.excel_loader import ExcelLoader
 from ..models.base_dataset import BaseDataset
 from ..models.base_dataset_schemas import BaseDatasetSchema
-from ..models.dynamic_model import DynamicDataset
+from ..models.dynamic_schema import DynamicDataset
 from ..models.preprocess import validate_schema
 from ..utils.logging import get_logger
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
@@ -41,7 +41,7 @@ class ValidationPipeline:
         )
 
         if result:
-            if result["dataset_type"] != settings.FALLBACK_DATASET:
+            if settings.FALLBACK_PROGRAMME not in str(result["dataset_type"]):
                 dataset = BaseDataset(
                     schema_path=result[schema_file], validator_path=result[validator_file]
                 )
@@ -198,7 +198,7 @@ class ValidationPipeline:
             loader = ExcelLoader(dataset.schema)
             dataset.data, excel_results = loader.load(
                 filepath,
-                load_all_sheets=dataset.schema.dataset_type == settings.FALLBACK_DATASET,
+                load_all_sheets=settings.FALLBACK_PROGRAMME in dataset.schema.dataset_type,
             )
 
             if excel_results:
@@ -241,7 +241,7 @@ class ValidationPipeline:
             )
             return all_results
 
-        if dataset.schema.dataset_type == settings.FALLBACK_DATASET:
+        if settings.FALLBACK_PROGRAMME in dataset.schema.dataset_type:
             logger.info(
                 "Building dynamic schema.",
                 extra={
