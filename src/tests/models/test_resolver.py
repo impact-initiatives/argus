@@ -23,7 +23,8 @@ def build_schema(sheet_name: str, columns: list[str]):
         column_map.append(SchemaColumnMap(standard_name=column))
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[SchemaSheetMap(standard_name=sheet_name, columns=column_map)],
         schema_unloaded_sheets=[],
     )
@@ -33,7 +34,8 @@ class TestDatasetResolver:
     def test_valid_dataset(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.return_value = (
             {
-                "dataset_type": "jmmi_dataset",
+                "programme_type": "jmmi",
+                "output_type": "dataset",
                 "schema_loaded_sheets": [
                     {
                         "standard_name": "clean_data",
@@ -55,13 +57,15 @@ class TestDatasetResolver:
         assert result.schema_loaded_sheets[0].alternate_names[0] == "also_clean"
         assert not result.schema_loaded_sheets[0].allow_fuzzy_matching
         assert result.schema_loaded_sheets[0].columns[0].standard_name == "uuid"
-        assert result.dataset_type == "jmmi_dataset"
+        assert result.programme_type == "jmmi"
+        assert result.output_type == "dataset"
         assert result.schema_unloaded_sheets[0].standard_name == "other_data"
 
     def test_invalid_dataset(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.return_value = (
             {
-                "dataset_type": "jmmi_dataset",
+                "programme_type": "jmmi",
+                "output_type": "dataset",
                 "schema_loaded_sheets": [
                     {
                         "standard_name_invalid": "clean_data",
@@ -83,7 +87,8 @@ class TestDatasetResolver:
     def test_missing_reference(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.return_value = (
             {
-                "dataset_type": "jmmi_dataset",
+                "programme_type": "jmmi",
+                "output_type": "dataset",
                 "schema_loaded_sheets": [{"$use": "clean_data"}],
                 "schema_unloaded_sheets": [{"standard_name": "other_data"}],
             },
@@ -99,7 +104,8 @@ class TestDatasetResolver:
         mock_yaml_loader.side_effect = [
             (
                 {
-                    "dataset_type": "jmmi_dataset",
+                    "programme_type": "jmmi",
+                    "output_type": "dataset",
                     "schema_loaded_sheets": [{"$use": "clean_data_sheet"}],
                     "schema_unloaded_sheets": [],
                 },
@@ -119,7 +125,8 @@ class TestDatasetResolver:
         mock_yaml_loader.side_effect = [
             (
                 {
-                    "dataset_type": "jmmi_dataset",
+                    "programme_type": "jmmi",
+                    "output_type": "dataset",
                     "schema_loaded_sheets": [
                         {
                             "$use": "clean_data_sheet",
@@ -145,7 +152,8 @@ class TestDatasetResolver:
         mock_yaml_loader.side_effect = [
             (
                 {
-                    "dataset_type": "jmmi_dataset",
+                    "programme_type": "jmmi",
+                    "output_type": "dataset",
                     "schema_loaded_sheets": [
                         {
                             "$use": "clean_data_sheet",
@@ -172,7 +180,8 @@ class TestDatasetResolver:
         mock_yaml_loader.side_effect = [
             (
                 {
-                    "dataset_type": "jmmi_dataset",
+                    "programme_type": "jmmi",
+                    "output_type": "dataset",
                     "schema_loaded_sheets": [
                         {
                             "$use": "clean_data_sheet",

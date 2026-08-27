@@ -89,7 +89,8 @@ def build_schema_with_process(
         sheet_maps.append(SchemaSheetMap(standard_name=sheet, columns=column_map))
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=sheet_maps,
         schema_unloaded_sheets=[],
     )

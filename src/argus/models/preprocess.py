@@ -29,9 +29,9 @@ def validate_schema(schema: BaseDatasetSchema) -> list[ValidationResult]:
             results.append(
                 ValidationResult(
                     rule="Duplicate column names in schema sheet",
-                    message=f" Sheet {sheet} for schema {schema.dataset_type} has"
-                    + " mandatory column standard/altername names listed on more"
-                    + " than one column. Column names should be unique per sheet."
+                    message=f" Sheet {sheet} for schema {schema.programme_type}"
+                    + f" {schema.output_type} has mandatory column standard/altername names listed"
+                    + " on more than one column. Column names should be unique per sheet."
                     + " Check the output for details.",
                     severity=SeverityLevel.ADMIN_ERROR,
                     column_name=", ".join(duplicate_column_names),
@@ -46,8 +46,8 @@ def validate_schema(schema: BaseDatasetSchema) -> list[ValidationResult]:
         results.append(
             ValidationResult(
                 rule="Duplicate sheet names in schema.",
-                message=f"The schema for {schema.dataset_type} contains sheet names"
-                + " that are listed for more than one sheet. Sheet names and"
+                message=f"The schema for {schema.programme_type} {schema.output_type} contains"
+                + " sheet names that are listed for more than one sheet. Sheet names and"
                 + " alternate sheet names should be unique to each schema."
                 + " Check the output for details.",
                 severity=SeverityLevel.ADMIN_ERROR,

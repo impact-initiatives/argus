@@ -248,7 +248,8 @@ class ResolveDataset:
 
 def find_dataset_files(
     root_directory: Path,
-    dataset_type: str,
+    programme_type: str,
+    output_type: str,
     locale: str,
     schema_file_name: str,
     validator_file_name: str,
@@ -260,15 +261,16 @@ def find_dataset_files(
     If only one file exists in a directory, returns None without checking fallbacks.
 
     Fallback hierarchy:
-    1. root_dir / dataset_type / locale / [file_1, file_2]
-    2. (if locale != en) root_dir / dataset_type / en / [file_1, file_2]
-    3. (if dataset_type != other) root_dir / other / locale / [file_1, file_2]
-    4. (if dataset_type != other AND locale != en) root_dir / other / en / [file_1, file_2]
+    1. root_dir / type_of_programme / type_of_output / locale / [file_1, file_2]
+    2. (if locale != en) root_dir / type_of_programme / type_of_output / en / [file_1, file_2]
+    3. (if type_of_programme != other) root_dir / other / locale / [file_1, file_2]
+    4. (if type_of_programme != other AND locale != en) root_dir / other / en / [file_1, file_2]
 
     Args:
         root_directory: The base directory path.
         locale: The locale code (e.g., 'en', 'fr').
-        dataset_type: The dataset type (e.g., 'jmmi', 'other').
+        type_of_programme: The programme type (e.g., 'jmmi', 'other').
+        type_of_output: type of output (eg: dataset, analysis)
         schema_file_name: The name of the schema file to find.
         validator_file_name: The name of the validator file to find.
 
@@ -278,8 +280,8 @@ def find_dataset_files(
     """
 
     def check_location(
-        type_of_programme: str,
-        type_of_output: str,
+        programme_type: str,
+        output_type: str,
         locale: str,
     ) -> (
         tuple[Literal[True], dict[str, Path | str]]
@@ -294,11 +296,9 @@ def find_dataset_files(
             (None, None) if only one exists .
         """
 
-        schema_path = (
-            root_directory / type_of_programme / type_of_output / locale / schema_file_name
-        )
+        schema_path = root_directory / programme_type / output_type / locale / schema_file_name
         validator_path = (
-            root_directory / type_of_programme / type_of_output / locale / validator_file_name
+            root_directory / programme_type / output_type / locale / validator_file_name
         )
 
         schema_exists = schema_path.is_file()
@@ -310,7 +310,8 @@ def find_dataset_files(
                 {
                     schema_file_name: schema_path,
                     validator_file_name: validator_path,
-                    "dataset_type": type_of_programme + "_" + type_of_output,
+                    "programme_type": programme_type,
+                    "output_type": output_type,
                 },
             )
         elif not schema_exists and not validator_exists:
@@ -320,38 +321,30 @@ def find_dataset_files(
             # only one file found. dont continue and return error.
             return (None, None)
 
-    if "_" in dataset_type:
-        type_of_programme, type_of_output = dataset_type.split("_")
-    else:
-        raise ValueError(
-            f"Dataset type '{dataset_type}' should be a combination of programme"
-            + " and output seperated by '_'. For example 'jmmi_dataset'."
-        )
-
     # List of locations to check in order
-    # Each entry is (dataset_type, locale)
+    # Each entry is (programme_type, output_type, locale)
     checks: list[tuple[str, str, str]] = []
 
     # 1. Primary: original dataset, original locale
-    checks.append((type_of_programme, type_of_output, locale))
+    checks.append((programme_type, output_type, locale))
 
     # 2. Fallback 1: original dataset, 'en' locale (only if locale != 'en')
     if locale.lower() != settings.FALLBACK_LOCALE:
-        checks.append((type_of_programme, type_of_output, settings.FALLBACK_LOCALE))
+        checks.append((programme_type, output_type, settings.FALLBACK_LOCALE))
 
     # 3. Fallback 2: 'other' dataset, original locale (only if dataset != 'other')
-    if dataset_type.lower() != settings.FALLBACK_PROGRAMME:
-        checks.append((settings.FALLBACK_PROGRAMME, type_of_output, locale))
+    if programme_type != settings.FALLBACK_PROGRAMME:
+        checks.append((settings.FALLBACK_PROGRAMME, output_type, locale))
 
         # 4. Fallback 3: 'other' dataset, 'en' locale
         # (only if dataset != 'other' AND locale != 'en')
         if locale.lower() != settings.FALLBACK_LOCALE:
-            checks.append((settings.FALLBACK_PROGRAMME, type_of_output, settings.FALLBACK_LOCALE))
+            checks.append((settings.FALLBACK_PROGRAMME, output_type, settings.FALLBACK_LOCALE))
 
     # Iterate through potential locations
     for l_type_of_programme, l_type_of_output, l_locale in checks:
         status, result = check_location(
-            type_of_programme=l_type_of_programme, type_of_output=l_type_of_output, locale=l_locale
+            programme_type=l_type_of_programme, output_type=l_type_of_output, locale=l_locale
         )
 
         if status is True:

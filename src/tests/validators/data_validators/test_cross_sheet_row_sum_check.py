@@ -36,7 +36,8 @@ def valid_schema_child_validator(valid_schema_child):
 def valid_schema():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -68,7 +69,8 @@ def valid_schema():
 def valid_schema_child():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data_child",

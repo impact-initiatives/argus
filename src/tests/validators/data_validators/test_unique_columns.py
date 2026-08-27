@@ -14,7 +14,8 @@ def get_validator(schema):
 def build_schema(sheet_name: str, column: str, unique: bool):
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name=sheet_name,

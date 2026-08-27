@@ -51,7 +51,8 @@ uv run main.py --dataset-type other_dataset "path/to/excel/file.xlsx"
    "admin_error": [...],  
    "admin_info":  [...],  
    "metadata": {
-      "dataset_type": str,
+      "programme_type": str,
+      "output_type": str,
       "validation_date": datetime,
       "argus_version": str,
       "argus_schemas_version": str,
@@ -79,7 +80,7 @@ from src.argus.orchestrator.validation_pipeline import ValidationPipeline
 
 try:
     results = ValidationPipeline().run_all(
-        filepath="path/to/excel/file.xlsx", dataset_type="other_dataset", locale="en"
+        filepath="path/to/excel/file.xlsx", programme_type="jmmi", output_type="dataset",, locale="en"
     )  # or jmmi_dataset
 except Exception as e:
     # handle errors
@@ -115,11 +116,14 @@ from src.argus.validators.data_validators import RawToCleanToLogCheck
 
 
 locale = "en"
-dataset_type = "jmmi_dataset"
+programme_type = "jmmi"
+output_type = "dataset"
 schema_file = "schema.yaml"
 validator_file = "validators.yaml"
 dataset_config_dir = download_config("config_directory")
-result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
+result = find_dataset_files(
+    dataset_config_dir, programme_type, output_type, locale, schema_file, validator_file
+)
 
 dataset = BaseDataset(schema_path=result[schema_file], validator_path=result[validator_file])
 loader = ExcelLoader(dataset.schema)
@@ -138,11 +142,14 @@ from src.argus.loaders.excel_loader import ExcelLoader
 from src.argus.validators.data_validators import CrossSheetIdCheck
 
 locale = "en"
-dataset_type = "other_dataset"
+programme_type = "other"
+output_type = "dataset"
 schema_file = "schema.yaml"
 validator_file = "validators.yaml"
 dataset_config_directory = download_config("config_directory")
-result = find_dataset_files(dataset_config_dir, dataset_type, locale, schema_file, validator_file)
+result = find_dataset_files(
+    dataset_config_dir, programme_type, output_type, locale, schema_file, validator_file
+)
 
 dataset = DynamicDataset(schema_path=result[schema_file], validator_path=result[validator_file])
 loader = ExcelLoader(dataset.schema)

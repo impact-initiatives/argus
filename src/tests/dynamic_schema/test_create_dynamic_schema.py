@@ -20,7 +20,7 @@ def valid_dataset():
     """Create a UniqueColumn validator instance"""
     dataset_config_directory = download_config(settings.DATASET_CONFIG_DIR)
     result = find_dataset_files(
-        dataset_config_directory, "other_dataset", "en", "schema.yaml", "validators.yaml"
+        dataset_config_directory, "other", "dataset", "en", "schema.yaml", "validators.yaml"
     )
     assert result is not None
     dataset: DynamicDataset = DynamicDataset(

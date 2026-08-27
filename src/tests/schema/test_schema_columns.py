@@ -10,7 +10,8 @@ from tests.helpers import do_basic_checks
 def valid_schema():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -26,7 +27,8 @@ def valid_schema():
 def invalid_schema_duplicate_columns():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -45,7 +47,8 @@ def invalid_schema_duplicate_columns():
 def invalid_schema_duplicate_columns_alt():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",

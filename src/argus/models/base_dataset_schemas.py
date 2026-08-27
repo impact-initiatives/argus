@@ -6,7 +6,8 @@ from argus.models.base import SchemaColumnMap, SchemaSheetMap
 
 
 class BaseDatasetSchema(BaseModel):
-    dataset_type: str = ""
+    programme_type: str
+    output_type: str
     # sheets that have to be loaded and used for further validation
     schema_loaded_sheets: list[SchemaSheetMap] = Field(default=[])
     # sheets that should exist but dont need to be loaded

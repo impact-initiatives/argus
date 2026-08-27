@@ -105,7 +105,7 @@ class DynamicDataset(BaseDataset):
         # to ensure the complete schema is referenced
         self.validators: list[BaseValidator] = self.get_validators()
 
-        if "dataset" in self.schema.dataset_type:
+        if self.schema.output_type == "dataset":
             results = self.build_dataset_validators(consent_sheet=consent_sheet)
         else:
             results = self.build_analysis_validators()

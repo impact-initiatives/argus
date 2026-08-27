@@ -15,7 +15,8 @@ def get_validator(valid_schema, ignore_sheets: list[str] | None = None):
 def valid_schema():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",

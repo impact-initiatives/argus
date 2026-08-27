@@ -21,7 +21,8 @@ def build_schema(sheet_name: str, columns: list[str], matching_term: str | None 
         column_map.append(SchemaColumnMap(standard_name=column))
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name=sheet_name, columns=column_map, matching_term=matching_term

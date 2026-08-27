@@ -25,7 +25,8 @@ def build_schema(
         l_unloaded_sheet = [SchemaSheetMap(standard_name=unloaded_sheet)]
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(standard_name=sheet_name, columns=column_map, allow_fuzzy_matching=fuzzy)
         ],

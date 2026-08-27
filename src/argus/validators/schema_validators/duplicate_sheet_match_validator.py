@@ -41,11 +41,12 @@ class DuplicateSheetMatchCheck(BaseValidator):
 
         if duplicates:
             for item in duplicates:
-                schema_sheet = self.schema.get_schema_loaded_sheet(item)
+                schema_sheet = self.schema.get_schema_sheet(item)
                 if schema_sheet and schema_sheet.matching_term:
                     # matching on terms can match a schema sheet to multiple excel sheets
                     # which is intended so ignore as part of this check
                     continue
+
                 matched_sheets = data.get_sheet_matches(item)
                 sheet_names = [name.data_sheet_name for name in matched_sheets]
                 matches.extend([{"sheet": item, "matches": sheet_names}])

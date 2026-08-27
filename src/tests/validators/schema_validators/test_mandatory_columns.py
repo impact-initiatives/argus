@@ -17,7 +17,8 @@ def build_schema(sheet_name: str, columns: list[tuple[str, bool]], required=True
         column_map.append(SchemaColumnMap(standard_name=column[0], required=column[1]))
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(standard_name=sheet_name, columns=column_map, required=required)
         ],

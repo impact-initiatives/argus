@@ -10,7 +10,8 @@ from tests.helpers import do_basic_checks
 def valid_schema():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -28,7 +29,8 @@ def valid_schema():
 def invalid_schema_duplicate_sheets():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -51,7 +53,8 @@ def invalid_schema_duplicate_sheets():
 def invalid_schema_duplicate_sheets_alt():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -72,7 +75,8 @@ def invalid_schema_duplicate_sheets_alt():
 def invalid_schema_duplicate_unloaded_sheets():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -91,7 +95,8 @@ def invalid_schema_duplicate_unloaded_sheets():
 def invalid_schema_duplicate_loaded_unloaded_sheets():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
@@ -110,7 +115,8 @@ def invalid_schema_duplicate_loaded_unloaded_sheets():
 def invalid_schema_duplicate_loaded_unloaded_sheets_alt():
 
     return BaseDatasetSchema(
-        dataset_type="jmmi",
+        programme_type="jmmi",
+        output_type="dataset",
         schema_loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
