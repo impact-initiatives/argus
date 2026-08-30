@@ -377,7 +377,7 @@ class RawToCleanToLogCheck(BaseValidator):
                     pl.col(self.cleaning_log_old_value_column),
                     pl.col(self.cleaning_log_new_value_column),
                 ]
-            )
+            ).with_columns(pl.lit(raw_data_id_columns.data_column_name).alias("uuid_column_name"))
 
             # difference between above and cleaning log
             # This does not check the actual values. It only checks that
