@@ -61,7 +61,7 @@ class ExcelLoader(BaseExcelLoader):
             ]
 
             if unnamed_columns:
-                data_df = data_df.drop([column["name"] for column in unnamed_columns])
+                data_df = data_df.drop([str(column["name"]) for column in unnamed_columns])
                 results.append(
                     ValidationResult(
                         rule="Unnamed sheet columns",

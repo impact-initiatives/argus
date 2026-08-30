@@ -100,8 +100,8 @@ def match_list_by_terms(source: list[str] | set[str], target: list[str] | set[st
     Eg: if source = "edu_person_id" and target = "person_id", edu_person_id
     would be returned
     """
-    seen = set()
-    result = []
+    seen: set[str] = set()
+    result: list[str] = []
     for term in target:
         for column in source:
             if term in column and column not in seen:

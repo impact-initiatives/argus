@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from pathlib import Path
 
 from ..loaders.base_excel_loader import ExcelLoaderData
@@ -23,6 +22,5 @@ class BaseDataset:
     def get_validators(self) -> list[BaseValidator]:
         return self.resolver.resolve_validators(self.validator_path, self.schema)
 
-    @abstractmethod
     def process_data(self, **kwargs: int | str | float | Path) -> list[ValidationResult]:
-        pass
+        return []

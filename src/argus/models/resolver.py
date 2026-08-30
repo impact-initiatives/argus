@@ -90,7 +90,7 @@ class ResolveDataset:
                 if ref_name not in definitions:
                     raise ValueError(
                         f"[{path}] Missing definition '{ref_name}'. "
-                        f"Available: [{list(definitions.keys())}]"
+                        + f"Available: [{list(definitions.keys())}]"
                     )
 
                 # 1. Load the base definition
@@ -104,9 +104,9 @@ class ResolveDataset:
 
                 # 3. Handle Overrides
                 overrides = {}
-                for k, v in item.items():
-                    if k not in internal_keys:
-                        overrides[k] = v
+                for key, value in item.items():
+                    if key not in internal_keys:
+                        overrides[key] = value
 
                 if overrides:
                     resolved_overrides = self._resolve(overrides, definitions, f"{path}(overrides)")
@@ -212,8 +212,8 @@ class ResolveDataset:
             if invalid_args:
                 raise ValueError(
                     f"Validation Error for '{class_name}' (item {item}): "
-                    f"Received unexpected keyword arguments: {invalid_args}. "
-                    f"Accepted arguments: {valid_params}"
+                    + f"Received unexpected keyword arguments: {invalid_args}. "
+                    + f"Accepted arguments: {valid_params}"
                 )
 
             #  dependency injection
@@ -231,8 +231,8 @@ class ResolveDataset:
             if final_missing:
                 raise ValueError(
                     f"Instantiation Error for '{class_name}' (item {item}): "
-                    f"Missing required arguments: {final_missing}. "
-                    "Ensure all required parameters are in the YAML."
+                    + f"Missing required arguments: {final_missing}. "
+                    + "Ensure all required parameters are in the YAML."
                 )
 
             try:

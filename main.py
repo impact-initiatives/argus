@@ -14,13 +14,13 @@ def main():
         "--programme_type",
         required=True,
         choices=["jmmi", "other"],
-        help="Type of dataset to validate",
+        help="Type of programme.",
     )
     parser.add_argument(
         "--output_type",
         required=True,
         choices=["dataset", "analysis"],
-        help="Type of dataset to validate",
+        help="Type of output.",
     )
 
     args = parser.parse_args()

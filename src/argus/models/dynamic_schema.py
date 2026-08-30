@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path, PosixPath
-from typing import override
+from typing import Any, override
 
 import polars as pl
 
@@ -79,7 +79,7 @@ class DynamicDataset(BaseDataset):
         self.schema: BaseDatasetSchema = self.get_schema()
         self.sheet_matching: dict[str, DynamicSheetMatching] = {}
         self.sorted_sheets: SortedSheets = SortedSheets()
-        self.schema_defaults: dict
+        self.schema_defaults: dict[str, Any]
 
     @override
     def process_data(self, **kwargs: int | str | float | Path) -> list[ValidationResult]:

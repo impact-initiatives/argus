@@ -291,7 +291,9 @@ class ValidationPipeline:
                     "schema version": self.argus_schemas_version,
                 },
             )
-            results = dataset.process_data(dataset_config_directory=dataset_config_directory)
+            results: list[ValidationResult] = dataset.process_data(
+                dataset_config_directory=dataset_config_directory
+            )
             if results:
                 all_results.extend(results)
 
@@ -419,7 +421,11 @@ class ValidationPipeline:
 
     def _get_validator_params(self, validator: BaseValidator) -> dict[str, Any]:
         """Get validator paramaters for logs but exclude schema."""
-        return {k: v for k, v in vars(validator).items() if not isinstance(v, BaseDatasetSchema)}
+        return {
+            key: value
+            for key, value in vars(validator).items()
+            if not isinstance(value, BaseDatasetSchema)
+        }
 
     def _excel_loader_to_dict(self, excel_loader: ExcelLoaderData) -> dict[str, Any]:
         """Convert ExcelLoaderData to dict, excluding data and column fields."""

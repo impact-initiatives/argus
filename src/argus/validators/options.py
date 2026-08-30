@@ -9,7 +9,7 @@ PII_PATTERNS = {
     "email": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
     # This is limited. Currently looking for numbers starting
     # with a + or 0. Does not match decimals
-    "phone": r"^(\+|0)[\d\s\-\(\)\+]+$",
+    "phone": r"^(?:\+|0|\()[\d\s()+-]+$",
 }
 
 PII_PATTERN_EXPRESSIONS = [
@@ -113,7 +113,7 @@ PII_COLUMN_NAMES = [
     "waypoint",
     "marker",
     "position",
-    "geo"
+    "geo",
     # KoboToolbox Specific Fields
     "_geopoint",  # '_start', '_end', '_submission_time', '_uuid',
     # '_xform_id_string', '_status', '_notes', '_index', '_total_media',
