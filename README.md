@@ -24,11 +24,11 @@ When Argus is run, the latest release from the schemas repository is downloaded.
 
 4. Run the process
 ```bash
-uv run main.py --dataset-type jmmi_dataset "path/to/excel/file.xlsx"
+uv run main.py --programme-type jmmi --output_type dataset "path/to/excel/file.xlsx"
 ```
 or
 ```bash
-uv run main.py --dataset-type other_dataset "path/to/excel/file.xlsx"
+uv run main.py --programme-type other --output_type dataset "path/to/excel/file.xlsx"
 ```
 5. Validation results and errors will be returned in JSON format:
 ```json
