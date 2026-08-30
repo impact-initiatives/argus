@@ -136,6 +136,9 @@ msgstr "There were {count} differences found in the '{clean_sheet}' sheet that w
 msgid "raw_clean_cleaning_log_validator.cleaning_log_diff.issue"
 msgstr "Change not reflected in '{sheet}'."
 
+msgid "cleaning_log.all_values"
+msgstr "{count} '{question_column}' values in the sheet '{sheet}' had a {uuid_column} value of 'all' and were not evaluated. Columns: {columns}."
+
 #: src/argus/validators/data_validators/raw_clean_cleaning_log_validator.py:363
 msgid "raw_clean_cleaning_log_validator.diff_no_cleaning_log"
 msgstr "There were {count} differences found between the '{clean_sheet}' sheet and the '{raw_sheet}' but no cleaning log was found. Check the output for details."

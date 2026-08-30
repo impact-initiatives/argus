@@ -314,6 +314,7 @@ def get_id_linking_columns(
     target_sheet: str,
     rule: str,
     min_overlap: float = settings.MIN_COLUMN_MATCHING_OVERLAP,
+    exclude_id_values: list[str] | None = None,
 ) -> (
     tuple[list[ValidationResult], None, None]
     | tuple[list[ValidationResult], DataColumnMap, DataColumnMap]
@@ -348,12 +349,17 @@ def get_id_linking_columns(
         source_sheet (str): name of the source sheet
         target_sheet (str): name of the target sheet
         rule (str): name of the rule calling this process
+        min_overlap (float, optional): minimum overlap required to be considered linkable columns.
+            Defaults to 0.9.
+        exclude_id_values (list[str]): remove these items from the sets being compared. eg: 'all'
+            from cleaning_log
 
     Returns:
         tuple[list[ValidationResult], None, None] |
             tuple[list[ValidationResult], DataColumnMap, DataColumnMap]: _description_
     """
     results: list[ValidationResult] = []
+    exclude_id_values = [] if exclude_id_values is None else exclude_id_values
 
     result, child_schema_loaded_sheet = get_schema_loaded_sheet(schema, source_sheet, rule)
     if result is not None:
@@ -458,6 +464,7 @@ def get_id_linking_columns(
         data_loaded_sheets=data_loaded_sheets,
         rule=rule,
         min_overlap=min_overlap,
+        exclude_id_values=exclude_id_values,
     )
 
     if result_overlap is not None:
@@ -489,6 +496,7 @@ def check_id_column_overlap(
     data_loaded_sheets: dict[str, DataSheetMap],
     rule: str,
     min_overlap: float = settings.MIN_COLUMN_MATCHING_OVERLAP,
+    exclude_id_values: list[str] | None = None,
 ) -> ValidationResult | None:
     """Compares the intersection of two columns and calculates their overlap.
     Useful for verifying that id columns that have been matched through their
@@ -507,10 +515,13 @@ def check_id_column_overlap(
         rule (str): validation rule
         min_overlap (float, optional): minimum overlap required to be considered linkable columns.
             Defaults to 0.9.
+        exclude_id_values (list[str]): remove these items from the sets being compared. eg: 'all'
+            from cleaning_log
 
     Returns:
         ValidationResult | None: validation error if overlap is too low. otherwise None
     """
+    exclude_id_values = [] if exclude_id_values is None else exclude_id_values
     result = None
     source_set = set(
         data_loaded_sheets[source_sheet]
@@ -519,6 +530,7 @@ def check_id_column_overlap(
         .unique()
         .to_list()
     )
+    source_set.difference_update(exclude_id_values)
     target_set = set(
         data_loaded_sheets[target_sheet]
         .data.select(pl.col(target_column).cast(pl.String))
@@ -526,6 +538,7 @@ def check_id_column_overlap(
         .unique()
         .to_list()
     )
+    target_set.difference_update(exclude_id_values)
     overlap = get_set_overlap(source_set, target_set)
 
     if overlap < min_overlap:

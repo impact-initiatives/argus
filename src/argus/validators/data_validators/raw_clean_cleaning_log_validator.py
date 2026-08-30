@@ -37,6 +37,7 @@ class RawToCleanToLogCheck(BaseValidator):
         cleaning_log_old_value_column: str = "old_value",
         cleaning_log_question_column: str = "variable",
         cleaning_log_change_type_column: str = "change_type",
+        exclude_id_values: list[str] | None = None,
     ) -> None:
         """Validates that the items in a cleaning log are reflected in the clean data
 
@@ -56,6 +57,8 @@ class RawToCleanToLogCheck(BaseValidator):
                 quesitons column. Defaults to 'question'.
             cleaning_log_change_type_column (str, optional): name of the cleaning log
                 change_type column. Defaults to 'change_type'
+            exclude_id_values (list[str] | None): used to filter out questions from
+                this check. ie, when uuid == 'all'
         """
         self.schema: BaseDatasetSchema = schema
         self.clean_data_sheet: str = clean_data_sheet
@@ -68,6 +71,9 @@ class RawToCleanToLogCheck(BaseValidator):
         # the ProcessValueMap that contains the list of possible values needed in
         #  cleaning_log_change_type_column
         self.process_value_map_name: str = "cleaning_log_validation"
+        self.exclude_id_values: list[str] = (
+            exclude_id_values if exclude_id_values is not None else ["all"]
+        )
 
     @property
     @override
@@ -95,6 +101,7 @@ class RawToCleanToLogCheck(BaseValidator):
             List[ValidationResult]: List of validation errors.
         """
         results: list[ValidationResult] = []
+        all_column_variables: list[str] = []
 
         # PRE-VALIDATION - check sheets, columns etc all exist
 
@@ -133,18 +140,19 @@ class RawToCleanToLogCheck(BaseValidator):
                 results.append(result)
                 return results
 
-            result, clean_log_id_columns, clean_data_id_columns = get_id_linking_columns(
+            result, cleaning_log_id_columns, clean_data_id_columns = get_id_linking_columns(
                 schema=self.schema,
                 data_loaded_sheets=data_loaded_sheets,
                 source_sheet=self.cleaning_log_sheet,
                 target_sheet=self.clean_data_sheet,
                 rule=self.name,
+                exclude_id_values=self.exclude_id_values,
             )
             results.extend(result)
-            if clean_log_id_columns is None or clean_data_id_columns is None:
+            if cleaning_log_id_columns is None or clean_data_id_columns is None:
                 return results
             assert clean_data_id_columns is not None
-            assert clean_log_id_columns is not None
+            assert cleaning_log_id_columns is not None
 
             result, data_loaded_columns = get_data_loaded_columns(
                 data={
@@ -185,7 +193,7 @@ class RawToCleanToLogCheck(BaseValidator):
             # TRANSFORMATION: transforms data in preparation for comparison
             # dataframe of actual changes made
             clean_log_id_columns_filter = (
-                pl.col(clean_log_id_columns.data_column_name).cast(pl.Utf8).str.strip_chars(" ")
+                pl.col(cleaning_log_id_columns.data_column_name).cast(pl.Utf8).str.strip_chars(" ")
             )
 
             modified_rows_df = (
@@ -203,7 +211,7 @@ class RawToCleanToLogCheck(BaseValidator):
                 )
                 .select(
                     [
-                        clean_log_id_columns.data_column_name,
+                        cleaning_log_id_columns.data_column_name,
                         data_loaded_columns[self.cleaning_log_new_value_column].data_column_name,
                         data_loaded_columns[self.cleaning_log_old_value_column].data_column_name,
                         data_loaded_columns[self.cleaning_log_change_type_column].data_column_name,
@@ -211,6 +219,42 @@ class RawToCleanToLogCheck(BaseValidator):
                     ]
                 )
             )
+
+            # variables/questions in cleaning log where uuid == "all"
+            all_column_variables = (
+                data_loaded_sheets[self.cleaning_log_sheet]
+                .data.filter(
+                    pl.col(cleaning_log_id_columns.data_column_name)
+                    .cast(pl.String)
+                    .str.to_lowercase()
+                    .is_in(self.exclude_id_values)
+                )
+                .select(
+                    pl.col(data_loaded_columns[self.cleaning_log_question_column].data_column_name)
+                )
+                .unique()
+                .to_series()
+                .to_list()
+            )
+
+            if all_column_variables:
+                results.append(
+                    ValidationResult(
+                        rule=self.name,
+                        message=self._(
+                            "cleaning_log.all_values",
+                            count=len(all_column_variables),
+                            sheet=self.cleaning_log_sheet,
+                            columns=", ".join(all_column_variables),
+                            uuid_column=cleaning_log_id_columns.data_column_name,
+                            question_column=data_loaded_columns[
+                                self.cleaning_log_question_column
+                            ].data_column_name,
+                        ),
+                        severity=SeverityLevel.INFO,
+                        sheet_name=self.cleaning_log_sheet,
+                    )
+                )
 
         # Gets the difference between raw and clean sheets and compares
         # this to the cleaning log
@@ -223,6 +267,9 @@ class RawToCleanToLogCheck(BaseValidator):
             ),
             [clean_data_id_columns.data_column_name],
         )
+
+        if all_column_variables:
+            clean_data_columns = filter_list(clean_data_columns, all_column_variables)
 
         clean_data_filtered_df = data_loaded_sheets[self.clean_data_sheet].data.select(
             [clean_data_id_columns.data_column_name] + clean_data_columns
@@ -347,7 +394,7 @@ class RawToCleanToLogCheck(BaseValidator):
                     how="anti",
                     left_on=["uuid", self.cleaning_log_question_column],
                     right_on=[
-                        clean_log_id_columns.data_column_name,  # pyright: ignore[reportPossiblyUnboundVariable]
+                        cleaning_log_id_columns.data_column_name,  # pyright: ignore[reportPossiblyUnboundVariable]
                         data_loaded_columns[self.cleaning_log_question_column].data_column_name,  # pyright: ignore[reportPossiblyUnboundVariable]
                     ],
                 ).with_columns(

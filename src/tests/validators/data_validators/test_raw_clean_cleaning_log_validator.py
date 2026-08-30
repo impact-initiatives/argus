@@ -313,6 +313,48 @@ class TestRawCleanCleaningLog:
         assert filtered_results[0].details is not None
         assert filtered_results[0].details["uuid"][0] == 5
 
+    def test_all_cleaning_log_value(
+        self,
+    ):
+        # diff between raw and clean but uuid has no record in cleaning log
+        schema = build_schema_with_process(
+            {
+                "clean_data": ["uuid"],
+                "raw_data": ["uuid"],
+                "cleaning_log": ["uuid", "new_value", "old_value", "variable", "change_type"],
+            },
+            process_details={
+                "cleaning_log_validation": ["yes", "change_response"],
+            },
+            process_sheet="cleaning_log",
+            process_column="change_type",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", ["1", "2", "3", "4", "5"]),
+                    ("question1", [1, 2, 3, 4, 5]),
+                    ("question2", ["b", "c", "f", "a", "a"]),
+                ],
+                "raw_data": [
+                    ("uuid", ["1", "2", "3", "4", "5"]),
+                    ("question1", [1, 2, 3, 4, 4]),
+                    ("question2", ["a", "c", "f", "a", "a"]),
+                ],
+                "cleaning_log": [
+                    ("uuid", ["all", "1"]),
+                    ("variable", ["question1", "question2"]),
+                    ("new_value", ["", "b"]),
+                    ("old_value", ["", "a"]),
+                    ("change_type", ["variable_added", "yes"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
+
+        do_basic_checks(result, 0)
+
     def test_missing_cleaning_log_value_question(
         self,
     ):
