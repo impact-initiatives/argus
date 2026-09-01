@@ -61,7 +61,11 @@ def create_column_difference_expression(
         """Convert empty strings to null for consistent comparison."""
         return (
             pl.when(data_type == pl.String)
-            .then(pl.when(expression.str.strip_chars() == "").then(None).otherwise(expression))
+            .then(
+                pl.when(expression.str.strip_chars() == "")
+                .then(None)
+                .otherwise(expression.str.strip_chars().str.to_lowercase())
+            )
             .otherwise(expression)
         )
 
