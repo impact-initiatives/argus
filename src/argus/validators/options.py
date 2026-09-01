@@ -3,7 +3,7 @@ import re
 import polars as pl
 
 # put regex here so its only compiled once
-COLUMN_NAME_VALIDATOR_PATTERN = re.compile(r"[^a-zA-Z_./\-\\\d:]")
+COLUMN_NAME_VALIDATOR_PATTERN = re.compile(r"[^a-zA-Z_./(/)/\-\\\d:]")
 
 PII_PATTERNS = {
     "email": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
