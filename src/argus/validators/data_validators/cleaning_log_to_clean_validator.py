@@ -256,7 +256,16 @@ class CleaningLogToCleanCheck(BaseValidator):
                     rule=self.name,
                     message=self._(
                         "cleaning_log_to_clean_validator.multiple_changes",
-                        count=multiple_change_df.select(pl.col("uuid_column_name")).n_unique(),
+                        count=multiple_change_df.select(
+                            [
+                                pl.col("uuid"),
+                                pl.col(
+                                    data_loaded_columns[
+                                        self.cleaning_log_question_column
+                                    ].data_column_name
+                                ),
+                            ]
+                        ).n_unique(),
                     ),
                     severity=SeverityLevel.WARNING,
                     sheet_name=self.cleaning_log_sheet,

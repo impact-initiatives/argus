@@ -151,3 +151,17 @@ class BaseDatasetSchema(BaseModel):
         if sheet is not None:
             _ = sheet.add_column(column)
             return sheet
+
+    def remove_loaded_sheet(self, sheet_standard_name: str):
+        """Removes a loaded sheet based on its standard name.
+        Assumes no duplicates as only the first match found is removed.
+
+        Args:
+            sheet_standard_name (str): name of sheet to remove
+        """
+        for index, sheet in enumerate(self.schema_loaded_sheets):
+            if sheet.standard_name == sheet_standard_name:
+                self.schema_loaded_sheets.pop(index)
+                return True
+
+        return False

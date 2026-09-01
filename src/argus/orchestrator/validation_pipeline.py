@@ -5,19 +5,18 @@ from typing import Any
 
 from fastexcel import CalamineCellError
 
-from argus.locales.il8n import _, i18n
-from argus.models.resolver import find_dataset_files
-from argus.utils.yaml_loader import download_config
-
 from ..config import settings
 from ..loaders.base import DataSheetMap
 from ..loaders.base_excel_loader import ExcelLoaderData
 from ..loaders.excel_loader import ExcelLoader
-from ..models.base_dataset import BaseDataset
+from ..locales.il8n import _, i18n
 from ..models.base_dataset_schemas import BaseDatasetSchema
+from ..models.dynamic_defined_schema import DynamicDefinedDataset
 from ..models.dynamic_schema import DynamicDataset
 from ..models.preprocess import validate_schema
+from ..models.resolver import find_dataset_files
 from ..utils.logging import get_logger
+from ..utils.yaml_loader import download_config
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
 
 logger = get_logger("argus.orchestrator")
@@ -49,7 +48,7 @@ class ValidationPipeline:
 
         if result:
             if result["programme_type"] != settings.FALLBACK_PROGRAMME:
-                dataset = BaseDataset(
+                dataset = DynamicDefinedDataset(
                     schema_path=result[schema_file_name], validator_path=result[validator_file_name]
                 )
             else:
@@ -125,6 +124,7 @@ class ValidationPipeline:
         """
         all_results: list[ValidationResult] = []
 
+        # load the initial schema and validator list
         try:
             if use_local_config:
                 dataset_config_directory = settings.DATASET_CONFIG_LOCAL_DIR
@@ -142,16 +142,16 @@ class ValidationPipeline:
                 all_results.append(
                     ValidationResult(
                         rule="GetYAMLConfig",
-                        message=f"No dataset schema for '{programme_type}' '{output_type}' was"
-                        + f" found for version '{dataset_config_directory.name}'. Falling back to "
-                        + f"'{dataset.schema.programme_type}'.",
+                        message=f"No schema for '{programme_type}' '{output_type}' was"
+                        + f" found for version '{dataset_config_directory.name}'. Falling back to"
+                        + f" '{dataset.schema.programme_type}' '{dataset.schema.output_type}'.",
                         severity=SeverityLevel.WARNING,
                     )
                 )
                 logger.warning(
-                    f"No dataset schema for '{programme_type}' '{output_type}' was found for "
-                    + f" version '{dataset_config_directory.name}'. Falling back to "
-                    + f"'{dataset.schema.programme_type}' '{dataset.schema.output_type}'.",
+                    f"No dataset schema for '{programme_type}' '{output_type}' was found for"
+                    + f" version '{dataset_config_directory.name}'. Falling back to"
+                    + f" '{dataset.schema.programme_type}' '{dataset.schema.output_type}'.",
                     extra={"file": filepath.name},
                 )
 
@@ -281,30 +281,29 @@ class ValidationPipeline:
             )
             return all_results
 
-        if dataset.schema.programme_type == settings.FALLBACK_PROGRAMME:
-            logger.info(
-                "Building dynamic schema.",
-                extra={
-                    "file": filepath.name,
-                    "programme_type": dataset.schema.programme_type,
-                    "output_type": dataset.schema.output_type,
-                    "schema version": self.argus_schemas_version,
-                },
-            )
-            results: list[ValidationResult] = dataset.process_data(
-                dataset_config_directory=dataset_config_directory
-            )
-            if results:
-                all_results.extend(results)
+        logger.info(
+            "Building schema and validators.",
+            extra={
+                "file": filepath.name,
+                "programme_type": dataset.schema.programme_type,
+                "output_type": dataset.schema.output_type,
+                "schema version": self.argus_schemas_version,
+            },
+        )
+        results: list[ValidationResult] = dataset.process_data(
+            dataset_config_directory=dataset_config_directory
+        )
+        if results:
+            all_results.extend(results)
 
-            all_results.append(
-                ValidationResult(
-                    rule="ExcelFileLoading",
-                    message="Data mapping after dynamic data matching.",
-                    severity=SeverityLevel.ADMIN_INFO,
-                    details=self._excel_loader_to_dict(dataset.data),
-                )
+        all_results.append(
+            ValidationResult(
+                rule="ExcelFileLoading",
+                message="Data mapping after dynamic data matching.",
+                severity=SeverityLevel.ADMIN_INFO,
+                details=self._excel_loader_to_dict(dataset.data),
             )
+        )
 
         all_results.append(
             ValidationResult(
@@ -410,6 +409,10 @@ class ValidationPipeline:
             "summary": counts,
             **{key: buckets[key] for key in buckets},
             "metadata": {
+                # this is currently the passed in value, not neceissarily the used value
+                # eg: if the programme does not have a schema and argus reverts to 'other'
+                # then programme_type here will not be 'other'
+                # TODO: set programme_type = used programme_type
                 "programme_type": programme_type,
                 "output_type": output_type,
                 "validation_date": datetime.now(UTC).isoformat(timespec="seconds"),

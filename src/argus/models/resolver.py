@@ -76,14 +76,34 @@ class ResolveDataset:
                 result[key] = value
         return result
 
+    def _substitute_vars(self, obj: Any, variables: dict[str, str]) -> Any:
+        """Recursively replace {var_name} in all string values."""
+        if isinstance(obj, str):
+            for var_name, var_val in variables.items():
+                obj = obj.replace(f"{{{var_name}}}", var_val)
+            return obj
+        elif isinstance(obj, dict):
+            return {k: self._substitute_vars(v, variables) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._substitute_vars(v, variables) for v in obj]
+        return obj
+
     def _resolve(self, item: Any, definitions: dict[str, str], path: str = "root") -> Any:
         """recursivly parses the file and returns the mapped content"""
         if isinstance(item, list):
-            return [self._resolve(x, definitions, f"{path}[i]") for x in item]
+            resolved_list: list[Any] = []
+            for x in item:
+                resolved_item = self._resolve(x, definitions, f"{path}[i]")
+                if isinstance(resolved_item, list):
+                    # $use pointed at a multi-block definition: splice its contents
+                    resolved_list.extend(resolved_item)
+                else:
+                    resolved_list.append(resolved_item)
+            return resolved_list
 
         if isinstance(item, dict):
             # supported keys used in yaml files
-            internal_keys = {"$use", "override", "$append_columns"}
+            internal_keys = {"$use", "override", "$append_columns", "variables"}
 
             if "$use" in item:
                 ref_name = item["$use"]
@@ -126,6 +146,16 @@ class ResolveDataset:
                         item["override"], definitions, f"{path}(override_block)"
                     )
                     resolved_content = self._deep_merge(resolved_content, override_data)
+
+                if "variables" in item:
+                    variables = self._resolve(item["variables"], definitions, f"{path}(variables)")
+                    resolved_content = self._substitute_vars(resolved_content, variables)
+                    if isinstance(resolved_content, dict):
+                        resolved_content.pop("variables", None)
+                    elif isinstance(resolved_content, list):
+                        for entry in resolved_content:
+                            if isinstance(entry, dict):
+                                entry.pop("variables", None)
 
                 return resolved_content
 
