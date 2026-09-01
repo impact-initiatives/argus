@@ -87,13 +87,13 @@ class SchemaSheetMap(BaseModel):
     standard_name: str
     classification: SheetClassification = SheetClassification.OTHER
     alternate_names: list[str] = Field(default=[])
-    columns: list[SchemaColumnMap] = Field(default=[])    
+    columns: list[SchemaColumnMap] = Field(default=[])
     allow_fuzzy_matching: bool = True
     required: bool = True
     # if setting a matching term, the fuzzy matching config will be ignored
     matching_term: str | None = None
-    matching_term_ignore: list[str] = Field(default=[])    
-    # these are used to build some validaton rules and support sheet id linking    
+    matching_term_ignore: list[str] = Field(default=[])
+    # these are used to build some validaton rules and support sheet id linking
     parent_sheet: str | None = None
     parent_linking_column: str | None = None
     linked_sheet: str | None = None

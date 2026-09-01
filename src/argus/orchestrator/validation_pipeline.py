@@ -27,7 +27,6 @@ class ValidationPipeline:
         self.set_errors: set[SeverityLevel] = set([SeverityLevel.ADMIN_ERROR, SeverityLevel.ERROR])
         self.argus_schemas_version: str = ""
 
-
     def _setup_schema(
         self, dataset_config_directory: Path, programme_type: str, output_type: str, locale: str
     ):
@@ -410,11 +409,11 @@ class ValidationPipeline:
             "summary": counts,
             **{key: buckets[key] for key in buckets},
             "metadata": {
-                # this is currently the passed in value, not neceissarily the used value 
+                # this is currently the passed in value, not neceissarily the used value
                 # eg: if the programme does not have a schema and argus reverts to 'other'
-                # then programme_type here will not be 'other' 
+                # then programme_type here will not be 'other'
                 # TODO: set programme_type = used programme_type
-                "programme_type": programme_type, 
+                "programme_type": programme_type,
                 "output_type": output_type,
                 "validation_date": datetime.now(UTC).isoformat(timespec="seconds"),
                 "argus_version": settings.argus_version,

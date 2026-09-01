@@ -259,9 +259,11 @@ class CleaningLogToCleanCheck(BaseValidator):
                         count=multiple_change_df.select(
                             [
                                 pl.col("uuid"),
-                                pl.col(data_loaded_columns[
-                                    self.cleaning_log_question_column
-                                ].data_column_name),
+                                pl.col(
+                                    data_loaded_columns[
+                                        self.cleaning_log_question_column
+                                    ].data_column_name
+                                ),
                             ]
                         ).n_unique(),
                     ),
