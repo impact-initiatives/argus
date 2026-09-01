@@ -129,6 +129,7 @@ class CleaningLogToCleanCheck(BaseValidator):
             source_sheet=self.cleaning_log_sheet,
             target_sheet=self.clean_data_sheet,
             rule=self.name,
+            exclude_id_values=self.exclude_id_values,
         )
         results.extend(result)
         if clean_data_id_columns is None or cleaning_log_id_columns is None:

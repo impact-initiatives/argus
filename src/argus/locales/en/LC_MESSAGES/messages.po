@@ -195,7 +195,8 @@ msgstr "Column '{source_column}' in sheet '{source_sheet}' was linked to column 
 
 #: src/argus/validators/data_helpers.py:510
 msgid "data_helpers.check_id_column_overlap"
-msgstr "Column '{source_column}' in sheet '{source_sheet}' had an overlap of {overlap} with column '{target_column}' in sheet '{target_sheet}'. A minimum of {min_overlap} is required for these columns to be considered linkable id columns."
+msgstr "Too many values in sheet '{source_sheet}' Column '{source_column}' were not found in sheet '{target_sheet}' column '{target_column}' so the coulumns could not be linked. Overlap: {overlap}. Minimum overlap: {min_overlap}."
+#: msgstr "Column '{source_column}' in sheet '{source_sheet}' had an overlap of {overlap} with column '{target_column}' in sheet '{target_sheet}'. A minimum of {min_overlap} is required for these columns to be considered linkable id columns."
 
 #: src/argus/validators/data_helpers.py:543
 msgid "data_helpers.check_data_exists"

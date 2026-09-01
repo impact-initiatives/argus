@@ -22,7 +22,7 @@ class CrossSheetIdCheck(BaseValidator):
         master_sheet: str = "raw_data",
         child_sheets: list[str] | None = None,
         is_in: bool = True,
-        filter_values: list[str] | None = None,
+        exclude_id_values: list[str] | None = None,
     ):
         """Checks to see if ids from child sheet/s are present in a master/parent sheet
 
@@ -34,7 +34,7 @@ class CrossSheetIdCheck(BaseValidator):
                 master_sheet. Defaults to ['clean_data', 'deletion_log', 'cleaning_log']
             is_in (bool, optional): determins if the child ids should (true) or
                 should not (false) be in the matser sheet
-            filter_values (list[str] | None): excludes uuid records from a child sheet from
+            exclude_id_values (list[str] | None): excludes uuid records from a child sheet from
                 the checks. Currently used for filtering out "all" from the cleaning log.
                 Defaults to ["all"]
         """
@@ -47,7 +47,9 @@ class CrossSheetIdCheck(BaseValidator):
         self.schema: BaseDatasetSchema = schema
         self.is_in: bool = is_in
         # used to filter out "all" in the cleaning log id column, for example
-        self.filter_values: list[str] = filter_values if filter_values is not None else ["all"]
+        self.exclude_id_values: list[str] = (
+            exclude_id_values if exclude_id_values is not None else ["all"]
+        )
 
     @property
     @override
@@ -119,6 +121,7 @@ class CrossSheetIdCheck(BaseValidator):
                 target_sheet=self.master_sheet,
                 rule=self.name,
                 min_overlap=settings.MIN_COLUMN_MATCHING_OVERLAP if self.is_in else 0.0,
+                exclude_id_values=self.exclude_id_values,
             )
             results.extend(result)
             if child_data_id_columns is None or master_id_columns is None:
@@ -144,7 +147,7 @@ class CrossSheetIdCheck(BaseValidator):
                         (
                             (
                                 pl.col(child_data_id_columns.data_column_name)
-                                .is_in(self.filter_values)
+                                .is_in(self.exclude_id_values)
                                 .not_()
                             )
                             & (
