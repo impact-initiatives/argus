@@ -142,13 +142,7 @@ class DynamicDataset(BaseDataset):
         return results
 
     def build_dataset_validators(self, consent_sheet: str | None) -> list[ValidationResult]:
-        """builds a list of validators matched to use the dynamically created schema.
-
-        Current assumptions:
-        - there is only ever one deletion log and it only lists deleted
-          records for the parent object
-
-        """
+        """builds a list of validators matched to use the dynamically created schema."""
         results: list[ValidationResult] = []
         rule = "DynamicSchemaCreation_build_validators"
 

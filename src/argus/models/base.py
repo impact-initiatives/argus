@@ -72,17 +72,32 @@ class SchemaColumnMap(BaseModel):
 
 
 class SchemaSheetMap(BaseModel):
+    """
+    parent_sheet, parent_linking_column for linking:
+        - deletion log to raw
+        - cleaning log to clean
+        - repeat group to parent
+    linked_sheet for linking:
+        - raw and clean sheets
+    linked_log for linking:
+        - raw to deletion log
+        - clean to cleaning log
+    """
+
     standard_name: str
     classification: SheetClassification = SheetClassification.OTHER
     alternate_names: list[str] = Field(default=[])
-    columns: list[SchemaColumnMap] = Field(default=[])
-    parent_sheet: str | None = None
-    parent_linking_column: str | None = None
+    columns: list[SchemaColumnMap] = Field(default=[])    
     allow_fuzzy_matching: bool = True
+    required: bool = True
     # if setting a matching term, the fuzzy matching config will be ignored
     matching_term: str | None = None
-    matching_term_ignore: list[str] = Field(default=[])
-    required: bool = True
+    matching_term_ignore: list[str] = Field(default=[])    
+    # these are used to build some validaton rules and support sheet id linking    
+    parent_sheet: str | None = None
+    parent_linking_column: str | None = None
+    linked_sheet: str | None = None
+    linked_log: str | None = None
 
     @model_validator(mode="after")
     def lowercase_all(self):
