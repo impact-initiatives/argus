@@ -147,20 +147,23 @@ class Parser:
             if node[0] == "num":
                 return ("num", "-" + node[1])  # fold: -999 becomes a single numeric literal
             return ("neg", node)
-
         if kind == "NAME":
             if self.peek() == ("OP", "("):  # function call
                 self.advance()
+
+                if self.peek() == ("OP", ")"):
+                    # Zero-argument function: true(), false(), ...
+                    self.advance()
+                    if value in ("true", "false"):
+                        return ("bool", value == "true")
+                    raise ValueError(f"Unsupported function: {value}()")
+
+                # At least one argument
                 args = [self.parse_or()]
                 while self.peek() == ("OP", ","):
                     self.advance()
                     args.append(self.parse_or())
                 self.expect_op(")")
-
-                if value in ("true", "false"):      # function form: true() / false()
-                    if args:                        # these take no arguments
-                        raise ValueError(f"{value}() takes no arguments")
-                    return ("bool", value == "true")
 
                 if value == "selected":
                     if len(args) != 2 or args[0][0] != "ref":
@@ -174,7 +177,13 @@ class Parser:
                         raise ValueError("count-selected() expects (${var},)")
                     return ("count_selected", args[0][1])
 
+                if value in ("true", "false"):
+                    raise ValueError(f"{value}() takes no arguments")
+
                 raise ValueError(f"Unsupported function: {value}()")
+
+            if value in ("true", "false"):
+                return ("bool", value == "true")
 
         raise ValueError(f"Unexpected token: {tok}")
 
@@ -201,7 +210,7 @@ ARITH_MAP = {
 }
 
 
-def _to_expr(node, df_columns: set[str],  schema: dict[str, pl.DataType]) -> pl.Expr:
+def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.Expr:
     def _is_numeric_node(node) -> bool:
         """True if the node evaluates to a number by construction."""
         if node[0] == "num":
@@ -211,7 +220,6 @@ def _to_expr(node, df_columns: set[str],  schema: dict[str, pl.DataType]) -> pl.
         if node[0] == "arith":
             return True
         return node[0] == "count_selected"
-
 
     kind = node[0]
 
@@ -242,20 +250,26 @@ def _to_expr(node, df_columns: set[str],  schema: dict[str, pl.DataType]) -> pl.
 
     if kind == "cmp":
         _, op, left, right = node
-        left_side, right_side = _to_expr(left, df_columns, schema), _to_expr(right, df_columns, schema)
-        
+        left_side, right_side = (
+            _to_expr(left, df_columns, schema),
+            _to_expr(right, df_columns, schema),
+        )
+
         # Force numeric cast if either side contains arithmetic operations.
         # In ODK/XPath, +, -, *, div, mod are only defined for numbers.
         if _is_numeric_node(left) or _is_numeric_node(right):
             # Existing heuristic: literal numbers or count-selected()
             left_side = left_side.cast(pl.Float64, strict=False)
             right_side = right_side.cast(pl.Float64, strict=False)
-        
+
         return CMP_MAP[op](left_side, right_side).fill_null(False)
 
     if kind == "arith":
         _, op, left, right = node
-        left_side, right_side = _to_expr(left, df_columns, schema), _to_expr(right, df_columns, schema)
+        left_side, right_side = (
+            _to_expr(left, df_columns, schema),
+            _to_expr(right, df_columns, schema),
+        )
         left_side = left_side.cast(pl.Float64, strict=False)
         right_side = right_side.cast(pl.Float64, strict=False)
         return ARITH_MAP[op](left_side, right_side)
@@ -296,7 +310,9 @@ def _to_expr(node, df_columns: set[str],  schema: dict[str, pl.DataType]) -> pl.
     raise ValueError(f"Unknown node: {node}")
 
 
-def build_relevance_expression(relevant: str, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.Expr:
+def build_relevance_expression(
+    relevant: str, df_columns: set[str], schema: dict[str, pl.DataType]
+) -> pl.Expr:
     """Parse a Kobo 'relevant' string into a single non-null Boolean Polars expr."""
     ast = Parser(tokenize(str(relevant))).parse()
     return _to_expr(ast, df_columns, schema).fill_null(False)

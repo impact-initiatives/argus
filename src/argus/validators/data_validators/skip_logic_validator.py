@@ -173,7 +173,7 @@ class SkipLogicCheck(BaseValidator):
                     ] = build_relevance_expression(
                         row[data_loaded_columns[self.survey_relevant_column].data_column_name],
                         set(data_loaded_sheets[sheet].data.columns),
-                        data_loaded_sheets[sheet].data.schema
+                        data_loaded_sheets[sheet].data.schema,
                     )
                 except Exception as e:
                     # most likely due to column references in other sheets but
