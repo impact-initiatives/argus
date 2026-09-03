@@ -5,12 +5,12 @@ import polars as pl
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ..data_helpers import (
+from ..helpers.data_helpers import (
     get_data_loaded_columns,
     get_data_loaded_sheets,
     get_data_sheet_ids,
 )
-from ..schema_helpers import (
+from ..helpers.schema_helpers import (
     get_schema_loaded_columns,
     get_schema_loaded_sheets,
     get_schema_process_values,

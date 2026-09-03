@@ -4,11 +4,11 @@ from typing import override
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ..data_helpers import (
+from ..helpers.data_helpers import (
     get_data_loaded_sheets,
     get_data_sheet_id,
 )
-from ..schema_helpers import get_schema_loaded_sheet
+from ..helpers.schema_helpers import get_schema_loaded_sheet
 
 
 class CrossSheetRowSumCheck(BaseValidator):

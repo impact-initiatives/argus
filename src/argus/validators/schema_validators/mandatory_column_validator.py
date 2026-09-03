@@ -7,7 +7,7 @@ from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base import SchemaColumnMap
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ..data_helpers import get_data_loaded_columns, get_data_loaded_sheets
+from ..helpers.data_helpers import get_data_loaded_columns, get_data_loaded_sheets
 
 
 class MandatoryColumnsCheck(BaseValidator):

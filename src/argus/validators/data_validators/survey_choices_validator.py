@@ -2,16 +2,16 @@ from typing import override
 
 import polars as pl
 
-from ...common.expression_builder import normalise_list
 from ...common.list_matching import filter_loaded_sheets, match_list
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ..data_helpers import (
+from ..helpers.data_helpers import (
     get_data_loaded_columns,
     get_data_loaded_sheets,
     get_data_sheet_ids,
 )
+from ..helpers.expression_builder import normalise_list
 
 
 class SurveyChoicesCheck(BaseValidator):

@@ -5,7 +5,7 @@ import polars as pl
 
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ...validators.data_helpers import (
+from ..helpers.data_helpers import (
     get_data_loaded_column,
     get_data_loaded_columns,
     get_data_loaded_sheets,

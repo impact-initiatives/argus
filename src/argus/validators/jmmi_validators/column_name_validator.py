@@ -9,7 +9,7 @@ from ...common.list_matching import lower_list_items, match_list, upper_list_ite
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...utils.yaml_loader import load_file
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ...validators.data_helpers import (
+from ..helpers.data_helpers import (
     get_data_loaded_sheets,
 )
 

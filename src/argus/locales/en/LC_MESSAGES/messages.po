@@ -333,4 +333,14 @@ msgstr "'{main_column}' must start with '{start_column}', contain '{contain_colu
 msgid "empty_column_validator.empty_values"
 msgstr "{count} column values were empty when values were expected. Check output for details."
 
+msgid "skip_logic_validator.failed_conversions"
+msgstr "{count} skip logic expressions could not be converted. Check output for details."
 
+msgid "skip_logic_validator.invalid_values"
+msgstr "{count} column values did not match the skip logic. Check output for details."
+
+msgid "skip_logic_validator.invalid_values.issue.empty_value"
+msgstr "No value when question was not skipped."
+
+msgid "skip_logic_validator.invalid_values.issue.not_empty_value"
+msgstr "Value when question was skipped."

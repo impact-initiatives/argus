@@ -23,7 +23,11 @@ from ..validators.data_validators import (
     SurveyChoicesCheck,
     UniqueColumnCheck,
 )
-from ..validators.jmmi import JMMIColumnDataCheck, JMMIColumnNameCheck, JMMIMebAnalysisCheck
+from ..validators.jmmi_validators import (
+    JMMIColumnDataCheck,
+    JMMIColumnNameCheck,
+    JMMIMebAnalysisCheck,
+)
 from ..validators.schema_validators import (
     ColumnNameCheck,
     DuplicateSheetMatchCheck,
