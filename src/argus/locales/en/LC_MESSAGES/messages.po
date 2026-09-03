@@ -334,7 +334,7 @@ msgid "empty_column_validator.empty_values"
 msgstr "{count} column values were empty when values were expected. Check output for details."
 
 msgid "skip_logic_validator.failed_conversions"
-msgstr "{count} skip logic expressions could not be converted. Check output for details."
+msgstr "{count} skip logic expressions could not be converted. This could be caused by reference columns being on different sheets. Check output for details."
 
 msgid "skip_logic_validator.invalid_values"
 msgstr "{count} column values did not match the skip logic. Check output for details."

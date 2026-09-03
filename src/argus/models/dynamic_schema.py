@@ -33,6 +33,7 @@ from ..validators.data_validators import (
     DataTypeCheck,
     NaNDataCheck,
     RawToCleanToLogCheck,
+    SkipLogicCheck,
     SurveyChoicesCheck,
 )
 from .base_dataset_schemas import BaseDatasetSchema
@@ -129,6 +130,9 @@ class DynamicDataset(BaseDataset):
             )
             self.validators.append(
                 NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
+            )
+            self.validators.append(
+                SkipLogicCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
             )
         else:
             results.append(
@@ -349,6 +353,9 @@ class DynamicDataset(BaseDataset):
             )
             self.validators.append(
                 NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
+            )
+            self.validators.append(
+                SkipLogicCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
             )
         else:
             results.append(

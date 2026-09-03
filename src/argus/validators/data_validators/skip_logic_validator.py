@@ -27,12 +27,13 @@ class SkipLogicCheck(BaseValidator):
 
         Args:
             schema (BaseDatasetSchema): dataset schema
-            survey_sheet (str, optional): name of the kobo survey sheet in excel.
+            survey_sheet (str, optional): name of the kobo survey sheet.
                 Defaults to 'survey'.
             survey_relevant_column (str, optional): name of the relevant column in the
                 kobo survey sheet. Defaults to 'relevant'.
             survey_name_column (str, optional): name of the name column in the
                 kobo survey sheet. Defaults to 'name'.
+            check_sheets (list[str] | None): list of clean data sheets to check
 
         """
         self.schema: BaseDatasetSchema = schema
@@ -50,6 +51,23 @@ class SkipLogicCheck(BaseValidator):
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
+        """Checks that the columns/questions in the survey that contain skip logic
+        contain:
+        - no value when the question was skipped
+        - a value when the question was not skipped
+
+        This is done through converting kobo skip logic into polars expressions.
+
+        Limitations:
+        This process does not currently support column references that are on
+        different sheets. Joining the datasets together is possible but it causes
+        the dataset to be quite large (in terms of height) making the process
+        computationally expensive. Any columns that are affected by this produce
+        a warning.
+
+        Returns:
+            list[ValidationResult]: a list of validation results, if any
+        """
 
         results: list[ValidationResult] = []
         failed_conversions: list[dict[str, str]] = []
@@ -63,6 +81,8 @@ class SkipLogicCheck(BaseValidator):
                 pl.Series("issue", [], dtype=pl.String),
             ]
         )
+
+        # check all the sheets exist
 
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data,
@@ -112,8 +132,6 @@ class SkipLogicCheck(BaseValidator):
                     pl.col(
                         data_loaded_columns[self.survey_name_column].data_column_name
                     ).str.to_lowercase(),
-                    # data_loaded_columns[self.survey_relevant_column].data_column_name,
-                    # data_loaded_columns[self.survey_name_column].data_column_name,
                 ]
             )
         )
@@ -157,6 +175,8 @@ class SkipLogicCheck(BaseValidator):
                         set(data_loaded_sheets[sheet].data.columns),
                     )
                 except Exception as e:
+                    # most likely due to column references in other sheets but
+                    # will also report errors with the expression builder
                     failed_conversions.append(
                         {
                             "sheet": sheet,
@@ -175,7 +195,7 @@ class SkipLogicCheck(BaseValidator):
                 continue
 
             check_sheet_id_column = data_id_columns[sheet][0]
-            
+
             # useful for finind out which columns are causing errors in the
             # below select statements
             # df = data_loaded_sheets[sheet].data

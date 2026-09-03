@@ -17,6 +17,7 @@ from ..validators.data_validators import (
     DataTypeCheck,
     NaNDataCheck,
     RawToCleanToLogCheck,
+    SkipLogicCheck,
     SurveyChoicesCheck,
 )
 
@@ -218,4 +219,7 @@ class DynamicDefinedDataset(BaseDataset):
             )
             self.validators.append(
                 NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
+            )
+            self.validators.append(
+                SkipLogicCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
             )

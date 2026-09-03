@@ -206,7 +206,7 @@ def _to_expr(node, df_columns: set[str]) -> pl.Expr:
         if node[0] == "neg":
             return _is_numeric_node(node[1])
         if node[0] == "arith":
-            return True  # arithmetic always yields a number in ODK/XPath
+            return True
         return node[0] == "count_selected"
 
     kind = node[0]

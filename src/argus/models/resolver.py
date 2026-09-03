@@ -20,6 +20,7 @@ from ..validators.data_validators import (
     NaNDataCheck,
     PiiDataCheck,
     RawToCleanToLogCheck,
+    SkipLogicCheck,
     SurveyChoicesCheck,
     UniqueColumnCheck,
 )
@@ -55,6 +56,7 @@ VALIDATOR_REGISTRY = {
     "MissingSheetsCheck": MissingSheetsCheck,
     "UnexpectedSheetsCheck": UnexpectedSheetsCheck,
     "EmptyColumnCheck": EmptyColumnCheck,
+    "SkipLogicCheck": SkipLogicCheck,
     "JMMIColumnNameCheck": JMMIColumnNameCheck,
     "JMMIMebAnalysisCheck": JMMIMebAnalysisCheck,
     "JMMIColumnDataCheck": JMMIColumnDataCheck,
