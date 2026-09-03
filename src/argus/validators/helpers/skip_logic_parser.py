@@ -149,8 +149,6 @@ class Parser:
             return ("neg", node)
 
         if kind == "NAME":
-            if value in ("true", "false"):
-                return ("bool", value == "true")
             if self.peek() == ("OP", "("):  # function call
                 self.advance()
                 args = [self.parse_or()]
@@ -158,6 +156,11 @@ class Parser:
                     self.advance()
                     args.append(self.parse_or())
                 self.expect_op(")")
+
+                if value in ("true", "false"):      # function form: true() / false()
+                    if args:                        # these take no arguments
+                        raise ValueError(f"{value}() takes no arguments")
+                    return ("bool", value == "true")
 
                 if value == "selected":
                     if len(args) != 2 or args[0][0] != "ref":
@@ -198,7 +201,7 @@ ARITH_MAP = {
 }
 
 
-def _to_expr(node, df_columns: set[str]) -> pl.Expr:
+def _to_expr(node, df_columns: set[str],  schema: dict[str, pl.DataType]) -> pl.Expr:
     def _is_numeric_node(node) -> bool:
         """True if the node evaluates to a number by construction."""
         if node[0] == "num":
@@ -208,6 +211,7 @@ def _to_expr(node, df_columns: set[str]) -> pl.Expr:
         if node[0] == "arith":
             return True
         return node[0] == "count_selected"
+
 
     kind = node[0]
 
@@ -219,34 +223,41 @@ def _to_expr(node, df_columns: set[str]) -> pl.Expr:
         return pl.lit(node[1])
     if kind == "ref":
         name = node[1]
-        if df_columns is not None and name not in df_columns:
+        if name not in schema:
             raise KeyError(f"Referenced column {name!r} not found in data")
-        return pl.col(name).cast(pl.String, strict=False).str.strip_chars().replace("", None)
+        col = pl.col(name)
+        if schema[name] in (pl.String, pl.Utf8):
+            return col.str.strip_chars().replace("", None)
+        return col
 
     if kind == "or":
-        return _to_expr(node[1], df_columns) | _to_expr(node[2], df_columns)
+        return _to_expr(node[1], df_columns, schema) | _to_expr(node[2], df_columns, schema)
     if kind == "and":
-        return _to_expr(node[1], df_columns) & _to_expr(node[2], df_columns)
+        return _to_expr(node[1], df_columns, schema) & _to_expr(node[2], df_columns, schema)
     if kind == "not":
-        return ~_to_expr(node[1], df_columns)
+        return ~_to_expr(node[1], df_columns, schema)
 
     if kind == "neg":
-        return -_to_expr(node[1], df_columns)
+        return -_to_expr(node[1], df_columns, schema)
 
     if kind == "cmp":
         _, op, left, right = node
-        left_side, right_side = _to_expr(left, df_columns), _to_expr(right, df_columns)
+        left_side, right_side = _to_expr(left, df_columns, schema), _to_expr(right, df_columns, schema)
+        
+        # Force numeric cast if either side contains arithmetic operations.
+        # In ODK/XPath, +, -, *, div, mod are only defined for numbers.
         if _is_numeric_node(left) or _is_numeric_node(right):
+            # Existing heuristic: literal numbers or count-selected()
             left_side = left_side.cast(pl.Float64, strict=False)
             right_side = right_side.cast(pl.Float64, strict=False)
+        
         return CMP_MAP[op](left_side, right_side).fill_null(False)
 
     if kind == "arith":
         _, op, left, right = node
-        left_side, right_side = _to_expr(left, df_columns), _to_expr(right, df_columns)
-        if _is_numeric_node(left) or _is_numeric_node(right):
-            left_side = left_side.cast(pl.Float64, strict=False)
-            right_side = right_side.cast(pl.Float64, strict=False)
+        left_side, right_side = _to_expr(left, df_columns, schema), _to_expr(right, df_columns, schema)
+        left_side = left_side.cast(pl.Float64, strict=False)
+        right_side = right_side.cast(pl.Float64, strict=False)
         return ARITH_MAP[op](left_side, right_side)
 
     if kind == "selected":
@@ -285,10 +296,10 @@ def _to_expr(node, df_columns: set[str]) -> pl.Expr:
     raise ValueError(f"Unknown node: {node}")
 
 
-def build_relevance_expression(relevant: str, df_columns: set[str]) -> pl.Expr:
+def build_relevance_expression(relevant: str, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.Expr:
     """Parse a Kobo 'relevant' string into a single non-null Boolean Polars expr."""
     ast = Parser(tokenize(str(relevant))).parse()
-    return _to_expr(ast, df_columns).fill_null(False)
+    return _to_expr(ast, df_columns, schema).fill_null(False)
 
 
 # ---------------------------------------------------------------------------
@@ -298,4 +309,10 @@ def build_relevance_expression(relevant: str, df_columns: set[str]) -> pl.Expr:
 
 def is_missing(col: str) -> pl.Expr:
     # null, empty string, or whitespace-only
-    return pl.col(col).is_null() | (pl.col(col).cast(pl.Utf8).str.strip_chars() == "")
+    return (
+        pl.col(col)
+        .cast(pl.String, strict=False)
+        .str.strip_chars()
+        .eq("")
+        .fill_null(True)  # null -> True (missing)
+    )

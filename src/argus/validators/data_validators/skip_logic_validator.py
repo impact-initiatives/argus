@@ -173,6 +173,7 @@ class SkipLogicCheck(BaseValidator):
                     ] = build_relevance_expression(
                         row[data_loaded_columns[self.survey_relevant_column].data_column_name],
                         set(data_loaded_sheets[sheet].data.columns),
+                        data_loaded_sheets[sheet].data.schema
                     )
                 except Exception as e:
                     # most likely due to column references in other sheets but
@@ -211,10 +212,13 @@ class SkipLogicCheck(BaseValidator):
             value_exist_df = (
                 data_loaded_sheets[sheet]
                 .data.lazy()
+                .with_columns(
+                    *(e.alias(q) for q, e in expressions.items() if q in check_columns),
+                )
                 .select(
                     [
                         check_sheet_id_column.data_column_name,
-                        *(e.alias(q) for q, e in expressions.items() if q in check_columns),
+                        *(q for q in expressions if q in check_columns),
                     ]
                 )
                 .collect()
@@ -229,10 +233,13 @@ class SkipLogicCheck(BaseValidator):
             value_not_exist_df = (
                 data_loaded_sheets[sheet]
                 .data.lazy()
+                .with_columns(
+                    *(is_missing(q).alias(q) for q in expressions if q in check_columns),
+                )
                 .select(
                     [
                         check_sheet_id_column.data_column_name,
-                        *(is_missing(q).alias(q) for q in expressions if q in check_columns),
+                        *(q for q in expressions if q in check_columns),
                     ]
                 )
                 .collect()
