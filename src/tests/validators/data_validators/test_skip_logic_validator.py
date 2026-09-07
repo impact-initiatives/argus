@@ -903,4 +903,3 @@ class TestSchemaObjects:
         do_basic_checks(result, 1)
         assert result[0].details is not None
         assert result[0].details["sheet"][0] == "clean_data"
-
