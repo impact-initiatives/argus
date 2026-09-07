@@ -3,9 +3,7 @@ from typing import Any
 
 import polars as pl
 
-# ---------------------------------------------------------------------------
-# 1. Tokenizer
-# ---------------------------------------------------------------------------
+# Tokenizer
 
 TOKEN_RE = re.compile(
     r"""
@@ -45,11 +43,8 @@ def tokenize(text: str) -> list[tuple[str, Any]]:
     return tokens
 
 
-# ---------------------------------------------------------------------------
-# 2. Recursive-descent parser  (produces tuple-based AST nodes)
-#
+# Recursive-descent parser  (produces tuple-based AST nodes)
 # Precedence (loosest -> tightest):  or, and, not, comparison, +- , */div/mod
-# ---------------------------------------------------------------------------
 
 COMPARISON_OPS = {"=", "!=", "<", ">", "<=", ">="}
 
@@ -193,9 +188,7 @@ class Parser:
         raise ValueError(f"Skip logic parser: Unexpected token: {tok}")
 
 
-# ---------------------------------------------------------------------------
-# 3. AST -> Polars expression
-# ---------------------------------------------------------------------------
+# AST -> Polars expression
 
 CMP_MAP = {
     "=": lambda left_side, right_side: left_side == right_side,
@@ -261,9 +254,9 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
         )
 
         # Force numeric cast if either side contains arithmetic operations.
-        # In ODK/XPath, +, -, *, div, mod are only defined for numbers.
+        # +, -, *, div, mod are only defined for numbers.
         if _is_numeric_node(left) or _is_numeric_node(right):
-            # Existing heuristic: literal numbers or count-selected()
+            # literal numbers or count-selected()
             left_side = left_side.cast(pl.Float64, strict=False)
             right_side = right_side.cast(pl.Float64, strict=False)
 
@@ -296,8 +289,8 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
     if kind == "count_selected":
         _, var = node
         # Number of selected options. An unanswered (null/empty) question
-        # must yield 0, matching ODK's behaviour — a raw split on null
-        # would give a null length and poison the surrounding arithmetic.
+        # must yield 0 — a raw split on null would give a null length
+        # and poison the surrounding arithmetic.
         return (
             pl.when(pl.col(var).is_null())
             .then(pl.lit(0))
@@ -323,9 +316,7 @@ def build_relevance_expression(
     return _to_expr(ast, df_columns, schema).fill_null(False)
 
 
-# ---------------------------------------------------------------------------
-# 4. Validator: compare skip logic against the collected data
-# ---------------------------------------------------------------------------
+# Validator: compare skip logic against the collected data
 
 
 def is_missing(col: str) -> pl.Expr:

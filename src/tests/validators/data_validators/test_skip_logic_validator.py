@@ -1,6 +1,7 @@
 import polars as pl
 import pytest
 
+from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import ValidationResult
 from argus.validators.data_validators import (
     SkipLogicCheck,
@@ -9,7 +10,7 @@ from argus.validators.helpers.skip_logic_parser import build_relevance_expressio
 from tests.helpers import build_excel_data, build_schema_with_process, do_basic_checks
 
 
-def get_validator(schema, sheets: list[str]):
+def get_validator(schema: BaseDatasetSchema, sheets: list[str]):
     """Create a UniqueColumn validator instance"""
     return SkipLogicCheck(schema=schema, check_sheets=sheets)
 
@@ -27,24 +28,6 @@ def run_skip_validation(
     data = build_excel_data(columns)
     validator = get_validator(schema, sheets=["clean_data"])
     return validator.validate(data)
-
-
-def make_case(
-    relevant: str,
-    question: str,
-    data_columns: list[tuple[str, list]],
-    values: list,
-) -> list[ValidationResult]:
-    """
-    Assemble columns for one question with given answers, plus the survey rows.
-    `values[i]` is the answer for `question` in record i.
-    """
-    cols = [("uuid", list(range(len(values)))), *data_columns, (question, values)]
-    survey = (
-        "survey",
-        [("relevant", [relevant]), ("name", [question])],
-    )
-    return run_skip_validation({"clean_data": cols, "survey": [survey]})
 
 
 class TestParserLiterals:
@@ -513,6 +496,83 @@ class TestParserArithmetic:
         assert result[0].details is not None
         assert len(result[0].details["uuid"]) == 2
 
+    def test_neg_ref_compared_to_negative_literal(self):
+        # ${loss} = '50' -> -(50) = -50 < -10 -> shown; empty target -> violation
+        # ${loss} = '5'  -> -5 < -10 is False -> hidden; consistent
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("loss", ["50", "5"]),  # string-typed export
+                    ("loss_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["-${loss} < -10"]),
+                    ("name", ["loss_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_neg_of_parenthesised_arithmetic(self):
+        # -(3 + 4) = -7 is a constant True -> always shown; empty -> 2 violations
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("always_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["-(3 + 4) = -7"]),
+                    ("name", ["always_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 2
+
+    def test_neg_on_unanswered_ref_is_false(self):
+        # ODK: -(unanswered) is null; comparison against null is False
+        # -> question hidden; empty target is consistent
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("loss", [""]),  # unanswered
+                    ("loss_probe", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["-${loss} < -10"]),
+                    ("name", ["loss_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_double_negation_of_literal_does_not_crash(self):
+        # '--5' is a valid ODK expression; naive literal folding produces
+        # the string '--5', which float() cannot parse. Verify it either
+        # folds to 5 or raises ValueError -- a crash from float() parsing
+        # would ALSO satisfy this, but see the fix below.
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("always_probe", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["--5 = 5"]),
+                    ("name", ["always_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)  # -(-5) = 5 -> True -> shown but empty
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
 
 class TestParserSelectedFunction:
     def test_select_one_match(self):
@@ -693,94 +753,13 @@ class TestParserInvalidExpressions:
             "false(${reasons})",
         ],
     )
-    def test_malformed_raises(self, bad):
+    def test_malformed_raises(self, bad: str):
 
         schema = {"a": pl.String, "b": pl.Int64}
         with pytest.raises(Exception) as e:
-            build_relevance_expression(bad, {"a", "b"}, schema)
+            _ = build_relevance_expression(bad, {"a", "b"}, schema)
 
         assert "Skip logic parser" in str(e.value)
-
-
-class TestParserNegation:
-    """Unary minus: folded onto literals, applied to refs, parentheses."""
-
-    def test_neg_ref_compared_to_negative_literal(self):
-        # ${loss} = '50' -> -(50) = -50 < -10 -> shown; empty target -> violation
-        # ${loss} = '5'  -> -5 < -10 is False -> hidden; consistent
-        result = run_skip_validation(
-            {
-                "clean_data": [
-                    ("uuid", [1, 2]),
-                    ("loss", ["50", "5"]),  # string-typed export
-                    ("loss_probe", ["", ""]),
-                ],
-                "survey": [
-                    ("relevant", ["-${loss} < -10"]),
-                    ("name", ["loss_probe"]),
-                ],
-            }
-        )
-        do_basic_checks(result, 1)
-        assert result[0].details is not None
-        assert len(result[0].details["uuid"]) == 1
-
-    def test_neg_of_parenthesised_arithmetic(self):
-        # -(3 + 4) = -7 is a constant True -> always shown; empty -> 2 violations
-        result = run_skip_validation(
-            {
-                "clean_data": [
-                    ("uuid", [1, 2]),
-                    ("always_probe", ["", ""]),
-                ],
-                "survey": [
-                    ("relevant", ["-(3 + 4) = -7"]),
-                    ("name", ["always_probe"]),
-                ],
-            }
-        )
-        do_basic_checks(result, 1)
-        assert result[0].details is not None
-        assert len(result[0].details["uuid"]) == 2
-
-    def test_neg_on_unanswered_ref_is_false(self):
-        # ODK: -(unanswered) is null; comparison against null is False
-        # -> question hidden; empty target is consistent
-        result = run_skip_validation(
-            {
-                "clean_data": [
-                    ("uuid", [1]),
-                    ("loss", [""]),  # unanswered
-                    ("loss_probe", [""]),
-                ],
-                "survey": [
-                    ("relevant", ["-${loss} < -10"]),
-                    ("name", ["loss_probe"]),
-                ],
-            }
-        )
-        do_basic_checks(result, 0)
-
-    def test_double_negation_of_literal_does_not_crash(self):
-        # '--5' is a valid ODK expression; naive literal folding produces
-        # the string '--5', which float() cannot parse. Verify it either
-        # folds to 5 or raises ValueError -- a crash from float() parsing
-        # would ALSO satisfy this, but see the fix below.
-        result = run_skip_validation(
-            {
-                "clean_data": [
-                    ("uuid", [1]),
-                    ("always_probe", [""]),
-                ],
-                "survey": [
-                    ("relevant", ["--5 = 5"]),
-                    ("name", ["always_probe"]),
-                ],
-            }
-        )
-        do_basic_checks(result, 1)  # -(-5) = 5 -> True -> shown but empty
-        assert result[0].details is not None
-        assert len(result[0].details["uuid"]) == 1
 
 
 class TestSchemaObjects:
