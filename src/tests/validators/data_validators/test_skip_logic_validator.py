@@ -372,7 +372,8 @@ class TestParserBooleanLogic:
                     (
                         "relevant",
                         [
-                            "${dis_forced}='yes_but_back' and (${dis_area_origin}='same_neighbourhood' and ${ds_plans}='move_back_original')"
+                            "${dis_forced}='yes_but_back' and (${dis_area_origin}="
+                            + "'same_neighbourhood' and ${ds_plans}='move_back_original')"
                         ],
                     ),
                     ("name", ["nested_target"]),
@@ -685,20 +686,221 @@ class TestParserInvalidExpressions:
             "and ${a}='b'",  # leading operator
             "${a}='x' extra_garbage",  # trailing tokens
             "unknown_fn(${a})",  # unsupported function
+            "unknown_fn()",
             "selected(${a})",  # wrong arity
             "count-selected('a')",  # non-ref argument
+            "selected(${reasons}, ${a})",
+            "false(${reasons})",
         ],
     )
     def test_malformed_raises(self, bad):
 
         schema = {"a": pl.String, "b": pl.Int64}
-        with pytest.raises(Exception) :
+        with pytest.raises(Exception) as e:
             build_relevance_expression(bad, {"a", "b"}, schema)
 
-    # def test_unknown_reference_raises_keyerror(self):
-    #     schema = {"some_other": pl.String}
-    #     with pytest.raises(KeyError):
-    #         build_relevance_expression("${nonexistent} = 'x'",{"a", "b"},  schema)
+        assert "Skip logic parser" in str(e.value)
 
-    # with pytest.raises(ValueError, match="arity|expects"):
-    #     build_relevance_expression("selected(${a})", schema)
+
+class TestParserNegation:
+    """Unary minus: folded onto literals, applied to refs, parentheses."""
+
+    def test_neg_ref_compared_to_negative_literal(self):
+        # ${loss} = '50' -> -(50) = -50 < -10 -> shown; empty target -> violation
+        # ${loss} = '5'  -> -5 < -10 is False -> hidden; consistent
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("loss", ["50", "5"]),  # string-typed export
+                    ("loss_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["-${loss} < -10"]),
+                    ("name", ["loss_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_neg_of_parenthesised_arithmetic(self):
+        # -(3 + 4) = -7 is a constant True -> always shown; empty -> 2 violations
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("always_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["-(3 + 4) = -7"]),
+                    ("name", ["always_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 2
+
+    def test_neg_on_unanswered_ref_is_false(self):
+        # ODK: -(unanswered) is null; comparison against null is False
+        # -> question hidden; empty target is consistent
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("loss", [""]),  # unanswered
+                    ("loss_probe", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["-${loss} < -10"]),
+                    ("name", ["loss_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_double_negation_of_literal_does_not_crash(self):
+        # '--5' is a valid ODK expression; naive literal folding produces
+        # the string '--5', which float() cannot parse. Verify it either
+        # folds to 5 or raises ValueError -- a crash from float() parsing
+        # would ALSO satisfy this, but see the fix below.
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("always_probe", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["--5 = 5"]),
+                    ("name", ["always_probe"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)  # -(-5) = 5 -> True -> shown but empty
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+
+class TestSchemaObjects:
+    def test_missing_loaded_sheet(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey_missing": [
+                    ("relevant", ["${gender}='other'"]),
+                    ("name", ["gender_other"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is None
+        assert "A data sheet for" in result[0].message
+
+    def test_missing_loaded_column(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender}='other'"]),
+                    ("name_missing", ["gender_other"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is None
+        assert "A column for 'name'" in result[0].message
+
+    def test_missing_id_column(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("id_Missing", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender}='other'"]),
+                    ("name", ["gender_other"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is None
+        assert "Expected one unique id column for" in result[0].message
+
+    def test_no_relevant_columns(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey": [
+                    ("relevant", [""]),
+                    ("name", ["gender_other"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_no_relevant_column_for_sheet(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender_diff}='other'"]),
+                    ("name", ["diff"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_some_relevant_column_for_sheet(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", "bla"]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender_diff}='other'", "${gender}='other'"]),
+                    ("name", ["diff", "gender_other"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_column_reference_on_other_sheet(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender_diff}='other'"]),
+                    ("name", ["gender_other"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert result[0].details["sheet"][0] == "clean_data"
+

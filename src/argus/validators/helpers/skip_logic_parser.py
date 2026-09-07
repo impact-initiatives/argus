@@ -26,7 +26,7 @@ def tokenize(text: str) -> list[tuple[str, Any]]:
     while pos < len(text):
         m = TOKEN_RE.match(text, pos)
         if not m:
-            raise ValueError(f"Cannot tokenize near: {text[pos : pos + 20]!r}")
+            raise ValueError(f"Skip logic parser: Cannot tokenize near: {text[pos : pos + 20]!r}")
         pos = m.end()
         kind = m.lastgroup
         value = m.group()
@@ -65,19 +65,19 @@ class Parser:
     def advance(self) -> tuple[str, Any]:
         tok = self.peek()
         if tok is None:
-            raise ValueError("Unexpected end of expression")
+            raise ValueError("Skip logic parser: Unexpected end of expression")
         self.i += 1
         return tok
 
     def expect_op(self, symbol: str) -> None:
         tok = self.advance()
         if tok != ("OP", symbol):
-            raise ValueError(f"Expected {symbol!r}, got {tok}")
+            raise ValueError(f"Skip logic parser: Expected {symbol!r}, got {tok}")
 
     def parse(self):
         node = self.parse_or()
         if self.peek() is not None:
-            raise ValueError(f"Trailing tokens: {self.tokens[self.i :]}")
+            raise ValueError(f"Skip logic parser: Trailing tokens: {self.tokens[self.i :]}")
         return node
 
     def parse_or(self):
@@ -145,7 +145,10 @@ class Parser:
         if kind == "OP" and value == "-":
             node = self.parse_atom()
             if node[0] == "num":
-                return ("num", "-" + node[1])  # fold: -999 becomes a single numeric literal
+                # -(-5) = 5: absorb instead of producing the unparsable '--5'
+                if node[1].startswith("-"):
+                    return ("num", node[1][1:])
+                return ("num", "-" + node[1])
             return ("neg", node)
         if kind == "NAME":
             if self.peek() == ("OP", "("):  # function call
@@ -156,7 +159,7 @@ class Parser:
                     self.advance()
                     if value in ("true", "false"):
                         return ("bool", value == "true")
-                    raise ValueError(f"Unsupported function: {value}()")
+                    raise ValueError(f"Skip logic parser: Unsupported function: {value}()")
 
                 # At least one argument
                 args = [self.parse_or()]
@@ -167,25 +170,27 @@ class Parser:
 
                 if value == "selected":
                     if len(args) != 2 or args[0][0] != "ref":
-                        raise ValueError("selected() expects (${var}, 'value')")
+                        raise ValueError("Skip logic parser: selected() expects (${var}, 'value')")
                     if args[1][0] != "lit":
-                        raise ValueError("selected() value must be a quoted string")
+                        raise ValueError(
+                            "Skip logic parser: selected() value must be a quoted string"
+                        )
                     return ("selected", args[0][1], args[1][1])
 
                 if value == "count-selected":
                     if len(args) != 1 or args[0][0] != "ref":
-                        raise ValueError("count-selected() expects (${var},)")
+                        raise ValueError("Skip logic parser: count-selected() expects (${var},)")
                     return ("count_selected", args[0][1])
 
                 if value in ("true", "false"):
-                    raise ValueError(f"{value}() takes no arguments")
+                    raise ValueError(f"Skip logic parser: {value}() takes no arguments")
 
-                raise ValueError(f"Unsupported function: {value}()")
+                raise ValueError(f"Skip logic parser: Unsupported function: {value}()")
 
             if value in ("true", "false"):
                 return ("bool", value == "true")
 
-        raise ValueError(f"Unexpected token: {tok}")
+        raise ValueError(f"Skip logic parser: Unexpected token: {tok}")
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +237,7 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
     if kind == "ref":
         name = node[1]
         if name not in schema:
-            raise KeyError(f"Referenced column {name!r} not found in data")
+            raise KeyError(f"Skip logic parser: Referenced column {name!r} not found in data")
         col = pl.col(name)
         if schema[name] in (pl.String, pl.Utf8):
             return col.str.strip_chars().replace("", None)
@@ -246,7 +251,7 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
         return ~_to_expr(node[1], df_columns, schema)
 
     if kind == "neg":
-        return -_to_expr(node[1], df_columns, schema)
+        return -_to_expr(node[1], df_columns, schema).cast(pl.Float64, strict=False)
 
     if kind == "cmp":
         _, op, left, right = node
@@ -307,7 +312,7 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
             .fill_null(0)
         )
 
-    raise ValueError(f"Unknown node: {node}")
+    raise ValueError(f"Skip logic parser: Unknown node: {node}")
 
 
 def build_relevance_expression(
