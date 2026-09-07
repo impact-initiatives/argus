@@ -135,9 +135,9 @@ class SkipLogicCheck(BaseValidator):
                     pl.col(
                         data_loaded_columns[self.survey_name_column].data_column_name
                     ).str.to_lowercase(),
-                    pl.col(
-                        data_loaded_columns[self.survey_required_column].data_column_name
-                    ).str.to_lowercase(),
+                    pl.col(data_loaded_columns[self.survey_required_column].data_column_name)
+                    .cast(pl.String)
+                    .str.to_lowercase(),
                 ]
             )
         )
@@ -152,7 +152,9 @@ class SkipLogicCheck(BaseValidator):
 
         survey_relevant_required_columns = (
             survey_relevant_columns_df.filter(
-                pl.col(data_loaded_columns[self.survey_required_column].data_column_name) == "yes"
+                pl.col(data_loaded_columns[self.survey_required_column].data_column_name).is_in(
+                    ["yes", "true"]
+                )
             )
             .select(data_loaded_columns[self.survey_name_column].data_column_name)
             .to_series()
