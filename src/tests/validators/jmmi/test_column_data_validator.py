@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from argus.validators.base import BaseValidator
-from argus.validators.jmmi.column_data_validator import (
+from argus.validators.jmmi_validators.column_data_validator import (
     JMMIColumnDataCheck,
 )
 from tests.helpers import build_excel_data, do_basic_checks

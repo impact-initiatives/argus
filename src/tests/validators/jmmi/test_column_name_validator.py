@@ -8,7 +8,7 @@ from argus.loaders.base import DataColumnMap
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.loaders.excel_loader import DataSheetMap
 from argus.validators.base import BaseValidator
-from argus.validators.jmmi.column_name_validator import (
+from argus.validators.jmmi_validators.column_name_validator import (
     JMMIColumnNameCheck,
 )
 from tests.helpers import do_basic_checks

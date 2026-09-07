@@ -7,12 +7,12 @@ from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base import SheetClassification
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ...validators.schema_helpers import get_schema_loaded_sheet
-from ..data_helpers import (
+from ..helpers.data_helpers import (
     get_data_loaded_sheet,
     get_data_loaded_sheets,
     get_id_linking_columns,
 )
+from ..helpers.schema_helpers import get_schema_loaded_sheet
 
 
 class CrossSheetIdCheck(BaseValidator):

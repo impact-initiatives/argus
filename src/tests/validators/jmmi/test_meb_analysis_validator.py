@@ -4,7 +4,7 @@ import pytest
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.loaders.excel_loader import DataSheetMap
 from argus.validators.base import BaseValidator
-from argus.validators.jmmi.meb_analysis_validator import (
+from argus.validators.jmmi_validators.meb_analysis_validator import (
     JMMIMebAnalysisCheck,
 )
 from tests.helpers import do_basic_checks

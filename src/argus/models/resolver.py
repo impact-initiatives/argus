@@ -20,10 +20,15 @@ from ..validators.data_validators import (
     NaNDataCheck,
     PiiDataCheck,
     RawToCleanToLogCheck,
+    SkipLogicCheck,
     SurveyChoicesCheck,
     UniqueColumnCheck,
 )
-from ..validators.jmmi import JMMIColumnDataCheck, JMMIColumnNameCheck, JMMIMebAnalysisCheck
+from ..validators.jmmi_validators import (
+    JMMIColumnDataCheck,
+    JMMIColumnNameCheck,
+    JMMIMebAnalysisCheck,
+)
 from ..validators.schema_validators import (
     ColumnNameCheck,
     DuplicateSheetMatchCheck,
@@ -51,6 +56,7 @@ VALIDATOR_REGISTRY = {
     "MissingSheetsCheck": MissingSheetsCheck,
     "UnexpectedSheetsCheck": UnexpectedSheetsCheck,
     "EmptyColumnCheck": EmptyColumnCheck,
+    "SkipLogicCheck": SkipLogicCheck,
     "JMMIColumnNameCheck": JMMIColumnNameCheck,
     "JMMIMebAnalysisCheck": JMMIMebAnalysisCheck,
     "JMMIColumnDataCheck": JMMIColumnDataCheck,

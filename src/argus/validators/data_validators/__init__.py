@@ -21,6 +21,7 @@ from .pii_validator import PiiDataCheck
 from .raw_clean_cleaning_log_validator import (
     RawToCleanToLogCheck,
 )
+from .skip_logic_validator import SkipLogicCheck
 from .survey_choices_validator import (
     SurveyChoicesCheck,
 )
@@ -40,4 +41,5 @@ __all__ = [
     "RawToCleanToLogCheck",
     "SurveyChoicesCheck",
     "UniqueColumnCheck",
+    "SkipLogicCheck",
 ]
