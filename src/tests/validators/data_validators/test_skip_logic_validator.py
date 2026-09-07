@@ -45,12 +45,30 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["${gender}='other'"]),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
         do_basic_checks(result, 1)
         assert result[0].details is not None
         assert len(result[0].details["uuid"]) == 1
+
+    def test_string_equality_true_not_required(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender}='other'"]),
+                    ("name", ["gender_other"]),
+                    ("required", ["no"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
 
     def test_string_equality_false_shows_no_violation(self):
         result = run_skip_validation(
@@ -63,6 +81,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["${gender}='other'"]),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -79,6 +98,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ['${gender}="other"']),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -98,6 +118,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["${gender}='other'"]),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -115,6 +136,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["true() or ${some_flag}='2'"]),
                     ("name", ["always_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -134,6 +156,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["false() and ${some_flag}='2'"]),
                     ("name", ["never_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -154,6 +177,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["true"]),
                     ("name", ["always_note"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -174,6 +198,7 @@ class TestParserLiterals:
                 "survey": [
                     ("relevant", ["false() or ${some_flag}='x'"]),
                     ("name", ["always_note"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -207,7 +232,11 @@ class TestParserComparisonOperators:
                     ("age", [10, 15, 20]),
                     ("age_other", ["", "", ""]),
                 ],
-                "survey": [("relevant", [relevant]), ("name", ["age_other"])],
+                "survey": [
+                    ("relevant", [relevant]),
+                    ("name", ["age_other"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result, 1)
@@ -226,6 +255,7 @@ class TestParserComparisonOperators:
                 "survey": [
                     ("relevant", ["${income} != -999"]),
                     ("name", ["income_source"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -243,7 +273,11 @@ class TestParserComparisonOperators:
                     ("age", [10, 20]),
                     ("minor_guardian", ["", "present"]),
                 ],
-                "survey": [("relevant", ["15 > ${age}"]), ("name", ["minor_guardian"])],
+                "survey": [
+                    ("relevant", ["15 > ${age}"]),
+                    ("name", ["minor_guardian"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result, 1)
@@ -266,6 +300,7 @@ class TestParserBooleanLogic:
                 "survey": [
                     ("relevant", ["${gender} = 'female' and ${age} >= 15"]),
                     ("name", ["pregnant"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -288,6 +323,7 @@ class TestParserBooleanLogic:
                         ["selected(${resp_hoh_yn}, 'yes') or selected(${non_hoh_consent},'yes')"],
                     ),
                     ("name", ["second_consented"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -309,6 +345,7 @@ class TestParserBooleanLogic:
                 "survey": [
                     ("relevant", ["not(${dis_reasons_primary} != 'yes_entirely')"]),
                     ("name", ["dis_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -333,6 +370,7 @@ class TestParserBooleanLogic:
                 "survey": [
                     ("relevant", ["(${a}='x' or ${b}='y') and ${c}='no'"]),
                     ("name", ["c"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -360,6 +398,7 @@ class TestParserBooleanLogic:
                         ],
                     ),
                     ("name", ["nested_target"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -379,6 +418,7 @@ class TestParserBooleanLogic:
                 "survey": [
                     ("relevant", ["${consent_hh}='no'"]),
                     ("name", ["refusal_notes"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -393,7 +433,11 @@ class TestParserBooleanLogic:
                     ("consent_hh", ["no"]),
                     ("refusal_notes", [""]),
                 ],
-                "survey": [("relevant", ["${consent_hh}='no'"]), ("name", ["refusal_notes"])],
+                "survey": [
+                    ("relevant", ["${consent_hh}='no'"]),
+                    ("name", ["refusal_notes"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result2, 1)
@@ -417,6 +461,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["${expenditure} > ${income} * 3"]),
                     ("name", ["overspend_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -436,6 +481,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["${hh_size} + ${extra_members} > 5"]),
                     ("name", ["large_hh_note"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -453,7 +499,11 @@ class TestParserArithmetic:
                     ("n", ["4", "3"]),
                     ("even_note", ["", ""]),
                 ],
-                "survey": [("relevant", ["${n} mod 2 = 0"]), ("name", ["even_note"])],
+                "survey": [
+                    ("relevant", ["${n} mod 2 = 0"]),
+                    ("name", ["even_note"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result, 1)
@@ -469,7 +519,11 @@ class TestParserArithmetic:
                     ("parts", ["2", "2"]),
                     ("ratio_note", ["", ""]),
                 ],
-                "survey": [("relevant", ["${total} div ${parts} = 5"]), ("name", ["ratio_note"])],
+                "survey": [
+                    ("relevant", ["${total} div ${parts} = 5"]),
+                    ("name", ["ratio_note"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result, 1)
@@ -489,6 +543,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["${income} != -999"]),
                     ("name", ["income_note"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -509,6 +564,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["-${loss} < -10"]),
                     ("name", ["loss_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -527,6 +583,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["-(3 + 4) = -7"]),
                     ("name", ["always_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -547,6 +604,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["-${loss} < -10"]),
                     ("name", ["loss_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -566,6 +624,7 @@ class TestParserArithmetic:
                 "survey": [
                     ("relevant", ["--5 = 5"]),
                     ("name", ["always_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -586,6 +645,7 @@ class TestParserSelectedFunction:
                 "survey": [
                     ("relevant", ["selected(${resp_hoh_yn}, 'yes')"]),
                     ("name", ["hoh_consent"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -604,6 +664,7 @@ class TestParserSelectedFunction:
                 "survey": [
                     ("relevant", ["selected(${reasons}, 'water')"]),
                     ("name", ["reason_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -623,6 +684,7 @@ class TestParserSelectedFunction:
                 "survey": [
                     ("relevant", ["selected(${reasons}, 'water')"]),
                     ("name", ["reason_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -641,6 +703,7 @@ class TestParserSelectedFunction:
                 "survey": [
                     ("relevant", ["count-selected(${reasons}) > 1"]),
                     ("name", ["multi_reason_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -660,6 +723,7 @@ class TestParserSelectedFunction:
                 "survey": [
                     ("relevant", ["count-selected(${reasons}) = 0"]),
                     ("name", ["no_reason_note"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -679,7 +743,11 @@ class TestParserEmptyValueSemantics:
                     ("consent_hh", [""]),  # unanswered
                     ("refusal_reason", [""]),
                 ],
-                "survey": [("relevant", ["${consent_hh}='no'"]), ("name", ["refusal_reason"])],
+                "survey": [
+                    ("relevant", ["${consent_hh}='no'"]),
+                    ("name", ["refusal_reason"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result, 0)  # hidden AND empty -> consistent
@@ -696,6 +764,7 @@ class TestParserEmptyValueSemantics:
                 "survey": [
                     ("relevant", ["${dis_reasons_primary} != 'yes_entirely'"]),
                     ("name", ["dis_probe"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -709,7 +778,11 @@ class TestParserEmptyValueSemantics:
                     ("consent_hh", ["   "]),  # whitespace only
                     ("refusal_reason", [""]),
                 ],
-                "survey": [("relevant", ["${consent_hh}='no'"]), ("name", ["refusal_reason"])],
+                "survey": [
+                    ("relevant", ["${consent_hh}='no'"]),
+                    ("name", ["refusal_reason"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         do_basic_checks(result, 0)
@@ -722,7 +795,11 @@ class TestParserEmptyValueSemantics:
                     ("consent_hh", ["no", "yes", "yes", "no"]),
                     ("refusal_reason", ["", "declined", "", ""]),  # one per case
                 ],
-                "survey": [("relevant", ["${consent_hh}='no'"]), ("name", ["refusal_reason"])],
+                "survey": [
+                    ("relevant", ["${consent_hh}='no'"]),
+                    ("name", ["refusal_reason"]),
+                    ("required", ["yes"]),
+                ],
             }
         )
         # rec 1: shown & empty -> violation (no value when shown)
@@ -774,6 +851,7 @@ class TestSchemaObjects:
                 "survey_missing": [
                     ("relevant", ["${gender}='other'"]),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -792,6 +870,7 @@ class TestSchemaObjects:
                 "survey": [
                     ("relevant", ["${gender}='other'"]),
                     ("name_missing", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -810,6 +889,7 @@ class TestSchemaObjects:
                 "survey": [
                     ("relevant", ["${gender}='other'"]),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -825,10 +905,7 @@ class TestSchemaObjects:
                     ("gender", ["male", "female", "other"]),
                     ("gender_other", ["", "", ""]),
                 ],
-                "survey": [
-                    ("relevant", [""]),
-                    ("name", ["gender_other"]),
-                ],
+                "survey": [("relevant", [""]), ("name", ["gender_other"]), ("required", ["yes"])],
             }
         )
         do_basic_checks(result, 0)
@@ -844,6 +921,7 @@ class TestSchemaObjects:
                 "survey": [
                     ("relevant", ["${gender_diff}='other'"]),
                     ("name", ["diff"]),
+                    ("required", ["yes"]),
                 ],
             }
         )
@@ -860,6 +938,7 @@ class TestSchemaObjects:
                 "survey": [
                     ("relevant", ["${gender_diff}='other'", "${gender}='other'"]),
                     ("name", ["diff", "gender_other"]),
+                    ("required", ["yes", "yes"]),
                 ],
             }
         )
@@ -876,6 +955,7 @@ class TestSchemaObjects:
                 "survey": [
                     ("relevant", ["${gender_diff}='other'"]),
                     ("name", ["gender_other"]),
+                    ("required", ["yes"]),
                 ],
             }
         )

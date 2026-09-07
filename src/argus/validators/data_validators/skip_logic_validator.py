@@ -20,6 +20,7 @@ class SkipLogicCheck(BaseValidator):
         schema: BaseDatasetSchema,
         survey_sheet: str = "survey",
         survey_relevant_column: str = "relevant",
+        survey_required_column: str = "required",
         survey_name_column: str = "name",
         check_sheets: list[str] | None = None,
     ) -> None:
@@ -39,6 +40,7 @@ class SkipLogicCheck(BaseValidator):
         self.schema: BaseDatasetSchema = schema
         self.survey_sheet: str = survey_sheet
         self.survey_relevant_column: str = survey_relevant_column
+        self.survey_required_column: str = survey_required_column
         self.survey_name_column: str = survey_name_column
         self.check_sheets: list[str] = check_sheets if check_sheets is not None else ["clean_data"]
 
@@ -98,6 +100,7 @@ class SkipLogicCheck(BaseValidator):
             data={
                 self.survey_relevant_column: data_loaded_sheets[self.survey_sheet],
                 self.survey_name_column: data_loaded_sheets[self.survey_sheet],
+                self.survey_required_column: data_loaded_sheets[self.survey_sheet],
             },
             rule=self.name,
         )
@@ -132,6 +135,9 @@ class SkipLogicCheck(BaseValidator):
                     pl.col(
                         data_loaded_columns[self.survey_name_column].data_column_name
                     ).str.to_lowercase(),
+                    pl.col(
+                        data_loaded_columns[self.survey_required_column].data_column_name
+                    ).str.to_lowercase(),
                 ]
             )
         )
@@ -140,6 +146,15 @@ class SkipLogicCheck(BaseValidator):
             survey_relevant_columns_df.select(
                 data_loaded_columns[self.survey_name_column].data_column_name
             )
+            .to_series()
+            .to_list()
+        )
+
+        survey_relevant_required_columns = (
+            survey_relevant_columns_df.filter(
+                pl.col(data_loaded_columns[self.survey_required_column].data_column_name) == "yes"
+            )
+            .select(data_loaded_columns[self.survey_name_column].data_column_name)
             .to_series()
             .to_list()
         )
@@ -155,6 +170,10 @@ class SkipLogicCheck(BaseValidator):
 
             if not check_columns:
                 continue
+
+            check_required_columns = set(
+                match_list(data_loaded_sheets[sheet].data.columns, survey_relevant_required_columns)
+            )
 
             expressions: dict[str, pl.Expr] = {}
             # build an expression for each relevant survey question
@@ -229,7 +248,7 @@ class SkipLogicCheck(BaseValidator):
                 )
             )
 
-            # no values when there should be
+            # no values when there should be if the field is required
             value_not_exist_df = (
                 data_loaded_sheets[sheet]
                 .data.lazy()
@@ -239,7 +258,7 @@ class SkipLogicCheck(BaseValidator):
                 .select(
                     [
                         check_sheet_id_column.data_column_name,
-                        *(q for q in expressions if q in check_columns),
+                        *(q for q in expressions if q in check_required_columns),
                     ]
                 )
                 .collect()
@@ -261,29 +280,36 @@ class SkipLogicCheck(BaseValidator):
                 on=data_loaded_columns[self.survey_name_column].data_column_name,
             )
 
-            issues_df = (
-                res.filter(pl.col("shown") == pl.col("missing"))
-                .with_columns(
-                    pl.when(pl.col("missing"))
-                    .then(pl.lit(self._("skip_logic_validator.invalid_values.issue.empty_value")))
-                    .otherwise(
-                        pl.lit(self._("skip_logic_validator.invalid_values.issue.not_empty_value"))
+            if res.height > 0:
+                issues_df = (
+                    res.filter(pl.col("shown") == pl.col("missing"))
+                    .with_columns(
+                        pl.when(pl.col("missing"))
+                        .then(
+                            pl.lit(self._("skip_logic_validator.invalid_values.issue.empty_value"))
+                        )
+                        .otherwise(
+                            pl.lit(
+                                self._("skip_logic_validator.invalid_values.issue.not_empty_value")
+                            )
+                        )
+                        .alias("issue")
                     )
-                    .alias("issue")
+                    .select(
+                        pl.lit(sheet).alias("sheet"),
+                        pl.lit(check_sheet_id_column.data_column_name).alias("uuid_column"),
+                        pl.col(check_sheet_id_column.data_column_name)
+                        .cast(pl.String)
+                        .alias("uuid"),
+                        pl.col(data_loaded_columns[self.survey_name_column].data_column_name).alias(
+                            "question"
+                        ),
+                        "issue",
+                    )
+                    .sort(["question"])
                 )
-                .select(
-                    pl.lit(sheet).alias("sheet"),
-                    pl.lit(check_sheet_id_column.data_column_name).alias("uuid_column"),
-                    pl.col(check_sheet_id_column.data_column_name).cast(pl.String).alias("uuid"),
-                    pl.col(data_loaded_columns[self.survey_name_column].data_column_name).alias(
-                        "question"
-                    ),
-                    "issue",
-                )
-                .sort(["question"])
-            )
 
-            all_issues_df = pl.concat([all_issues_df, issues_df])
+                all_issues_df = pl.concat([all_issues_df, issues_df])
 
         if failed_conversions:
             # might have duplicates but not a big issue
