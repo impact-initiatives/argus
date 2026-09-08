@@ -3,6 +3,7 @@ from typing import override
 import polars as pl
 
 from ...common.list_matching import filter_list, match_list
+from ...config import settings
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ..base import BaseValidator, SeverityLevel, ValidationResult
@@ -271,113 +272,141 @@ class RawToCleanToLogCheck(BaseValidator):
         if all_column_variables:
             clean_data_columns = filter_list(clean_data_columns, all_column_variables)
 
-        clean_data_filtered_df = data_loaded_sheets[self.clean_data_sheet].data.select(
-            [clean_data_id_columns.data_column_name] + clean_data_columns
-        )
-        raw_data_filtered_df = (
-            data_loaded_sheets[self.raw_data_sheet]
-            .data.select([raw_data_id_columns.data_column_name] + clean_data_columns)
-            .rename({f"{q}": f"{q}_original_value" for q in clean_data_columns})
-        )
+        difference_parts: list[pl.DataFrame] = []
 
-        # join the dataframes so that only ids in both are compared
-        joined_df = raw_data_filtered_df.join(
-            other=clean_data_filtered_df,
-            left_on=raw_data_id_columns.data_column_name,
-            right_on=clean_data_id_columns.data_column_name,
-            how="inner",
-        )
+        # use chunking to reduce memory usage
+        for start in range(0, len(clean_data_columns), settings.COLUMN_CHUNK_SIZE):
+            clean_data_columns_chunked = clean_data_columns[
+                start : start + settings.COLUMN_CHUNK_SIZE
+            ]
 
-        difference_expressions: list[pl.Expr] = []
-
-        # build expressions to compare the columns of both dataframes
-        for question in clean_data_columns:
-            difference_expression = create_column_difference_expression(
-                question,
-                f"{question}_original_value",
-                joined_df.schema[question],
-                joined_df.schema[f"{question}_original_value"],
-            ).alias(f"is_{question}_changed")
-
-            difference_expressions.append(difference_expression)
-
-        # add the difference flags to the dataframe and checl for changes
-        has_any_change = pl.any_horizontal(
-            [pl.col(f"is_{question}_changed") for question in clean_data_columns]
-        )
-        changes_only = joined_df.with_columns(difference_expressions).filter(has_any_change)
-
-        # The unpivot process transforms the data from a wide format into a long format.
-        #  By running this separately on the new values, old values, and change flags,
-        #  we create three aligned vertical lists that can be joined together using
-        #  the uuid and question name. This allows us to filter for changes and compare
-        # old vs. new values in a single operation.
-
-        if not changes_only.is_empty():
-            # the index id has to be the column that was the 'left_on' value when
-            # creating joined_df
-
-            # unpivot new values (clean data)
-            new_values_df = changes_only.unpivot(
-                index=[raw_data_id_columns.data_column_name],
-                on=clean_data_columns,
-                variable_name=self.cleaning_log_question_column,
-                value_name=self.cleaning_log_new_value_column,
+            clean_data_filtered_chunked_df = data_loaded_sheets[self.clean_data_sheet].data.select(
+                [clean_data_id_columns.data_column_name] + clean_data_columns_chunked
+            )
+            raw_data_filtered_chunked_df = (
+                data_loaded_sheets[self.raw_data_sheet]
+                .data.select([raw_data_id_columns.data_column_name] + clean_data_columns_chunked)
+                .rename({f"{q}": f"{q}_original_value" for q in clean_data_columns_chunked})
             )
 
-            # unpivot original values (raw data)
-            # need to rename so question names match
-            original_values_df = (
-                changes_only.select(
-                    [raw_data_id_columns.data_column_name]
-                    + [f"{q}_original_value" for q in clean_data_columns]
-                )
-                .rename({f"{q}_original_value": q for q in clean_data_columns})
-                .unpivot(
+            # join the dataframes so that only ids in both are compared
+            joined_chunked_df = raw_data_filtered_chunked_df.join(
+                other=clean_data_filtered_chunked_df,
+                left_on=raw_data_id_columns.data_column_name,
+                right_on=clean_data_id_columns.data_column_name,
+                how="inner",
+            )
+
+            # build expressions to compare the columns of both dataframes
+            chunk_difference_expressions: list[pl.Expr] = [
+                create_column_difference_expression(
+                    question,
+                    f"{question}_original_value",
+                    joined_chunked_df.schema[question],
+                    joined_chunked_df.schema[f"{question}_original_value"],
+                ).alias(f"is_{question}_changed")
+                for question in clean_data_columns_chunked
+            ]
+
+            # add the difference flags to the dataframe and checl for changes
+            has_any_change = pl.any_horizontal(
+                [pl.col(f"is_{question}_changed") for question in clean_data_columns_chunked]
+            )
+            changes_only_chunked_df = joined_chunked_df.with_columns(
+                chunk_difference_expressions
+            ).filter(has_any_change)
+
+            # The unpivot process transforms the data from a wide format into a long format.
+            #  By running this separately on the new values, old values, and change flags,
+            #  we create three aligned vertical lists that can be joined together using
+            #  the uuid and question name. This allows us to filter for changes and compare
+            # old vs. new values in a single operation.
+
+            if not changes_only_chunked_df.is_empty():
+                # the index id has to be the column that was the 'left_on' value when
+                # creating joined_df
+
+                # unpivot new values (clean data)
+                new_values_chunked_df = changes_only_chunked_df.unpivot(
                     index=[raw_data_id_columns.data_column_name],
-                    on=clean_data_columns,  # Now unpivoting the renamed columns
+                    on=clean_data_columns_chunked,
                     variable_name=self.cleaning_log_question_column,
-                    value_name=self.cleaning_log_old_value_column,
+                    value_name=self.cleaning_log_new_value_column,
                 )
-            )
 
-            # unpivot flags. Extract question name from flag column name
-            flags_long_df = changes_only.unpivot(
-                index=[raw_data_id_columns.data_column_name],
-                on=[f"is_{q}_changed" for q in clean_data_columns],
-                variable_name="flag_column_name",
-                value_name="is_changed",
-            ).with_columns(
-                pl.col("flag_column_name")
-                .str.replace("^is_", "", literal=False)
-                .str.replace("_changed$", "", literal=False)
-                .alias(self.cleaning_log_question_column)
-            )
-
-            # join all together. Filter the changed rows
-            merged_df = (
-                new_values_df.join(
-                    original_values_df,
-                    on=[raw_data_id_columns.data_column_name, self.cleaning_log_question_column],
-                    how="inner",
+                # unpivot original values (raw data)
+                # need to rename so question names match
+                original_values_chunked_df = (
+                    changes_only_chunked_df.select(
+                        [raw_data_id_columns.data_column_name]
+                        + [f"{q}_original_value" for q in clean_data_columns_chunked]
+                    )
+                    .rename({f"{q}_original_value": q for q in clean_data_columns_chunked})
+                    .unpivot(
+                        index=[raw_data_id_columns.data_column_name],
+                        on=clean_data_columns_chunked,  # Now unpivoting the renamed columns
+                        variable_name=self.cleaning_log_question_column,
+                        value_name=self.cleaning_log_old_value_column,
+                    )
                 )
-                .join(
-                    flags_long_df,
-                    on=[raw_data_id_columns.data_column_name, self.cleaning_log_question_column],
-                    how="inner",
-                )
-                .filter(pl.col("is_changed"))
-            )
 
+                # unpivot flags. Extract question name from flag column name
+                flags_long_chunked_df = changes_only_chunked_df.unpivot(
+                    index=[raw_data_id_columns.data_column_name],
+                    on=[f"is_{q}_changed" for q in clean_data_columns_chunked],
+                    variable_name="flag_column_name",
+                    value_name="is_changed",
+                ).with_columns(
+                    pl.col("flag_column_name")
+                    .str.replace("^is_", "", literal=False)
+                    .str.replace("_changed$", "", literal=False)
+                    .alias(self.cleaning_log_question_column)
+                )
+
+                # join all together. Filter the changed rows
+                merged_chunked_df = (
+                    new_values_chunked_df.join(
+                        original_values_chunked_df,
+                        on=[
+                            raw_data_id_columns.data_column_name,
+                            self.cleaning_log_question_column,
+                        ],
+                        how="inner",
+                    )
+                    .join(
+                        flags_long_chunked_df,
+                        on=[
+                            raw_data_id_columns.data_column_name,
+                            self.cleaning_log_question_column,
+                        ],
+                        how="inner",
+                    )
+                    .filter(pl.col("is_changed"))
+                )
+
+                difference_parts.append(
+                    merged_chunked_df.select(
+                        [
+                            pl.col(raw_data_id_columns.data_column_name).alias("uuid"),
+                            pl.col(self.cleaning_log_question_column),
+                            pl.col(self.cleaning_log_old_value_column),
+                            pl.col(self.cleaning_log_new_value_column),
+                        ]
+                    )
+                )
+                del (
+                    joined_chunked_df,
+                    changes_only_chunked_df,
+                    new_values_chunked_df,
+                    original_values_chunked_df,
+                    flags_long_chunked_df,
+                )
+
+        if difference_parts:
             # select the columns because they are all present in the merged DF
-            difference_raw_to_clean_df = merged_df.select(
-                [
-                    pl.col(raw_data_id_columns.data_column_name).alias("uuid"),
-                    pl.col(self.cleaning_log_question_column),
-                    pl.col(self.cleaning_log_old_value_column),
-                    pl.col(self.cleaning_log_new_value_column),
-                ]
-            ).with_columns(pl.lit(raw_data_id_columns.data_column_name).alias("uuid_column_name"))
+            difference_raw_to_clean_df = pl.concat(difference_parts, how="vertical").with_columns(
+                pl.lit(raw_data_id_columns.data_column_name).alias("uuid_column_name")
+            )
 
             # difference between above and cleaning log
             # This does not check the actual values. It only checks that

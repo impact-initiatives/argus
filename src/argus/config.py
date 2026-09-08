@@ -74,6 +74,10 @@ class Settings(BaseSettings):
     # limits the output of each of the validation results. set below 0 to ignore.
     LIMIT_DETAILS_THRESHOLD: int = -1
 
+    # used in RawToCleanToLogCheck to determine how many columns to process at once
+    # useful to reduce memory usage
+    COLUMN_CHUNK_SIZE: int = 400
+
     # for local testing
     # eg Path.cwd() / "dataset_config" / "v2026.06.25.01"
     DATASET_CONFIG_LOCAL_DIR: Path = Path.cwd() / "dataset_config"
