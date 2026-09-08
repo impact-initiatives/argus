@@ -1310,6 +1310,139 @@ class TestParserCompositeFunctions:
         assert len(result[0].details["uuid"]) == 1
 
 
+class TestParserSumFunction:
+    """sum() — row-wise addition across multiple refs, empty = 0."""
+
+    def test_sum_two_columns_rowwise(self):
+        # cash may be blank when value is recorded in-kind, and vice versa
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("income_cash", ["", "300", "50"]),
+                    ("income_kinda", ["80", "", "60"]),
+                    ("high_income_note", ["", "", "12"]),
+                ],
+                "survey": [
+                    ("relevant", ["sum(${income_cash}, ${income_kinda}) > 100"]),
+                    ("name", ["high_income_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        # rec 1: 0 + 80 = 80 -> hidden & empty, ok
+        # rec 2: 300 + 0 = 300 -> shown & empty -> violation
+        # rec 3: 130 -> hidden & empty, ok
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_sum_three_columns_skips_null_parts(self):
+        # regression: a null/empty part must contribute 0, not null the sum
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("a", ["AB", "10"]),
+                    ("b", ["CD", ""]),
+                    ("c", ["EF", "20"]),
+                    ("code_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["concat(${a}, ${b}, ${c}) = 'ABCDEF'"]),
+                    ("name", ["code_probe"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+        # and the arithmetic version:
+        result2 = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("a", ["5", "10"]),
+                    ("b", ["", "20"]),
+                    ("c", ["7", "30"]),
+                    ("total_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["sum(${a}, ${b}, ${c}) >= 57"]),
+                    ("name", ["total_probe"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        # rec 2: 10 + 20 + 30 = 60 -> shown & empty
+        do_basic_checks(result2, 1)
+        assert result2[0].details is not None
+        assert len(result2[0].details["uuid"]) == 1
+
+    def test_sum_all_empty_is_zero(self):
+        # unanswered everything -> sum = 0 -> condition False -> hidden & empty
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("a", [""]),
+                    ("b", [""]),
+                    ("total_probe", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["sum(${a}, ${b}) > 0"]),
+                    ("name", ["total_probe"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_sum_single_arg(self):
+        # sum(${x}) behaves like a forgiving numeric cast of one column
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("age", ["15", "25"]),
+                    ("youth_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["sum(${age}) < 18"]),
+                    ("name", ["youth_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1  # rec 1 only
+
+    def test_sum_in_comparison_forces_numeric_cast(self):
+        # string-typed export: 150 + 150 = 300, NOT string concat '150150'
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("a", ["150", "150"]),
+                    ("b", ["150", "150"]),
+                    ("sum_probe", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["sum(${a}, ${b}) = 300"]),
+                    ("name", ["sum_probe"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        # string-concat trap (if sum fell through to '+') would give
+        # '150150' != 300 -> never shown; numeric path flags both records
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 2
+
+
 class TestParserInvalidExpressions:
     """Malformed input must raise, not produce a wrong expression."""
 
@@ -1344,6 +1477,9 @@ class TestParserInvalidExpressions:
             "if(${a}='x', 'y')",  # wrong arity
             "int()",  # no argument
             "number(${a}, ${b})",  # wrong arity
+            "sum()",  # no arguments
+            "sum('a')",  # non-ref argument
+            "sum(${a}, 'b')",  # mixed ref / literal
         ],
     )
     def test_malformed_raises(self, bad: str):

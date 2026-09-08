@@ -202,9 +202,9 @@ class SkipLogicCheck(BaseValidator):
                             "question": row[
                                 data_loaded_columns[self.survey_name_column].data_column_name
                             ],
-                            "expression": data_loaded_columns[
-                                self.survey_relevant_column
-                            ].data_column_name,
+                            "expression": row[
+                                data_loaded_columns[self.survey_relevant_column].data_column_name
+                            ],
                             "exception": str(e),
                         }
                     )

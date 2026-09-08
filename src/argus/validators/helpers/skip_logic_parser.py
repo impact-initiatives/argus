@@ -164,7 +164,10 @@ class Parser:
                     self.advance()
                     if value in ("true", "false"):
                         return ("bool", value == "true")
-                    raise ValueError(f"Skip logic parser: Unsupported function: {value}()")
+                    raise ValueError(
+                        f"Skip logic parser: Unsupported function: {value}()."
+                        + " Raise an issue to have it added."
+                    )
 
                 # At least one argument
                 args = [self.parse_or()]
@@ -258,6 +261,16 @@ class Parser:
                         raise ValueError("Skip logic parser: count-selected() expects (${var},)")
                     return ("count_selected", args[0][1])
 
+                if value == "sum":
+                    if not args:
+                        raise ValueError("Skip logic parser: sum() requires at least one argument")
+                    if any(arg[0] != "ref" for arg in args):
+                        raise ValueError(
+                            "Skip logic parser: sum() expects (${var}, ${var2}, ...)"
+                            + " — all arguments must be column references"
+                        )
+                    return ("sum", [arg[1] for arg in args])
+
                 if value in ("true", "false"):
                     raise ValueError(f"Skip logic parser: {value}() takes no arguments")
 
@@ -292,14 +305,10 @@ ARITH_MAP = {
 def _to_expr(node, schema: dict[str, pl.DataType]) -> pl.Expr:
     def _is_numeric_node(node) -> bool:
         """True if the node evaluates to a number by construction."""
-        if node[0] == "num":
+        if node[0] in ("num", "arith", "count_selected", "sum"):
             return True
         if node[0] == "neg":
             return _is_numeric_node(node[1])
-        if node[0] == "arith":
-            return True
-        if node[0] == "count_selected":
-            return True
 
         return node[0] in ("string_length",)
 
@@ -472,6 +481,28 @@ def _to_expr(node, schema: dict[str, pl.DataType]) -> pl.Expr:
             .fill_null(0)
         )
 
+    if kind == "sum":
+        _, vars_ = node
+        # Row-wise sum across the referenced columns. Unanswered refs
+        # contribute 0 (ODK: sum over an empty nodeset is 0), and a null
+        # part must never poison the result with a null sum.
+        parts = [
+            (
+                pl.when(pl.col(v).is_null())
+                .then(pl.lit(0.0))
+                .otherwise(
+                    pl.col(v).cast(pl.String, strict=False).str.strip_chars().replace("", None)
+                )
+                .cast(pl.Float64, strict=False)
+                .fill_null(0.0)
+            )
+            for v in vars_
+        ]
+        out = parts[0]
+        for part in parts[1:]:
+            out = out + part
+        return out
+
     raise ValueError(f"Skip logic parser: Unknown node: {node}")
 
 
@@ -488,6 +519,8 @@ def _iter_refs(node):
         "string_length",
     ):
         yield node[1]
+    elif kind == "sum":
+        yield from node[1]
     elif kind in ("cmp", "arith"):
         yield from _iter_refs(node[2])
         yield from _iter_refs(node[3])
