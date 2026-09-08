@@ -811,6 +811,505 @@ class TestParserEmptyValueSemantics:
         assert len(result[0].details["uuid"]) == 3
 
 
+class TestParserStartsWithFunction:
+    def test_starts_with_match(self):
+        # 'piped_tap' starts with 'piped' -> shown & empty -> 1 violation
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("water_source", ["piped_tap", "well"]),
+                    ("tap_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'piped')"]),
+                    ("name", ["tap_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_starts_with_second_word_no_match(self):
+        # prefix anchored at the START only: 'food water' does not
+        # start with 'water' even though 'water' appears in the string
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("reasons", ["food water"]),
+                    ("water_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${reasons}, 'water')"]),
+                    ("name", ["water_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)  # hidden & empty -> consistent
+
+    def test_starts_with_prefix_inside_word_no_match(self):
+        # not a substring match: 'rainwater' does not start with 'water'
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("water_source", ["rainwater"]),
+                    ("water_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'water')"]),
+                    ("name", ["water_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_starts_with_exact_value_matches(self):
+        # prefix equal to the whole value still matches
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("water_source", ["piped"]),
+                    ("piped_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'piped')"]),
+                    ("name", ["piped_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_starts_with_hidden_but_filled(self):
+        # other violation direction: 'well' fails the prefix -> hidden,
+        # but a value is present anyway
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("water_source", ["well"]),
+                    ("tap_note", ["filled_anyway"]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'piped')"]),
+                    ("name", ["tap_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_starts_with_empty_ref_is_false(self):
+        # unanswered ref -> condition False -> hidden & empty -> consistent
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("water_source", [""]),
+                    ("tap_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'piped')"]),
+                    ("name", ["tap_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_starts_with_whitespace_only_ref_is_false(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("water_source", ["   "]),
+                    ("tap_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'piped')"]),
+                    ("name", ["tap_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_starts_with_case_insensitive(self):
+        # consistent with selected(): matching is case-insensitive.
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("water_source", ["Piped_Tap"]),
+                    ("tap_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["starts-with(${water_source}, 'piped')"]),
+                    ("name", ["tap_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+
+class TestParserStringFunctions:
+    """ends-with / contains / regex — prefix anchoring and literal matching."""
+
+    def test_ends_with_match(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("hh_id", ["KE_001", "UG_44"]),
+                    ("ke_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["ends-with(${hh_id}, '_001')"]),
+                    ("name", ["ke_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_ends_with_other_position_no_match(self):
+        # 'water_bottle_food' contains 'food' but does not END with it
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("reasons", ["water_food_bottle"]),
+                    ("note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["ends-with(${reasons}, 'food')"]),
+                    ("name", ["note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_contains_matches_middle_of_value(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("other_specify", ["irrigation pump", "none"]),
+                    ("irrigation_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["contains(${other_specify}, 'pump')"]),
+                    ("name", ["irrigation_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_contains_is_literal_not_regex(self):
+        # 'price usd' contains the inner text 'usd' but NOT the literal '(usd)'.
+        # Under regex semantics, the pattern '(usd)' is a capture group around
+        # 'usd' and WOULD match. Only literal=True gives the correct False.
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("comment", ["price usd", "nothing to see"]),
+                    ("price_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["contains(${comment}, '(usd)')"]),
+                    ("name", ["price_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        # literal semantics: neither value matches -> question hidden & empty
+        # -> 0 violations. (Regex semantics would flag record 1 as shown-but-empty.)
+        do_basic_checks(result, 0)
+
+    def test_contains_literal_parens_positive(self):
+        # 'cost (usd) total' DOES contain the literal '(usd)'
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("comment", ["cost (usd) total"]),
+                    ("price_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["contains(${comment}, '(usd)')"]),
+                    ("name", ["price_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_regex_match(self):
+        # IDs must match the ^KE_ pattern
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("hh_id", ["KE_001", "UG_44"]),
+                    ("ke_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["regex(${hh_id}, '^KE_')"]),
+                    ("name", ["ke_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_regex_non_matching_value_hidden(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("hh_id", ["KE_001", "UG_44"]),
+                    ("ke_note", ["", "ghost"]),
+                ],
+                "survey": [
+                    ("relevant", ["regex(${hh_id}, '^KE_')"]),
+                    ("name", ["ke_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        # rec 2: hidden but filled -> 1 violation
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 2
+
+    def test_string_length_numeric_comparison(self):
+        # open 'other' answers shorter than 3 chars are treated as junk
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("occupation_other", ["x", "carpenter"]),
+                    ("clarify_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["string-length(${occupation_other}) < 3"]),
+                    ("name", ["clarify_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_string_length_empty_is_zero(self):
+        # regression: unanswered ref -> length 0, condition True,
+        # so the empty target is flagged (shown but empty)
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("occupation_other", [""]),
+                    ("clarify_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["string-length(${occupation_other}) = 0"]),
+                    ("name", ["clarify_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+
+class TestParserCompositeFunctions:
+    """coalesce / concat / if / int — combined with comparisons."""
+
+    def test_coalesce_falls_through_to_second_ref(self):
+        # numeric totals may live in either column; coalesce picks the filled one
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("income_cash", ["", "300"]),
+                    ("income_kinda", ["50", ""]),
+                    ("high_income_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["coalesce(${income_cash}, ${income_kinda}) > 100"]),
+                    ("name", ["high_income_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        # record 2: 400 > 100 -> shown & empty; record 1: 50 -> hidden
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_coalesce_both_empty_stays_null(self):
+        # null coalesced with null remains null -> condition False -> hidden
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("income_cash", [""]),
+                    ("income_kinda", [""]),
+                    ("note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["coalesce(${income_cash}, ${income_kinda}) > 100"]),
+                    ("name", ["note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_concat_then_compare(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("region", ["north", "south"]),
+                    ("district_code", ["N-01", "S-09"]),
+                    ("north_region_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["concat(${region}, '-', ${district_code}) = 'north-N-01'"]),
+                    ("name", ["north_region_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_concat_skips_null_parts(self):
+        # null parts contribute '' rather than poisoning the result
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("prefix", ["AB"]),
+                    ("mid", [""]),
+                    ("suffix", ["CD"]),
+                    ("probe", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["concat(${prefix}, ${mid}, ${suffix}) = 'ABCD'"]),
+                    ("name", ["probe"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_if_selects_then_branch(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("age", ["19", "12"]),
+                    ("adult_banner", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["if(${age} >= 18, 'adult', 'minor') = 'adult'"]),
+                    ("name", ["adult_banner"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+    def test_if_selects_else_branch(self):
+        # both records resolve to 'minor' -> condition False -> hidden & empty
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("age", ["9", "12"]),
+                    ("banner", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["if(${age} >= 18, 'adult', 'minor') = 'adult'"]),
+                    ("name", ["adult_banner"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_int_truncates_before_comparison(self):
+        # int('7.9') = 7 -> 7 mod 2 = 1, not 0
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1]),
+                    ("n", ["7.9"]),
+                    ("even_note", [""]),
+                ],
+                "survey": [
+                    ("relevant", ["int(${n}) mod 2 = 0"]),
+                    ("name", ["even_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 0)
+
+    def test_number_cast_on_string_column(self):
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2]),
+                    ("qty_text", ["2.5", "10"]),
+                    ("small_qty_note", ["", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["number(${qty_text}) < 5"]),
+                    ("name", ["small_qty_note"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+
+
 class TestParserInvalidExpressions:
     """Malformed input must raise, not produce a wrong expression."""
 
@@ -828,13 +1327,30 @@ class TestParserInvalidExpressions:
             "count-selected('a')",  # non-ref argument
             "selected(${reasons}, ${a})",
             "false(${reasons})",
+            "starts-with(${a})",  # wrong arity
+            "starts-with('a', 'b')",  # first arg must be a ref
+            "starts-with(${a}, ${b})",  # second arg must be a literal
+            "starts-with()",  # no arguments
+            "ends-with(${a}, ${b})",  # non-literal suffix
+            "ends-with('a', ${b})",
+            "contains(${a})",  # wrong arity
+            "contains(${a}, ${b})",
+            "regex(${a})",  # missing pattern
+            "regex(${a}, ${b})",
+            "string-length()",  # no argument
+            "string-length('a')",  # non-ref argument
+            "coalesce(${a})",  # wrong arity
+            "concat()",  # needs >= 1 argument
+            "if(${a}='x', 'y')",  # wrong arity
+            "int()",  # no argument
+            "number(${a}, ${b})",  # wrong arity
         ],
     )
     def test_malformed_raises(self, bad: str):
 
         schema = {"a": pl.String, "b": pl.Int64}
         with pytest.raises(Exception) as e:
-            _ = build_relevance_expression(bad, {"a", "b"}, schema)
+            _ = build_relevance_expression(bad, schema)
 
         assert "Skip logic parser" in str(e.value)
 

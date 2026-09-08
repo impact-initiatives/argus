@@ -129,9 +129,7 @@ class SkipLogicCheck(BaseValidator):
             )
             .select(
                 [
-                    pl.col(
-                        data_loaded_columns[self.survey_relevant_column].data_column_name
-                    ).str.to_lowercase(),
+                    pl.col(data_loaded_columns[self.survey_relevant_column].data_column_name),
                     pl.col(
                         data_loaded_columns[self.survey_name_column].data_column_name
                     ).str.to_lowercase(),
@@ -193,7 +191,6 @@ class SkipLogicCheck(BaseValidator):
                         row[data_loaded_columns[self.survey_name_column].data_column_name]
                     ] = build_relevance_expression(
                         row[data_loaded_columns[self.survey_relevant_column].data_column_name],
-                        set(data_loaded_sheets[sheet].data.columns),
                         data_loaded_sheets[sheet].data.schema,
                     )
                 except Exception as e:

@@ -3,6 +3,16 @@ from typing import Any
 
 import polars as pl
 
+"""
+This is used to convert kobo skip logic into a polars expression.
+
+Not all possible functions are currently supported. Any unsuported 
+functions will raise an error.
+
+Cross dataset column references are not supported and will raise
+an error.
+"""
+
 # Tokenizer
 
 TOKEN_RE = re.compile(
@@ -31,7 +41,7 @@ def tokenize(text: str) -> list[tuple[str, Any]]:
         if kind == "ws":
             continue
         if kind == "ref":
-            tokens.append(("REF", value[2:-1].strip()))  # strip ${ }
+            tokens.append(("REF", value[2:-1].strip().lower()))  # strip ${ }
         elif kind == "string":
             tokens.append(("STR", value[1:-1]))
         elif kind == "number":
@@ -172,6 +182,77 @@ class Parser:
                         )
                     return ("selected", args[0][1], args[1][1])
 
+                if value == "starts-with":
+                    if len(args) != 2 or args[0][0] != "ref":
+                        raise ValueError(
+                            "Skip logic parser: starts-with() expects (${var}, 'prefix')"
+                        )
+                    if args[1][0] != "lit":
+                        raise ValueError(
+                            "Skip logic parser: starts-with() value must be a quoted string"
+                        )
+                    return ("starts_with", args[0][1], args[1][1])
+
+                if value == "ends-with":
+                    if len(args) != 2 or args[0][0] != "ref":
+                        raise ValueError(
+                            "Skip logic parser: ends-with() expects (${var}, 'suffix')"
+                        )
+                    if args[1][0] != "lit":
+                        raise ValueError(
+                            "Skip logic parser: ends-with() value must be a quoted string"
+                        )
+                    return ("ends_with", args[0][1], args[1][1])
+
+                if value == "contains":
+                    if len(args) != 2 or args[0][0] != "ref":
+                        raise ValueError(
+                            "Skip logic parser: contains() expects (${var}, 'substring')"
+                        )
+                    if args[1][0] != "lit":
+                        raise ValueError(
+                            "Skip logic parser: contains() value must be a quoted string"
+                        )
+                    return ("contains", args[0][1], args[1][1])
+
+                if value == "regex":
+                    if len(args) != 2 or args[0][0] != "ref":
+                        raise ValueError("Skip logic parser: regex() expects (${var}, 'pattern')")
+                    if args[1][0] != "lit":
+                        raise ValueError(
+                            "Skip logic parser: regex() pattern must be a quoted string"
+                        )
+                    return ("regex", args[0][1], args[1][1])
+
+                if value == "string-length":
+                    if len(args) != 1 or args[0][0] != "ref":
+                        raise ValueError("Skip logic parser: string-length() expects (${var},)")
+                    return ("string_length", args[0][1])
+
+                if value == "coalesce":
+                    if len(args) != 2:
+                        raise ValueError(
+                            "Skip logic parser: coalesce() expects exactly 2 arguments"
+                        )
+                    return ("coalesce", args[0], args[1])
+
+                if value == "concat":
+                    if not args:
+                        raise ValueError(
+                            "Skip logic parser: concat() requires at least one argument"
+                        )
+                    return ("concat", args)
+
+                if value == "if":
+                    if len(args) != 3:
+                        raise ValueError("Skip logic parser: if() expects (condition, then, else)")
+                    return ("if", args[0], args[1], args[2])
+
+                if value in ("int", "number"):
+                    if len(args) != 1:
+                        raise ValueError(f"Skip logic parser: {value}() takes exactly one argument")
+                    return ("num_cast", value, args[0])
+
                 if value == "count-selected":
                     if len(args) != 1 or args[0][0] != "ref":
                         raise ValueError("Skip logic parser: count-selected() expects (${var},)")
@@ -208,7 +289,7 @@ ARITH_MAP = {
 }
 
 
-def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.Expr:
+def _to_expr(node, schema: dict[str, pl.DataType]) -> pl.Expr:
     def _is_numeric_node(node) -> bool:
         """True if the node evaluates to a number by construction."""
         if node[0] == "num":
@@ -217,7 +298,10 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
             return _is_numeric_node(node[1])
         if node[0] == "arith":
             return True
-        return node[0] == "count_selected"
+        if node[0] == "count_selected":
+            return True
+
+        return node[0] in ("string_length",)
 
     kind = node[0]
 
@@ -229,28 +313,26 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
         return pl.lit(node[1])
     if kind == "ref":
         name = node[1]
-        if name not in schema:
-            raise KeyError(f"Skip logic parser: Referenced column {name!r} not found in data")
         col = pl.col(name)
         if schema[name] in (pl.String, pl.Utf8):
             return col.str.strip_chars().replace("", None)
         return col
 
     if kind == "or":
-        return _to_expr(node[1], df_columns, schema) | _to_expr(node[2], df_columns, schema)
+        return _to_expr(node[1], schema) | _to_expr(node[2], schema)
     if kind == "and":
-        return _to_expr(node[1], df_columns, schema) & _to_expr(node[2], df_columns, schema)
+        return _to_expr(node[1], schema) & _to_expr(node[2], schema)
     if kind == "not":
-        return ~_to_expr(node[1], df_columns, schema)
+        return ~_to_expr(node[1], schema)
 
     if kind == "neg":
-        return -_to_expr(node[1], df_columns, schema).cast(pl.Float64, strict=False)
+        return -_to_expr(node[1], schema).cast(pl.Float64, strict=False)
 
     if kind == "cmp":
         _, op, left, right = node
         left_side, right_side = (
-            _to_expr(left, df_columns, schema),
-            _to_expr(right, df_columns, schema),
+            _to_expr(left, schema),
+            _to_expr(right, schema),
         )
 
         # Force numeric cast if either side contains arithmetic operations.
@@ -265,8 +347,8 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
     if kind == "arith":
         _, op, left, right = node
         left_side, right_side = (
-            _to_expr(left, df_columns, schema),
-            _to_expr(right, df_columns, schema),
+            _to_expr(left, schema),
+            _to_expr(right, schema),
         )
         left_side = left_side.cast(pl.Float64, strict=False)
         right_side = right_side.cast(pl.Float64, strict=False)
@@ -276,6 +358,7 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
         _, var, value = node
         # Multi-select answers are stored as space-separated option codes,
         # e.g. "yes water food". This also works for select_one columns.
+
         return (
             pl.col(var)
             .cast(pl.String)
@@ -286,11 +369,95 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
             .fill_null(False)
         )
 
+    if kind == "starts_with":
+        _, var, value = node
+        # Prefix match on the first word of the (possibly space-separated)
+        # answer. Lowercased for consistency with selected().
+        return (
+            pl.col(var)
+            .cast(pl.String, strict=False)
+            .str.strip_chars()
+            .str.to_lowercase()
+            .str.starts_with(value.lower())
+            .fill_null(False)
+        )
+
+    if kind == "ends_with":
+        _, var, value = node
+        return (
+            pl.col(var)
+            .cast(pl.String, strict=False)
+            .str.strip_chars()
+            .str.to_lowercase()
+            .str.ends_with(value.lower())
+            .fill_null(False)
+        )
+
+    if kind == "contains":
+        _, var, value = node
+        # literal=True: the argument is a plain substring, never a regex,
+        # so characters like '(' or '*' match literally (ODK behaviour).
+        return (
+            pl.col(var)
+            .cast(pl.String, strict=False)
+            .str.strip_chars()
+            .str.to_lowercase()
+            .str.contains(pl.lit(value.lower()), literal=True)
+            .fill_null(False)
+        )
+
+    if kind == "regex":
+        _, var, pattern = node
+        return (
+            pl.col(var)
+            .cast(pl.String, strict=False)
+            .str.strip_chars()
+            .str.contains(pattern)
+            .fill_null(False)
+        )
+
+    if kind == "string_length":
+        _, var = node
+        # string-length of an unanswered question is 0 (ODK returns the
+        # length of ''; a null-propagating len() would poison arithmetic)
+        return (
+            pl.when(pl.col(var).is_null())
+            .then(pl.lit(0))
+            .otherwise(pl.col(var).cast(pl.String, strict=False).str.strip_chars().str.len_chars())
+            .cast(pl.Float64)
+        )
+
+    if kind == "coalesce":
+        left_side = _to_expr(node[1], schema)
+        right_side = _to_expr(node[2], schema)
+        return pl.coalesce(left_side, right_side)
+
+    if kind == "concat":
+        parts = [_to_expr(a, schema).cast(pl.String, strict=False).fill_null("") for a in node[1]]
+        out = parts[0]
+        for part in parts[1:]:
+            out = out + part
+        return out
+
+    if kind == "if":
+        _, cond, then_node, else_node = node
+        return (
+            pl.when(_to_expr(cond, schema).fill_null(False))
+            .then(_to_expr(then_node, schema))
+            .otherwise(_to_expr(else_node, schema))
+        )
+
+    if kind == "num_cast":
+        _, fn, arg = node
+        dtype = pl.Int64 if fn == "int" else pl.Float64
+        return _to_expr(arg, schema).cast(dtype, strict=False)
+
     if kind == "count_selected":
         _, var = node
         # Number of selected options. An unanswered (null/empty) question
         # must yield 0 — a raw split on null would give a null length
         # and poison the surrounding arithmetic.
+
         return (
             pl.when(pl.col(var).is_null())
             .then(pl.lit(0))
@@ -308,12 +475,47 @@ def _to_expr(node, df_columns: set[str], schema: dict[str, pl.DataType]) -> pl.E
     raise ValueError(f"Skip logic parser: Unknown node: {node}")
 
 
-def build_relevance_expression(
-    relevant: str, df_columns: set[str], schema: dict[str, pl.DataType]
-) -> pl.Expr:
+def _iter_refs(node):
+    kind = node[0]
+    if kind in (
+        "ref",
+        "selected",
+        "count_selected",
+        "starts_with",
+        "ends_with",
+        "contains",
+        "regex",
+        "string_length",
+    ):
+        yield node[1]
+    elif kind in ("cmp", "arith"):
+        yield from _iter_refs(node[2])
+        yield from _iter_refs(node[3])
+    elif kind in ("and", "or", "coalesce"):
+        yield from _iter_refs(node[1])
+        yield from _iter_refs(node[2])
+    elif kind in ("not", "neg", "num_cast"):
+        yield from _iter_refs(node[1])
+    elif kind == "concat":
+        for arg in node[1]:
+            yield from _iter_refs(arg)
+    elif kind == "if":
+        yield from _iter_refs(node[1])
+        yield from _iter_refs(node[2])
+        yield from _iter_refs(node[3])
+
+
+def build_relevance_expression(relevant: str, schema: dict[str, pl.DataType]) -> pl.Expr:
     """Parse a Kobo 'relevant' string into a single non-null Boolean Polars expr."""
     ast = Parser(tokenize(str(relevant))).parse()
-    return _to_expr(ast, df_columns, schema).fill_null(False)
+    for ref in _iter_refs(ast):
+        if ref not in schema:
+            raise KeyError(
+                f"Skip logic parser: Referenced column {ref!r} not found in data."
+                + " Note: cross dataset references are currently not supported."
+            )
+
+    return _to_expr(ast, schema).fill_null(False)
 
 
 # Validator: compare skip logic against the collected data
