@@ -20,7 +20,7 @@ dataset_config/
 config_directory/
 .~lock*
 *.csv
-
+*.json
 # ide files
 *.vscode
 *.code-workspace
