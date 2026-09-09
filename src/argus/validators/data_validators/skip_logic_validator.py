@@ -2,7 +2,7 @@ from typing import override
 
 import polars as pl
 
-from ...common.list_matching import filter_loaded_sheets, match_list
+from ...common.list_matching import combine_lists, filter_loaded_sheets, match_list
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
@@ -10,8 +10,9 @@ from ..helpers.data_helpers import (
     get_data_loaded_columns,
     get_data_loaded_sheets,
     get_data_sheet_ids,
+    get_id_linking_columns,
 )
-from ..helpers.skip_logic_parser import build_relevance_expression, is_missing
+from ..helpers.skip_logic_parser import build_relevance_expression, get_all_references, is_missing
 
 
 class SkipLogicCheck(BaseValidator):
@@ -22,7 +23,8 @@ class SkipLogicCheck(BaseValidator):
         survey_relevant_column: str = "relevant",
         survey_required_column: str = "required",
         survey_name_column: str = "name",
-        check_sheets: list[str] | None = None,
+        parent_sheet: str = "clean_data",
+        child_sheets: list[str] | None = None,
     ) -> None:
         """
 
@@ -42,7 +44,8 @@ class SkipLogicCheck(BaseValidator):
         self.survey_relevant_column: str = survey_relevant_column
         self.survey_required_column: str = survey_required_column
         self.survey_name_column: str = survey_name_column
-        self.check_sheets: list[str] = check_sheets if check_sheets is not None else ["clean_data"]
+        self.child_sheets: list[str] | None = child_sheets
+        self.parent_sheet: str = parent_sheet
 
     @property
     @override
@@ -61,11 +64,11 @@ class SkipLogicCheck(BaseValidator):
         This is done through converting kobo skip logic into polars expressions.
 
         Limitations:
-        This process does not currently support column references that are on
-        different sheets. Joining the datasets together is possible but it causes
-        the dataset to be quite large (in terms of height) making the process
-        computationally expensive. Any columns that are affected by this produce
-        a warning.
+        Support for cross sheet references is limited.
+        This process only supports column references that are on
+        a parent sheet (child referencing parent). If the reference is on a child sheet
+        (parent reference to child) or between child sheets then
+        any affected columns will produce a warning.
 
         Returns:
             list[ValidationResult]: a list of validation results, if any
@@ -85,10 +88,13 @@ class SkipLogicCheck(BaseValidator):
         )
 
         # check all the sheets exist
+        check_sheets = [self.parent_sheet]
+        if self.child_sheets:
+            check_sheets.extend(self.child_sheets)
 
         result, data_loaded_sheets = get_data_loaded_sheets(
             data=data,
-            sheet_names=[self.survey_sheet, *self.check_sheets],
+            sheet_names=[self.survey_sheet, *check_sheets],
             rule=self.name,
         )
 
@@ -109,7 +115,7 @@ class SkipLogicCheck(BaseValidator):
             results.append(result)
             return results
 
-        filtered_loaded_sheets = filter_loaded_sheets(self.check_sheets, data_loaded_sheets)
+        filtered_loaded_sheets = filter_loaded_sheets(check_sheets, data_loaded_sheets)
         result, data_id_columns = get_data_sheet_ids(
             schema=self.schema, data=filtered_loaded_sheets, rule=self.name
         )
@@ -162,11 +168,26 @@ class SkipLogicCheck(BaseValidator):
         if not survey_relevant_columns:
             return results
 
-        for sheet in self.check_sheets:
+        # get all columns referenced in the expressions
+        referenced_columns = get_all_references(
+            survey_relevant_columns_df[
+                data_loaded_columns[self.survey_relevant_column].data_column_name
+            ].to_list()
+        )
+
+        for sheet in check_sheets:
             # get columns relevant for sheet
             check_columns = set(
                 match_list(data_loaded_sheets[sheet].data.columns, survey_relevant_columns)
             )
+
+            # columns referenced in the sheet
+            check_referenced_columns = set(
+                match_list(data_loaded_sheets[sheet].data.columns, referenced_columns)
+            )
+
+            # combine referenced columns and skip logic columns
+            sheet_columns_needed = combine_lists(check_columns, check_referenced_columns)
 
             if not check_columns:
                 continue
@@ -174,6 +195,69 @@ class SkipLogicCheck(BaseValidator):
             check_required_columns = set(
                 match_list(data_loaded_sheets[sheet].data.columns, survey_relevant_required_columns)
             )
+
+            check_sheet_id_column = data_id_columns[sheet][0]
+
+            if sheet != self.parent_sheet:
+                parent_columns_referenced = match_list(
+                    data_loaded_sheets[self.parent_sheet].data.columns, referenced_columns
+                )
+                if parent_columns_referenced:
+                    # check if any parent columns are referenced. if so, join
+                    # to the parent sheet getting only the required columns
+                    result, child_sheet_linking_id_columns, parent_sheet_id_columns = (
+                        get_id_linking_columns(
+                            schema=self.schema,
+                            data_loaded_sheets=data_loaded_sheets,
+                            source_sheet=sheet,
+                            target_sheet=self.parent_sheet,
+                            rule=self.name,
+                        )
+                    )
+                    results.extend(result)
+                    if parent_sheet_id_columns is None or child_sheet_linking_id_columns is None:
+                        # should be an error in result
+                        continue
+                    assert child_sheet_linking_id_columns is not None
+                    assert parent_sheet_id_columns is not None
+
+                    # filter the two dataframes to only contain the minimum required columns
+                    data_df = (
+                        data_loaded_sheets[sheet]
+                        .data.lazy()
+                        .select(
+                            [
+                                check_sheet_id_column.data_column_name,
+                                child_sheet_linking_id_columns.data_column_name,
+                                *sheet_columns_needed,
+                            ]
+                        )
+                        .join(
+                            data_loaded_sheets[self.parent_sheet]
+                            .data.lazy()
+                            .select(
+                                [
+                                    parent_sheet_id_columns.data_column_name,
+                                    *parent_columns_referenced,
+                                ]
+                            ),
+                            left_on=child_sheet_linking_id_columns.data_column_name,
+                            right_on=parent_sheet_id_columns.data_column_name,
+                        )
+                    )
+                else:
+                    # select minimally required data
+                    data_df = (
+                        data_loaded_sheets[sheet]
+                        .data.lazy()
+                        .select([check_sheet_id_column.data_column_name, *sheet_columns_needed])
+                    )
+            else:
+                data_df = (
+                    data_loaded_sheets[sheet]
+                    .data.lazy()
+                    .select([check_sheet_id_column.data_column_name, *sheet_columns_needed])
+                )
 
             expressions: dict[str, pl.Expr] = {}
             # build an expression for each relevant survey question
@@ -191,7 +275,7 @@ class SkipLogicCheck(BaseValidator):
                         row[data_loaded_columns[self.survey_name_column].data_column_name]
                     ] = build_relevance_expression(
                         row[data_loaded_columns[self.survey_relevant_column].data_column_name],
-                        data_loaded_sheets[sheet].data.schema,
+                        data_df.collect_schema(),
                     )
                 except Exception as e:
                     # most likely due to column references in other sheets but
@@ -213,8 +297,6 @@ class SkipLogicCheck(BaseValidator):
             if not expressions:
                 continue
 
-            check_sheet_id_column = data_id_columns[sheet][0]
-
             # useful for finind out which columns are causing errors in the
             # below select statements
             # df = data_loaded_sheets[sheet].data
@@ -228,9 +310,7 @@ class SkipLogicCheck(BaseValidator):
 
             # values when there shouldnt be
             value_exist_df = (
-                data_loaded_sheets[sheet]
-                .data.lazy()
-                .with_columns(
+                data_df.with_columns(
                     *(e.alias(q) for q, e in expressions.items() if q in check_columns),
                 )
                 .select(
@@ -249,9 +329,7 @@ class SkipLogicCheck(BaseValidator):
 
             # no values when there should be if the field is required
             value_not_exist_df = (
-                data_loaded_sheets[sheet]
-                .data.lazy()
-                .with_columns(
+                data_df.with_columns(
                     *(is_missing(q).alias(q) for q in expressions if q in check_columns),
                 )
                 .select(

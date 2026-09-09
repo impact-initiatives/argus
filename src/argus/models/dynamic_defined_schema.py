@@ -1,6 +1,7 @@
 from pathlib import Path, PosixPath
 from typing import override
 
+from ..common.list_matching import filter_list
 from ..models.base import (
     SheetClassification,
 )
@@ -189,6 +190,16 @@ class DynamicDefinedDataset(BaseDataset):
                             child_sheets=[sheet.standard_name],
                         )
                     )
+                else:
+                    self.validators.append(
+                        SkipLogicCheck(
+                            schema=self.schema,
+                            parent_sheet=sheet.standard_name,
+                            child_sheets=filter_list(
+                                self.sorted_sheets.clean_sheets, [sheet.standard_name]
+                            ),
+                        )
+                    )
 
             elif sheet.classification == SheetClassification.RAW_DATA_SHEET:
                 # child in parent
@@ -219,7 +230,4 @@ class DynamicDefinedDataset(BaseDataset):
             )
             self.validators.append(
                 NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-            self.validators.append(
-                SkipLogicCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
             )

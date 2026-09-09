@@ -1,18 +1,24 @@
 import polars as pl
 import pytest
 
+from argus.models.base import SchemaColumnMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import ValidationResult
 from argus.validators.data_validators import (
     SkipLogicCheck,
 )
 from argus.validators.helpers.skip_logic_parser import build_relevance_expression
-from tests.helpers import build_excel_data, build_schema_with_process, do_basic_checks
+from tests.helpers import (
+    build_excel_data,
+    build_schema_with_process,
+    do_basic_checks,
+    error_counter,
+)
 
 
-def get_validator(schema: BaseDatasetSchema, sheets: list[str]):
+def get_validator(schema: BaseDatasetSchema, parent_sheet: str, child_sheets: list[str] | None):
     """Create a UniqueColumn validator instance"""
-    return SkipLogicCheck(schema=schema, check_sheets=sheets)
+    return SkipLogicCheck(schema=schema, parent_sheet=parent_sheet, child_sheets=child_sheets)
 
 
 def run_skip_validation(
@@ -20,13 +26,27 @@ def run_skip_validation(
 ) -> list[ValidationResult]:
     """Build schema + data, run the validator on 'clean_data', return result."""
     schema = build_schema_with_process(
-        {"clean_data": ["uuid"], "survey": ["relevant", "name"]},
+        {
+            "clean_data": ["uuid"],
+            "survey": ["relevant", "name"],
+            "child_data": ["person_id"],
+        },
         process_details={},
         process_sheet="",
         process_column="",
     )
+    schema.add_column_to_sheet("child_data", SchemaColumnMap(standard_name="uuid"))
+    child_sheet = schema.get_schema_loaded_sheet("child_data")
+    assert child_sheet is not None
+    child_sheet.parent_linking_column = "uuid"
+    child_sheet.parent_sheet = "clean_data"
+
     data = build_excel_data(columns)
-    validator = get_validator(schema, sheets=["clean_data"])
+    validator = get_validator(
+        schema,
+        parent_sheet="clean_data",
+        child_sheets=["child_data"] if "child_data" in columns else None,
+    )
     return validator.validate(data)
 
 
@@ -69,6 +89,32 @@ class TestParserLiterals:
             }
         )
         do_basic_checks(result, 0)
+
+    def test_string_equality_child_true(self):
+        # one missing value. one has value but shouldnt
+        result = run_skip_validation(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("gender", ["male", "female", "other"]),
+                    ("gender_other", ["", "", ""]),
+                ],
+                "child_data": [
+                    ("uuid", [1, 3]),
+                    ("person_id", [6, 7]),
+                    ("child_gender", ["bla", ""]),
+                ],
+                "survey": [
+                    ("relevant", ["${gender}='other'"]),
+                    ("name", ["child_gender"]),
+                    ("required", ["yes"]),
+                ],
+            }
+        )
+        do_basic_checks(result, 1)
+        filterd_results = error_counter(result)
+        assert filterd_results[0].details is not None
+        assert len(filterd_results[0].details["uuid"]) == 2
 
     def test_string_equality_false_shows_no_violation(self):
         result = run_skip_validation(

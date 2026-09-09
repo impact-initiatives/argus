@@ -120,6 +120,17 @@ class DynamicDataset(BaseDataset):
         results: list[ValidationResult] = []
         rule = "DynamicSchemaCreation_build_validators"
 
+        for sheet, details in self.sheet_matching.items():
+            if (
+                details.classification == SheetClassification.CLEAN_DATA_SHEET
+                and details.parent_sheet is None
+            ):
+                self.validators.append(
+                    SkipLogicCheck(
+                        schema=self.schema, parent_sheet=sheet, child_sheets=details.children
+                    )
+                )
+
         if self.sorted_sheets.clean_sheets:
             self.validators.append(
                 DataTypeCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
@@ -131,9 +142,7 @@ class DynamicDataset(BaseDataset):
             self.validators.append(
                 NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
             )
-            self.validators.append(
-                SkipLogicCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
+
         else:
             results.append(
                 ValidationResult(
@@ -215,6 +224,12 @@ class DynamicDataset(BaseDataset):
                             schema=self.schema,
                             master_sheet=details.parent_sheet,
                             child_sheets=[sheet],
+                        )
+                    )
+                else:
+                    self.validators.append(
+                        SkipLogicCheck(
+                            schema=self.schema, parent_sheet=sheet, child_sheets=details.children
                         )
                     )
 
@@ -353,9 +368,6 @@ class DynamicDataset(BaseDataset):
             )
             self.validators.append(
                 NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-            self.validators.append(
-                SkipLogicCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
             )
         else:
             results.append(

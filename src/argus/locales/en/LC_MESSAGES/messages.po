@@ -340,7 +340,7 @@ msgid "skip_logic_validator.invalid_values"
 msgstr "{count} column values did not match the skip logic for the column. Check output for details."
 
 msgid "skip_logic_validator.invalid_values.issue.empty_value"
-msgstr "No value when required question was not skipped."
+msgstr "No value found when required question was not skipped."
 
 msgid "skip_logic_validator.invalid_values.issue.not_empty_value"
-msgstr "Value when question was skipped."
+msgstr "Value found when question was skipped."

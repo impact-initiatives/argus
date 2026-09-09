@@ -160,6 +160,10 @@ def add_to_list(item: str | None, target: list[str] | None) -> list[str]:
     return unique_list(combined_list)
 
 
+def combine_lists(source: list[str] | set[str], target: list[str] | set[str]):
+    return set(source).union(target)
+
+
 def match_sheet_columns(
     source: list[DataColumnMap], target: list[DataColumnMap]
 ) -> list[tuple[DataColumnMap, DataColumnMap]]:

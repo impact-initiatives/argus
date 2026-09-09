@@ -27,6 +27,18 @@ TOKEN_RE = re.compile(
     re.VERBOSE,
 )
 
+REF_RE = re.compile(r"\$\{([^}]+)\}")
+
+
+def get_all_references(expressions: list[str]):
+    """
+    Extracts all referenced columns from a list of skip logic expressions
+    """
+    references = set().union(
+        *({m.strip().lower() for m in REF_RE.findall(expression)} for expression in expressions)
+    )
+    return references
+
 
 def tokenize(text: str) -> list[tuple[str, Any]]:
     tokens = []
@@ -348,8 +360,13 @@ def _to_expr(node, schema: dict[str, pl.DataType]) -> pl.Expr:
         # +, -, *, div, mod are only defined for numbers.
         if _is_numeric_node(left) or _is_numeric_node(right):
             # literal numbers or count-selected()
-            left_side = left_side.cast(pl.Float64, strict=False)
-            right_side = right_side.cast(pl.Float64, strict=False)
+            # rounding for cases when 1 changes to 1.0
+            left_side = left_side.cast(pl.Float64, strict=False).round(3)
+            right_side = right_side.cast(pl.Float64, strict=False).round(3)
+
+        elif node[1][0] == "lit" or node[3][0] == "lit":
+            left_side = left_side.cast(pl.String, strict=False)
+            right_side = right_side.cast(pl.String, strict=False)
 
         return CMP_MAP[op](left_side, right_side).fill_null(False)
 
