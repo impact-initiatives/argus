@@ -34,9 +34,12 @@ class SkipLogicCheck(BaseValidator):
                 Defaults to 'survey'.
             survey_relevant_column (str, optional): name of the relevant column in the
                 kobo survey sheet. Defaults to 'relevant'.
+            survey_required_column: (str, optional):  name of the required column in the
+                kobo survey sheet. Defaults to 'required'.
             survey_name_column (str, optional): name of the name column in the
                 kobo survey sheet. Defaults to 'name'.
-            check_sheets (list[str] | None): list of clean data sheets to check
+            parent_sheet (str): parent clean data sheet. Deffaults to 'clean_data'.
+            child_sheets (list[str] | None): list of child clean data sheets to check, if any
 
         """
         self.schema: BaseDatasetSchema = schema
@@ -56,10 +59,10 @@ class SkipLogicCheck(BaseValidator):
     def validate(
         self, data: ExcelLoaderData, **kwargs: str | int | float
     ) -> list[ValidationResult]:
-        """Checks that the columns/questions in the survey that contain skip logic
+        """Checks that clean_data columns/questions from the survey that contain skip logic
         contain:
         - no value when the question was skipped
-        - a value when the question was not skipped
+        - a value when the question was not skipped and marked as required.
 
         This is done through converting kobo skip logic into polars expressions.
 
@@ -146,6 +149,7 @@ class SkipLogicCheck(BaseValidator):
             )
         )
 
+        # survey questions with skip logic
         survey_relevant_columns = (
             survey_relevant_columns_df.select(
                 data_loaded_columns[self.survey_name_column].data_column_name
@@ -154,6 +158,7 @@ class SkipLogicCheck(BaseValidator):
             .to_list()
         )
 
+        # survey questions with skip logic marked as required if shown
         survey_relevant_required_columns = (
             survey_relevant_columns_df.filter(
                 pl.col(data_loaded_columns[self.survey_required_column].data_column_name).is_in(
