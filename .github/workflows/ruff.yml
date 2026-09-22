@@ -3,9 +3,13 @@ on:
   push:
     paths:
       - 'src/**/*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
   pull_request:
     paths:
       - 'src/**/*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
   workflow_dispatch:
 jobs:
   ruff:
