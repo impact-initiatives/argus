@@ -16,7 +16,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
-    "ruff>=0.15.9",
+    "ruff>=0.16.7",
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
 ]
