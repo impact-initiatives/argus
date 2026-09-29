@@ -73,6 +73,10 @@ class DynamicDataset(BaseDataset):
     Limitations:
     - loops within loops are currently not supported.
 
+    TODO
+        - produce warning/error when there are clean and raw data sheets
+        that are not matched (when clean AND raw data sheets are found)
+
     """
 
     def __init__(self, schema_path: Path | str, validator_path: Path | str) -> None:

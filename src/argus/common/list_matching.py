@@ -2,7 +2,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
-from thefuzz import fuzz, process
+from rapidfuzz import fuzz, process
 
 from ..config import settings
 from ..loaders.base import DataColumnMap, DataSheetMap
@@ -55,7 +55,7 @@ def match_list_to_list(
             l_target_tolerance = filter_list_with_tolerance(search_item, l_target)
 
             if l_target_tolerance:
-                match_result = process.extractBests(
+                match_result = process.extract(
                     query=search_item,
                     choices=l_target_tolerance,
                     scorer=fuzz.WRatio,  # settings.FUZZY_MATCH_SCORER,

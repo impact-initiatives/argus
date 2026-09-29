@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     #     extra="ignore",
     # )
 
-    MIN_FUZZY_MATCH_SCORE: int = 90
+    MIN_FUZZY_MATCH_SCORE: int = 85
     FUZZY_MATCH_STRING_LENGTH_RATIO: float = 0.7
 
     # for some validation rules and dynamic model creation

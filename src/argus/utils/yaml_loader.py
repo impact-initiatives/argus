@@ -1,9 +1,9 @@
 import zipfile
 from pathlib import Path
 
-import requests
+import httpx2
 import yaml
-from requests.models import Response
+from httpx2 import Response
 
 from ..config import settings
 
@@ -20,7 +20,7 @@ def download_config(download_dir: str | Path = "dataset_config"):
     base_path.mkdir(parents=True, exist_ok=True)
 
     try:
-        response: Response = requests.get(settings.DATASET_CONFIG_URL)
+        response: Response = httpx2.get(settings.DATASET_CONFIG_URL)
         response.raise_for_status()
         release_data = response.json()
     except Exception as e:
@@ -40,12 +40,11 @@ def download_config(download_dir: str | Path = "dataset_config"):
 
     # Stream download
     try:
-        stream_response = requests.get(release_data["zipball_url"], stream=True)
-        stream_response.raise_for_status()
-
-        with open(archive_path, "wb") as f:
-            for chunk in stream_response.iter_content(chunk_size=8192):
-                _ = f.write(chunk)
+        with httpx2.stream("GET", release_data["zipball_url"], follow_redirects=True) as response:
+            response.raise_for_status()
+            with open(archive_path, "wb") as f:
+                for chunk in response.iter_bytes(chunk_size=8192):
+                    f.write(chunk)
     except Exception as e:
         raise RuntimeError(f"Error downloading latest dataset release zip file: {e}") from None
 
