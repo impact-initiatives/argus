@@ -95,7 +95,19 @@ class SurveyChoicesCheck(BaseValidator):
         # add issue text
         def _get_difference(
             difference_expressions: list[pl.Expr], question_suffix: str, questions: list[str]
-        ):
+        ) -> pl.DataFrame | None:
+            """Computes the actual differences between the choice values and the data values
+            using built expressions.
+
+            Args:
+                difference_expressions (list[pl.Expr]): Built polars expression that finds value
+                    differences.
+                question_suffix (str): The suffix used to tag the expression columns
+                questions (list[str]): list of questions that are part of the expressions
+
+            Returns:
+                Dataframe | None: Data with details of differences found, otherwise None
+            """
             # Get the invalid values
             comparison_df = data_loaded_sheets[sheet].data.with_columns(difference_expressions)
             has_any_change = pl.any_horizontal(
@@ -153,6 +165,7 @@ class SurveyChoicesCheck(BaseValidator):
         column_selector = r"select_one|select_multiple"
         # pre-validation
         missing_choices: list[dict[str, str]] = []
+        missing_binary_quesitons: list[dict[str, str]] = []
         value_difference_suffix = "value_has_difference"
         binary_value_difference_suffix = "binary_value_has_difference"
 
@@ -305,7 +318,6 @@ class SurveyChoicesCheck(BaseValidator):
 
         for sheet in self.check_sheets:
             filtered_questions_binary: list[str] = []
-            missing_binary_quesitons: list[dict[str, str]] = []
             check_sheet_id_column = data_id_columns[sheet][0]
             # only check the questions that are present on the sheet
             filtered_questions_select_one: list[str] = match_list(
@@ -328,11 +340,12 @@ class SurveyChoicesCheck(BaseValidator):
             # values are made lowercase.
 
             # because multiple_select questions store data as a space delimited values,
-            # these values need to be split and compared individually
+            # these values need to be split and compared individually.
             # in the event that a survey choice option has a space in it this process
             # will throw an error for the value being checked
             #
-            # This step also checks the binary columns
+            # This step also checks the binary columns - they must be a 0 or 1 and
+            # must also match the parent column
 
             for question in filtered_questions_select_multiple:
                 try:
@@ -360,6 +373,7 @@ class SurveyChoicesCheck(BaseValidator):
                     pl.col(question).fill_null("").str.strip_chars().is_in(["", None])
                 )
 
+                # expression to compare data values and choices values
                 value_difference_expression = (
                     pl.when(empty_question_column_expression.not_())
                     .then(
@@ -412,6 +426,9 @@ class SurveyChoicesCheck(BaseValidator):
                         )
                         .list
                     )
+                    binary_question_expression_base = (
+                        pl.col(question_binary).cast(pl.String).fill_null("").str.strip_chars()
+                    )
 
                     # binary column should be 1 or 0 if the parent column has a value
                     # binary and parent columns should match.
@@ -419,34 +436,18 @@ class SurveyChoicesCheck(BaseValidator):
                         # when parent is empty then binary column should be empty
                         pl.when(empty_question_column_expression)
                         .then(
-                            ~pl.col(question_binary)
-                            .cast(pl.String)
-                            .fill_null("")
-                            .str.strip_chars()
                             # this currently means that the binary columns can either be blank or
                             # all 0's if the parent is empty
-                            .is_in(["", None, "0", "0.0"])
+                            ~binary_question_expression_base.is_in(["", None, "0", "0.0"])
                         )
                         .otherwise(
                             # when binary column has a valid value then that
                             # value should be reflected in the parent
                             # if binary column has an invalid value or is not
                             # reflected in the parent then this will return a difference
-                            pl.when(
-                                pl.col(question_binary)
-                                .cast(pl.String)
-                                .fill_null("")
-                                .str.strip_chars()
-                                .is_in(["0", "1", "0.0", "1.0"])
-                            )
+                            pl.when(binary_question_expression_base.is_in(["0", "1", "0.0", "1.0"]))
                             .then(
-                                pl.when(
-                                    pl.col(question_binary)
-                                    .cast(pl.String)
-                                    .fill_null("")
-                                    .str.strip_chars()
-                                    .is_in(["1", "1.0"])
-                                )
+                                pl.when(binary_question_expression_base.is_in(["1", "1.0"]))
                                 # binary value not in parent
                                 .then(question_to_list_expression.contains(choice_name).not_())
                                 # binary value incorrectly in parent
@@ -516,6 +517,7 @@ class SurveyChoicesCheck(BaseValidator):
             if value_difference_df is not None:
                 results_df = pl.concat([results_df, value_difference_df], how="vertical_relaxed")
 
+            # calculate the actual binary differences from the built expressions
             if binary_value_difference_expressions:
                 binary_value_difference_df = _get_difference(
                     binary_value_difference_expressions,
@@ -528,48 +530,46 @@ class SurveyChoicesCheck(BaseValidator):
                         [results_df, binary_value_difference_df], how="vertical_relaxed"
                     )
 
-            if results_df.height > 0:
-                results.append(
-                    ValidationResult(
-                        rule=self.name,
-                        message=self._(
-                            "survey_choices_validator.invalid_values",
-                            count=results_df.height,
-                            data_sheet=sheet,
-                            choices_sheet=self.choices_sheet,
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        sheet_name=sheet,
-                        details=results_df.to_dict(as_series=False),
-                    )
+        if results_df.height > 0:
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "survey_choices_validator.invalid_values",
+                        count=results_df.height,
+                        choices_sheet=self.choices_sheet,
+                    ),
+                    severity=SeverityLevel.ERROR,
+                    details=results_df.to_dict(as_series=False),
                 )
+            )
 
-            if missing_choices:
-                results.append(
-                    ValidationResult(
-                        rule=self.name,
-                        message=self._(
-                            "survey_choices_validator.missing_choices",
-                            count=len(missing_choices),
-                            survey_sheet=self.survey_sheet,
-                            choices_sheet=self.choices_sheet,
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        details=pl.DataFrame(missing_choices).to_dict(as_series=False),
-                    )
+        if missing_choices:
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "survey_choices_validator.missing_choices",
+                        count=len(missing_choices),
+                        survey_sheet=self.survey_sheet,
+                        choices_sheet=self.choices_sheet,
+                    ),
+                    severity=SeverityLevel.ERROR,
+                    details=pl.DataFrame(missing_choices).to_dict(as_series=False),
                 )
+            )
 
-            if missing_binary_quesitons:
-                results.append(
-                    ValidationResult(
-                        rule=self.name,
-                        message=self._(
-                            "survey_choices_validator.missing_binary_questions",
-                            count=len(missing_binary_quesitons),
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        details=pl.DataFrame(missing_binary_quesitons).to_dict(as_series=False),
-                    )
+        if missing_binary_quesitons:
+            results.append(
+                ValidationResult(
+                    rule=self.name,
+                    message=self._(
+                        "survey_choices_validator.missing_binary_questions",
+                        count=len(missing_binary_quesitons),
+                    ),
+                    severity=SeverityLevel.ERROR,
+                    details=pl.DataFrame(missing_binary_quesitons).to_dict(as_series=False),
                 )
+            )
 
         return results
