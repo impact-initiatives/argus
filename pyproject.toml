@@ -16,7 +16,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
-    "ruff>=0.16.8",
+    "ruff>=0.16.9",
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
 ]
@@ -30,7 +30,7 @@ line-length = 100
 select = ["UP", "E", "F", "I", "B", "SIM"]
 
 [build-system]
-requires = ["uv_build>=0.12.17,<0.13"]
+requires = ["uv_build>=0.12.19,<0.13"]
 build-backend = "uv_build"
 
 [tool.pytest.ini_options]
