@@ -145,10 +145,25 @@ msgstr "There were {count} differences found between the '{clean_sheet}' sheet a
 
 #: src/argus/validators/data_validators/survey_choices_validator.py:368
 msgid "survey_choices_validator.invalid_values"
-msgstr "There were {count} values found in the '{data_sheet}' sheet that were not reflected in the {choices_sheet} sheet. Check the output for details."
+msgstr "There were {count} values found that were not reflected in the {choices_sheet} sheet. Check the output for details."
 
 msgid "survey_choices_validator.missing_choices"
 msgstr "There were {count} questions listed in the '{survey_sheet}' sheet as 'select one' or 'select multiple' but had no choices listed in the '{choices_sheet}' sheet. Check the output for details."
+
+msgid "survey_choices_validator.missing_binary_questions"
+msgstr "There were {count} binary questions that were expected but not found. Check the output for details."
+
+msgid "survey_choices_validator.issue.value_has_difference"
+msgstr "Value not in choices sheet"
+
+msgid "survey_choices_validator.issue.binary_value_has_difference"
+msgstr "Mismatch between parent and binary column or invalid binary value"
+
+msgid "survey_choices_validator.missing_choices.issue"
+msgstr "No choices listed in '{sheet}' sheet"
+
+msgid "survey_choices_validator.missing_binary_questions.issue"
+msgstr "Column not found"
 
 #: src/argus/validators/data_validators/unique_column_validator.py:72
 msgid "unique_column_validator.non_unique"
