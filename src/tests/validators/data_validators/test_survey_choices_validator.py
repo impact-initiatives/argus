@@ -557,7 +557,45 @@ class TestSurveyBinaryChoices:
         do_basic_checks(result, 1)
         assert result[0].details is not None
         assert len(result[0].details["uuid"]) == 1
+        assert result[0].details["uuid"][0] == "3"
         assert result[0].details["value"][0] == "1"
+
+    def test_empty_binary_data_3(
+        self,
+    ):
+        schema = build_schema_with_process(
+            {"clean_data": ["uuid"], "survey": ["type", "name"], "choices": ["list_name", "name"]},
+            process_details={},
+            process_sheet="",
+            process_column="",
+        )
+        data = build_excel_data(
+            {
+                "clean_data": [
+                    ("uuid", [1, 2, 3]),
+                    ("items", ["rice pasta", "pasta", ""]),
+                    ("items.rice", ["1", "0", ""]),
+                    ("items.pasta", ["1", "1", ""]),
+                    ("items.none", ["", "0", ""]),
+                ],
+                "survey": [
+                    ("type", ["select_multiple item"]),
+                    ("name", ["items"]),
+                ],
+                "choices": [
+                    ("list_name", ["item", "item", "item"]),
+                    ("name", ["rice", "pasta", "none"]),
+                ],
+            }
+        )
+        validor = get_validator(schema)
+        result = validor.validate(data)
+
+        do_basic_checks(result, 1)
+        assert result[0].details is not None
+        assert len(result[0].details["uuid"]) == 1
+        assert result[0].details["value"][0] == ""
+        assert result[0].details["uuid"][0] == "1"
 
     def test_binary_not_in_parent_data(
         self,
