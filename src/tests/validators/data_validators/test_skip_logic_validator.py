@@ -4,7 +4,7 @@ import pytest
 from argus.models.base import SchemaColumnMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import ValidationResult
-from argus.validators.data_validators import (
+from argus.validators.common_validators import (
     SkipLogicCheck,
 )
 from argus.validators.helpers.skip_logic_parser import build_relevance_expression

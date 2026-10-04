@@ -1,4 +1,4 @@
-from argus.validators.data_validators.survey_choices_validator import (
+from argus.validators.common_validators.survey_choices_validator import (
     SurveyChoicesCheck,
 )
 from tests.helpers import build_excel_data, build_schema_with_process, do_basic_checks

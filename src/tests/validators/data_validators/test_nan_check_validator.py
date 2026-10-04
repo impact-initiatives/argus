@@ -1,6 +1,6 @@
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.data_validators.nan_check_validator import NaNDataCheck
+from argus.validators.common_validators.nan_check_validator import NaNDataCheck
 from tests.helpers import build_excel_data, do_basic_checks, error_counter
 
 

@@ -3,7 +3,7 @@ import pytest
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from argus.validators.base import BaseValidator
-from argus.validators.data_validators import (
+from argus.validators.common_validators import (
     CrossSheetRowSumCheck,
 )
 from tests.helpers import build_excel_data, do_basic_checks

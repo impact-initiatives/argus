@@ -10,31 +10,29 @@ from argus.utils.yaml_loader import load_file
 from argus.validators.base import BaseValidator
 
 from ..config import settings
-from ..validators.data_validators import (
+from ..validators.common_validators import (
     CleaningLogToCleanCheck,
+    ColumnNameCheck,
     ConsentCheck,
     CrossSheetIdCheck,
     CrossSheetRowSumCheck,
     DataTypeCheck,
+    DuplicateSheetMatchCheck,
     EmptyColumnCheck,
+    MandatoryColumnsCheck,
+    MissingSheetsCheck,
     NaNDataCheck,
     PiiDataCheck,
     RawToCleanToLogCheck,
     SkipLogicCheck,
     SurveyChoicesCheck,
+    UnexpectedSheetsCheck,
     UniqueColumnCheck,
 )
 from ..validators.jmmi_validators import (
     JMMIColumnDataCheck,
     JMMIColumnNameCheck,
     JMMIMebAnalysisCheck,
-)
-from ..validators.schema_validators import (
-    ColumnNameCheck,
-    DuplicateSheetMatchCheck,
-    MandatoryColumnsCheck,
-    MissingSheetsCheck,
-    UnexpectedSheetsCheck,
 )
 
 # supported rules. new rules need to be added to this list in order for them to

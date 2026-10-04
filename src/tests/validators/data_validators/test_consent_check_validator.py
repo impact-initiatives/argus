@@ -1,6 +1,6 @@
 from argus.models.base import ProcessValueMap, SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.data_validators.consent_check_validator import (
+from argus.validators.common_validators.consent_check_validator import (
     ConsentCheck,
 )
 from tests.helpers import build_excel_data, do_basic_checks

@@ -2,7 +2,7 @@ import pytest
 
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.data_validators.pii_validator import PiiDataCheck
+from argus.validators.common_validators.pii_validator import PiiDataCheck
 from tests.helpers import build_excel_data, do_basic_checks, error_counter
 
 

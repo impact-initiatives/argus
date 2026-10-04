@@ -1,4 +1,4 @@
-from argus.validators.data_validators.column_data_type_validator import (
+from argus.validators.common_validators.column_data_type_validator import (
     DataTypeCheck,
 )
 from tests.helpers import build_excel_data, build_schema_with_process, do_basic_checks

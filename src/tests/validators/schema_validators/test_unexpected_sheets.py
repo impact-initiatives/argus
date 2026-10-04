@@ -4,7 +4,7 @@ import pytest
 from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.loaders.excel_loader import DataSheetMap
 from argus.validators.base import BaseValidator
-from argus.validators.schema_validators.unexpected_sheets_validator import (
+from argus.validators.common_validators.unexpected_sheets_validator import (
     UnexpectedSheetsCheck,
 )
 from tests.helpers import do_basic_checks

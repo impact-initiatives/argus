@@ -1,4 +1,4 @@
-from argus.validators.schema_validators.column_name_validator import (
+from argus.validators.common_validators.column_name_validator import (
     ColumnNameCheck,
 )
 from tests.helpers import build_excel_data, do_basic_checks

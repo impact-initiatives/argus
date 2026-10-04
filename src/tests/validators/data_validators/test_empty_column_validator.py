@@ -1,6 +1,6 @@
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.data_validators.empty_column_validator import (
+from argus.validators.common_validators.empty_column_validator import (
     EmptyColumnCheck,
 )
 from tests.helpers import build_excel_data, do_basic_checks

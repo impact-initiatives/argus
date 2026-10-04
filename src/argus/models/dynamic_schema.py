@@ -25,7 +25,7 @@ from ..models.base import (
 from ..models.base_dataset import BaseDataset
 from ..utils.yaml_loader import load_file
 from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ..validators.data_validators import (
+from ..validators.common_validators import (
     CleaningLogToCleanCheck,
     ConsentCheck,
     CrossSheetIdCheck,

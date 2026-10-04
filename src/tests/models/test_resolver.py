@@ -5,8 +5,8 @@ import pytest
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from src.argus.models.resolver import ResolveDataset
-from src.argus.validators.data_validators.nan_check_validator import NaNDataCheck
-from src.argus.validators.data_validators.survey_choices_validator import SurveyChoicesCheck
+from src.argus.validators.common_validators.nan_check_validator import NaNDataCheck
+from src.argus.validators.common_validators.survey_choices_validator import SurveyChoicesCheck
 
 
 @pytest.fixture

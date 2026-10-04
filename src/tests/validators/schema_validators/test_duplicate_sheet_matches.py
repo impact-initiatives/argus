@@ -4,7 +4,7 @@ from argus.loaders.base_excel_loader import ExcelLoaderData
 from argus.loaders.excel_loader import DataSheetMap
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.validators.schema_validators.duplicate_sheet_match_validator import (
+from argus.validators.common_validators.duplicate_sheet_match_validator import (
     DuplicateSheetMatchCheck,
 )
 from tests.helpers import do_basic_checks

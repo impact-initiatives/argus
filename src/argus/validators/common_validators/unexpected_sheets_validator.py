@@ -1,7 +1,7 @@
 from typing import override
 
 from ...loaders.base_excel_loader import ExcelLoaderData
-from ...validators.base import BaseValidator, SeverityLevel, ValidationResult
+from ..base import BaseValidator, SeverityLevel, ValidationResult
 
 
 class UnexpectedSheetsCheck(BaseValidator):

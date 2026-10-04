@@ -1,4 +1,4 @@
-from argus.validators.data_validators.raw_clean_cleaning_log_validator import (
+from argus.validators.common_validators.raw_clean_cleaning_log_validator import (
     RawToCleanToLogCheck,
 )
 from tests.helpers import (
