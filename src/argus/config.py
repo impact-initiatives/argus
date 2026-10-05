@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     DELETION_LOG_SHEET_SEARCH_TERMS: list[str] = ["deletion_log"]
     RAW_DATA_SHEET_SEARCH_TERMS: list[str] = ["raw_data"]
 
+    SURVEY_SHEET_NAME: str = "survey"
+    CHOICES_SHEET_NAME: str = "choices"
+
     # for the NaNCheck validator
     NANCHECK_NUMERIC_VALUES: list[int] = [-999, -99, 99, 999, -88, -888, 88, 888]
     NANCHECK_STRING_VALUES: list[str] = [

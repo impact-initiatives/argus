@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from pathlib import Path
 from typing import Any
@@ -40,3 +40,12 @@ class BaseValidator(ABC):
 
     def _(self, key: str, **kwargs: str | int | float):
         return _(key, **kwargs)
+
+
+@dataclass(slots=True)
+class SortedSheets:
+    cleaning_log_sheets: list[str] = field(default_factory=list)
+    deletion_log_sheets: list[str] = field(default_factory=list)
+    clean_sheets: list[str] = field(default_factory=list)
+    raw_sheets: list[str] = field(default_factory=list)
+    unknown_sheets: list[str] = field(default_factory=list)

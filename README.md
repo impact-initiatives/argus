@@ -112,7 +112,7 @@ from argus.models.base_dataset import BaseDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
-from src.argus.validators.data_validators import RawToCleanToLogCheck
+from src.argus.validators.common_validators import RawToCleanToLogCheck
 
 
 locale = "en"
@@ -139,7 +139,7 @@ from argus.models.dynamic_model import DynamicDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
-from src.argus.validators.data_validators import CrossSheetIdCheck
+from src.argus.validators.common_validators import CrossSheetIdCheck
 
 locale = "en"
 programme_type = "other"

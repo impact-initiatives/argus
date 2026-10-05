@@ -3,6 +3,7 @@ from typing import override
 import polars as pl
 
 from ...common.list_matching import combine_lists, filter_loaded_sheets, match_list
+from ...config import settings
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ..base import BaseValidator, SeverityLevel, ValidationResult
@@ -19,7 +20,7 @@ class SkipLogicCheck(BaseValidator):
     def __init__(
         self,
         schema: BaseDatasetSchema,
-        survey_sheet: str = "survey",
+        survey_sheet: str = settings.SURVEY_SHEET_NAME,
         survey_relevant_column: str = "relevant",
         survey_required_column: str = "required",
         survey_name_column: str = "name",

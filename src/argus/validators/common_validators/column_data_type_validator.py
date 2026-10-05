@@ -2,6 +2,7 @@ from typing import override
 
 import polars as pl
 
+from ...config import settings
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ..base import BaseValidator, SeverityLevel, ValidationResult
@@ -25,7 +26,7 @@ class DataTypeCheck(BaseValidator):
     def __init__(
         self,
         schema: BaseDatasetSchema,
-        survey_sheet: str = "survey",
+        survey_sheet: str = settings.SURVEY_SHEET_NAME,
         survey_type_column: str = "type",
         survey_name_column: str = "name",
         check_sheets: list[str] | None = None,
