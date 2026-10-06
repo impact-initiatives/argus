@@ -9,9 +9,9 @@ class BaseDatasetSchema(BaseModel):
     programme_type: str
     output_type: str
     # sheets that have to be loaded and used for further validation
-    schema_loaded_sheets: list[SchemaSheetMap] = Field(default=[])
+    loaded_sheets: list[SchemaSheetMap] = Field(default=[])
     # sheets that should exist but dont need to be loaded
-    schema_unloaded_sheets: list[SchemaSheetMap] = Field(default=[])
+    unloaded_sheets: list[SchemaSheetMap] = Field(default=[])
 
     def get_schema_loaded_sheet(self, sheet_name: str) -> SchemaSheetMap | None:
         """Gets the details and data for a loaded sheet if it exists.
@@ -22,7 +22,7 @@ class BaseDatasetSchema(BaseModel):
         Returns:
             LoadedSheet | None: Loaded sheet details if found
         """
-        for sheet in self.schema_loaded_sheets:
+        for sheet in self.loaded_sheets:
             if sheet.standard_name == sheet_name:
                 return sheet
         return None
@@ -53,7 +53,7 @@ class BaseDatasetSchema(BaseModel):
         """
         return [
             item.standard_name
-            for item in self.schema_loaded_sheets
+            for item in self.loaded_sheets
             if (item.required == required) or required is None
         ]
 
@@ -63,8 +63,8 @@ class BaseDatasetSchema(BaseModel):
         Returns:
             List[List[str]]: list of all sheet names
         """
-        sheet_names = [item.combine_sheet_names() for item in self.schema_loaded_sheets]
-        sheet_names.extend([item.combine_sheet_names() for item in self.schema_unloaded_sheets])
+        sheet_names = [item.combine_sheet_names() for item in self.loaded_sheets]
+        sheet_names.extend([item.combine_sheet_names() for item in self.unloaded_sheets])
 
         return list(itertools.chain.from_iterable(sheet_names))
 
@@ -83,7 +83,7 @@ class BaseDatasetSchema(BaseModel):
         Returns:
             LoadedSheet | None: Loaded sheet details if found
         """
-        for sheet in self.schema_unloaded_sheets:
+        for sheet in self.unloaded_sheets:
             if sheet.standard_name == sheet_name:
                 return sheet
         return None
@@ -107,7 +107,7 @@ class BaseDatasetSchema(BaseModel):
 
         loaded_sheet = self.get_schema_loaded_sheet(sheet.standard_name)
         if loaded_sheet is None:
-            self.schema_loaded_sheets.append(sheet)
+            self.loaded_sheets.append(sheet)
         return sheet
 
     def add_unloaded_sheet(self, sheet: SchemaSheetMap) -> SchemaSheetMap | None:
@@ -127,7 +127,7 @@ class BaseDatasetSchema(BaseModel):
 
         """
         if self.get_schema_unloaded_sheet(sheet.standard_name) is None:
-            self.schema_unloaded_sheets.append(sheet)
+            self.unloaded_sheets.append(sheet)
             return sheet
 
     def add_column_to_sheet(
@@ -159,9 +159,9 @@ class BaseDatasetSchema(BaseModel):
         Args:
             sheet_standard_name (str): name of sheet to remove
         """
-        for index, sheet in enumerate(self.schema_loaded_sheets):
+        for index, sheet in enumerate(self.loaded_sheets):
             if sheet.standard_name == sheet_standard_name:
-                self.schema_loaded_sheets.pop(index)
+                self.loaded_sheets.pop(index)
                 return True
 
         return False

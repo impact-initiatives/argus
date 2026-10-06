@@ -3,6 +3,7 @@ from typing import override
 import polars as pl
 
 from ...common.list_matching import filter_loaded_sheets, match_list
+from ...config import settings
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ...models.base_dataset_schemas import BaseDatasetSchema
 from ..base import BaseValidator, SeverityLevel, ValidationResult
@@ -22,10 +23,10 @@ class SurveyChoicesCheck(BaseValidator):
     def __init__(
         self,
         schema: BaseDatasetSchema,
-        survey_sheet: str = "survey",
+        survey_sheet: str = settings.SURVEY_SHEET_NAME,
         survey_type_column: str = "type",
         survey_name_column: str = "name",
-        choices_sheet: str = "choices",
+        choices_sheet: str = settings.CHOICES_SHEET_NAME,
         choices_name_column: str = "name",
         choices_list_name_column: str = "list_name",
         check_sheets: list[str] | None = None,

@@ -135,10 +135,10 @@ class ExcelLoader(BaseExcelLoader):
 
         for excel_sheet_name in all_sheets:
             l_mapped_name, l_results = self.match_excel_sheet_to_schema(
-                excel_sheet_name, self.schema.schema_loaded_sheets
+                excel_sheet_name, self.schema.loaded_sheets
             )
             u_mapped_name, u_results = self.match_excel_sheet_to_schema(
-                excel_sheet_name, self.schema.schema_unloaded_sheets
+                excel_sheet_name, self.schema.unloaded_sheets
             )
 
             # pre schema validation will throw error if any sheets have matching names

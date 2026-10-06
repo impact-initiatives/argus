@@ -262,31 +262,18 @@ msgstr "{count} columns in the excel sheet {sheet} did not have names and were r
 msgid "excel_loader.load.multiple_matches"
 msgstr "Excel sheet {sheet} was matched with multiple schema sheets. This will lead to validation errors about excel sheets not being found."
 
-#: src/argus/models/dynamic_model.py:158
-msgid "dynamic_model.build_validators.CleaningLogToClean"
-msgstr "No linked cleaning log data sheet for the sheet '{sheet}' was found so the 'CleaningLogToClean' and 'CrossSheetIdCheck' rules could not be run."
-
-#: src/argus/models/dynamic_model.py:180
-msgid "dynamic_model.build_validators.missing_sheet"
-msgstr "No linked {sheet_type} sheet for the sheet '{sheet}' was found so the '{rule}' rule could not be run."
-
-#: src/argus/models/dynamic_model.py:293
-msgid "dynamic_model.build_validators.consent"
-msgstr "No possible raw_data sheet for 'consent' column was found."
-
-#: src/argus/models/dynamic_model.py:310
-msgid "dynamic_model.build_validators.no_sheets"
-msgstr "No possible sheets for '{sheet}' were found."
-
-msgid "dynamic_model.build_validators.no_matched_log"
-msgstr "{count} sheets could not be linked to the 'cleaning_log' sheet. Check that the 'cleaning_log' sheet contains the ID columns for the for these sheets if there are cleaning log records for these sheets. Check the output for details."
-
-msgid "dynamic_model.build_validators.no_matched_log.issue"
-msgstr "Column not found in '{sheet}'."
-
 #: src/argus/models/dynamic_model.py:601
-msgid "dynamic_model.match_data.no_parent"
-msgstr "{count} {sheet_type} sheets did not match to a parent. There should only be 1 {sheet_type} sheet without a parent."
+msgid "base_dataset.validate_schema.no_parent"
+msgstr "{count} '{sheet_type}' sheets did not match to a parent. There should only be 1 {sheet_type} sheet without a parent. Check the output for details."
+
+msgid "base_dataset.validate_schema.multiple_parents"
+msgstr "'{sheet_type}' sheets matched to {count} different parents. There should only be 1 parent sheet. Parent sheets: {parents}"
+
+msgid "base_dataset.validate_schema.missing_links"
+msgstr "{count} '{sheet_type}' sheets did not link to a '{linked_sheet_type}' sheet so related validation rules could not be created. Check the output for details."
+
+msgid "base_dataset.validate_schema.missing_links.issue"
+msgstr "No linked '{sheet}' sheet"
 
 msgid "jmmi_column_name_validator.items_not_in_dictionary"
 msgstr "{count} columns listed items not in the JMMI goods dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."

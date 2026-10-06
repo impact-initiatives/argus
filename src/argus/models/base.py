@@ -18,6 +18,18 @@ class SheetClassification(StrEnum):
 
 @dataclass(slots=True)
 class DynamicSheetMatching:
+    """
+    parent_sheet, parent_linking_column for linking:
+        - deletion log to raw
+        - cleaning log to clean
+        - repeat group to parent
+    linked_sheet for linking:
+        - raw and clean sheets
+    linked_log for linking:
+        - raw to deletion log
+        - clean to cleaning log
+    """
+
     data: pl.DataFrame
     base_sheet_name: str
     id_column: str | None
@@ -26,10 +38,8 @@ class DynamicSheetMatching:
     parent_sheet: str | None = None
     parent_linking_column: str | None = None
     children: list[str] = field(default_factory=list)
-    linked_cleaning_log: str | None = None
-    linked_deletion_log: str | None = None
-    linked_raw_sheet: str | None = None
-    linked_clean_sheet: str | None = None
+    linked_log: str | None = None
+    linked_sheet: str | None = None
     log_id_column: list[str] = field(default_factory=list)
 
 

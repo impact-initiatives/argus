@@ -24,7 +24,9 @@ class PiiDataCheck(BaseValidator):
         """
         self.schema: BaseDatasetSchema = schema
         self.ignore_sheets: list[str] = (
-            ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+            ignore_sheets
+            if ignore_sheets is not None
+            else [settings.CHOICES_SHEET_NAME, settings.SURVEY_SHEET_NAME]
         )
 
     @property

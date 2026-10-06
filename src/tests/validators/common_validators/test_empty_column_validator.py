@@ -16,13 +16,13 @@ def build_schema(sheet_name: str, column: str, allow_empty: bool):
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name=sheet_name,
                 columns=[SchemaColumnMap(standard_name=column, allow_empty_values=allow_empty)],
             )
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 

@@ -27,10 +27,10 @@ def build_schema(
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(standard_name=sheet_name, columns=column_map, allow_fuzzy_matching=fuzzy)
         ],
-        schema_unloaded_sheets=l_unloaded_sheet,
+        unloaded_sheets=l_unloaded_sheet,
     )
 
 

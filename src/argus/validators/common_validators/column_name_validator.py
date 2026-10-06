@@ -2,6 +2,7 @@ from typing import override
 
 import polars as pl
 
+from ...config import settings
 from ...loaders.base_excel_loader import ExcelLoaderData
 from ..base import BaseValidator, SeverityLevel, ValidationResult
 from ..helpers.options import COLUMN_NAME_VALIDATOR_PATTERN
@@ -17,7 +18,9 @@ class ColumnNameCheck(BaseValidator):
                 Defaults to "choices" and "survey" if None is specefied.
         """
         self.ignore_sheets: list[str] = (
-            ignore_sheets if ignore_sheets is not None else ["choices", "survey"]
+            ignore_sheets
+            if ignore_sheets is not None
+            else [settings.CHOICES_SHEET_NAME, settings.SURVEY_SHEET_NAME]
         )
 
     @property

@@ -3,14 +3,16 @@
 ## Overview
 Argus is designed to allow for the review and validation of different excel based datasets. This is performed through the construction of a dataset schema and specifying a list of validation rules that are required to be run against the data. 
 
-Both the schema components and the validation components are designed to be modular. This helps to support the easy building and management of schemas, validation rules and their integration with the wider validation framework.
+**Modular design**: Both the schema and validation components are designed to be modular. This helps to support the easy building and management of schemas, validation rules and their integration with the wider validation framework.
 
-Argus can be run as a standalone tool or incorporated into other workflows.
+**Kobo support**: Many of the validation rules are designed to validate Kobo survey specific components.
+
+**Flexible workflow**: Argus can be run as a standalone tool or incorporated into other workflows like [Jive](https://github.com/impact-initiatives/jive).
 
 ### Supported Datasets
-To run the process a dataset must be specidifed. The current supported datasets and their schemas and validation rules are stored in the [Argus schemas repository](https://github.com/impact-initiatives/argus_schemas)
+To run the process a dataset must be specidifed. These are stored as yaml files. The current supported datasets and their schemas are stored in the [Argus schemas](https://github.com/impact-initiatives/argus_schemas) repository.
 
-When Argus is run, the latest release from the schemas repository is downloaded.
+When Argus is run, the latest release from the schemas repository is downloaded by default.
 
 ## Setup
 1. Clone the repository
@@ -102,6 +104,15 @@ Most user messages (Error, Warnings, Info, Passed) support translations into oth
 
 See [translations](locales/README.md) for details on managing/expanding these.
 
+## Contributing and Reporting Issues
+If you are interested in expanding the list of supported languages for the validation messages get in touch. 
+
+If you encounter any bugs report these on the [project issues page](https://github.com/impact-initiatives/argus/issues).
+
+## Related Projects
+- [Argus schemas](https://github.com/impact-initiatives/argus_schemas): Schemas supported by Argus.
+- [Jive](https://github.com/impact-initiatives/jive): A tool for integration with validating datasets submitted to Jira.
+
 ## Development and Debugging
 If testing or debugging, it is possible to run individual validation rules or use specific versions of schemas.
 ### Running Rules Individually
@@ -112,7 +123,7 @@ from argus.models.base_dataset import BaseDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
-from src.argus.validators.data_validators import RawToCleanToLogCheck
+from src.argus.validators.common_validators import RawToCleanToLogCheck
 
 
 locale = "en"
@@ -139,7 +150,7 @@ from argus.models.dynamic_model import DynamicDataset
 from argus.models.resolver import find_dataset_files
 from argus.utils.yaml_loader import download_config
 from src.argus.loaders.excel_loader import ExcelLoader
-from src.argus.validators.data_validators import CrossSheetIdCheck
+from src.argus.validators.common_validators import CrossSheetIdCheck
 
 locale = "en"
 programme_type = "other"
@@ -164,7 +175,3 @@ results = CrossSheetIdCheck(dataset.schema).validate(dataset.data)
 
 ### Specifying Schema Versions
 By default, `download_config` downloads the latest release. It is possible to change to other releases by changing the Github api url stored in `DATASET_CONFIG_URL` in `config`. See the [Github Api documentation](https://docs.github.com/en/rest/releases/releases) for details.
-## Contributing and Reporting Issues
-If you are interested in expanding the list of supported languages for the validation messages get in touch. 
-
-If you encounter any bugs report these on the [project issues page](https://github.com/impact-initiatives/argus/issues).

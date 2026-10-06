@@ -25,8 +25,8 @@ def build_schema(sheet_name: str, columns: list[str]):
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[SchemaSheetMap(standard_name=sheet_name, columns=column_map)],
-        schema_unloaded_sheets=[],
+        loaded_sheets=[SchemaSheetMap(standard_name=sheet_name, columns=column_map)],
+        unloaded_sheets=[],
     )
 
 
@@ -36,7 +36,7 @@ class TestDatasetResolver:
             {
                 "programme_type": "jmmi",
                 "output_type": "dataset",
-                "schema_loaded_sheets": [
+                "loaded_sheets": [
                     {
                         "standard_name": "clean_data",
                         "alternate_names": ["also_clean"],
@@ -44,7 +44,7 @@ class TestDatasetResolver:
                         "columns": [{"standard_name": "uuid"}],
                     }
                 ],
-                "schema_unloaded_sheets": [{"standard_name": "other_data"}],
+                "unloaded_sheets": [{"standard_name": "other_data"}],
             },
             {},
         )
@@ -52,21 +52,21 @@ class TestDatasetResolver:
 
         result = resolver.resolve_schema("some/file.yaml")
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
-        assert len(result.schema_loaded_sheets) == 1
-        assert result.schema_loaded_sheets[0].standard_name == "clean_data"
-        assert result.schema_loaded_sheets[0].alternate_names[0] == "also_clean"
-        assert not result.schema_loaded_sheets[0].allow_fuzzy_matching
-        assert result.schema_loaded_sheets[0].columns[0].standard_name == "uuid"
+        assert len(result.loaded_sheets) == 1
+        assert result.loaded_sheets[0].standard_name == "clean_data"
+        assert result.loaded_sheets[0].alternate_names[0] == "also_clean"
+        assert not result.loaded_sheets[0].allow_fuzzy_matching
+        assert result.loaded_sheets[0].columns[0].standard_name == "uuid"
         assert result.programme_type == "jmmi"
         assert result.output_type == "dataset"
-        assert result.schema_unloaded_sheets[0].standard_name == "other_data"
+        assert result.unloaded_sheets[0].standard_name == "other_data"
 
     def test_invalid_dataset(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.return_value = (
             {
                 "programme_type": "jmmi",
                 "output_type": "dataset",
-                "schema_loaded_sheets": [
+                "loaded_sheets": [
                     {
                         "standard_name_invalid": "clean_data",
                         "alternate_names": ["also_clean"],
@@ -74,7 +74,7 @@ class TestDatasetResolver:
                         "columns": [{"standard_name": "uuid"}],
                     }
                 ],
-                "schema_unloaded_sheets": [{"standard_name": "other_data"}],
+                "unloaded_sheets": [{"standard_name": "other_data"}],
             },
             {},
         )
@@ -89,8 +89,8 @@ class TestDatasetResolver:
             {
                 "programme_type": "jmmi",
                 "output_type": "dataset",
-                "schema_loaded_sheets": [{"$use": "clean_data"}],
-                "schema_unloaded_sheets": [{"standard_name": "other_data"}],
+                "loaded_sheets": [{"$use": "clean_data"}],
+                "unloaded_sheets": [{"standard_name": "other_data"}],
             },
             {},
         )
@@ -106,8 +106,8 @@ class TestDatasetResolver:
                 {
                     "programme_type": "jmmi",
                     "output_type": "dataset",
-                    "schema_loaded_sheets": [{"$use": "clean_data_sheet"}],
-                    "schema_unloaded_sheets": [],
+                    "loaded_sheets": [{"$use": "clean_data_sheet"}],
+                    "unloaded_sheets": [],
                 },
                 {
                     "clean_data_sheet": {"standard_name": "clean_data"},
@@ -118,8 +118,8 @@ class TestDatasetResolver:
         resolver = ResolveDataset()
         result = resolver.resolve_schema("some/file.yaml")
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
-        assert len(result.schema_loaded_sheets) == 1
-        assert result.schema_loaded_sheets[0].standard_name == "clean_data"
+        assert len(result.loaded_sheets) == 1
+        assert result.loaded_sheets[0].standard_name == "clean_data"
 
     def test_import_sheet_append_columns(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.side_effect = [
@@ -127,13 +127,13 @@ class TestDatasetResolver:
                 {
                     "programme_type": "jmmi",
                     "output_type": "dataset",
-                    "schema_loaded_sheets": [
+                    "loaded_sheets": [
                         {
                             "$use": "clean_data_sheet",
                             "$append_columns": [{"standard_name": "country"}],
                         }
                     ],
-                    "schema_unloaded_sheets": [],
+                    "unloaded_sheets": [],
                 },
                 {
                     "clean_data_sheet": {"standard_name": "clean_data"},
@@ -144,9 +144,9 @@ class TestDatasetResolver:
         resolver = ResolveDataset()
         result = resolver.resolve_schema("some/file.yaml")
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
-        assert len(result.schema_loaded_sheets) == 1
-        assert result.schema_loaded_sheets[0].standard_name == "clean_data"
-        assert result.schema_loaded_sheets[0].columns[0].standard_name == "country"
+        assert len(result.loaded_sheets) == 1
+        assert result.loaded_sheets[0].standard_name == "clean_data"
+        assert result.loaded_sheets[0].columns[0].standard_name == "country"
 
     def test_import_sheet_append_imported_columns(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.side_effect = [
@@ -154,13 +154,13 @@ class TestDatasetResolver:
                 {
                     "programme_type": "jmmi",
                     "output_type": "dataset",
-                    "schema_loaded_sheets": [
+                    "loaded_sheets": [
                         {
                             "$use": "clean_data_sheet",
                             "$append_columns": [{"$use": "uuid_column"}],
                         }
                     ],
-                    "schema_unloaded_sheets": [],
+                    "unloaded_sheets": [],
                 },
                 {
                     "clean_data_sheet": {"standard_name": "clean_data"},
@@ -172,9 +172,9 @@ class TestDatasetResolver:
         resolver = ResolveDataset()
         result = resolver.resolve_schema("some/file.yaml")
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
-        assert len(result.schema_loaded_sheets) == 1
-        assert result.schema_loaded_sheets[0].standard_name == "clean_data"
-        assert result.schema_loaded_sheets[0].columns[0].standard_name == "uuid"
+        assert len(result.loaded_sheets) == 1
+        assert result.loaded_sheets[0].standard_name == "clean_data"
+        assert result.loaded_sheets[0].columns[0].standard_name == "uuid"
 
     def test_import_sheet_override(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.side_effect = [
@@ -182,13 +182,13 @@ class TestDatasetResolver:
                 {
                     "programme_type": "jmmi",
                     "output_type": "dataset",
-                    "schema_loaded_sheets": [
+                    "loaded_sheets": [
                         {
                             "$use": "clean_data_sheet",
                             "override": {"alternate_names": ["new_name"]},
                         }
                     ],
-                    "schema_unloaded_sheets": [],
+                    "unloaded_sheets": [],
                 },
                 {
                     "clean_data_sheet": {
@@ -202,9 +202,9 @@ class TestDatasetResolver:
         resolver = ResolveDataset()
         result = resolver.resolve_schema("some/file.yaml")
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
-        assert len(result.schema_loaded_sheets) == 1
-        assert result.schema_loaded_sheets[0].standard_name == "clean_data"
-        assert result.schema_loaded_sheets[0].alternate_names[0] == "new_name"
+        assert len(result.loaded_sheets) == 1
+        assert result.loaded_sheets[0].standard_name == "clean_data"
+        assert result.loaded_sheets[0].alternate_names[0] == "new_name"
 
 
 class TestValidatorResolver:

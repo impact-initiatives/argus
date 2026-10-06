@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path, PosixPath
 from typing import Any, override
@@ -24,28 +23,8 @@ from ..models.base import (
 )
 from ..models.base_dataset import BaseDataset
 from ..utils.yaml_loader import load_file
-from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
-from ..validators.common_validators import (
-    CleaningLogToCleanCheck,
-    ConsentCheck,
-    CrossSheetIdCheck,
-    CrossSheetRowSumCheck,
-    DataTypeCheck,
-    NaNDataCheck,
-    RawToCleanToLogCheck,
-    SkipLogicCheck,
-    SurveyChoicesCheck,
-)
+from ..validators.base import BaseValidator, SeverityLevel, SortedSheets, ValidationResult
 from .base_dataset_schemas import BaseDatasetSchema
-
-
-@dataclass(slots=True)
-class SortedSheets:
-    cleaning_log_sheets: list[str] = field(default_factory=list)
-    deletion_log_sheets: list[str] = field(default_factory=list)
-    clean_sheets: list[str] = field(default_factory=list)
-    raw_sheets: list[str] = field(default_factory=list)
-    unknown_sheets: list[str] = field(default_factory=list)
 
 
 class DynamicDataset(BaseDataset):
@@ -102,345 +81,24 @@ class DynamicDataset(BaseDataset):
         if results:
             all_results.extend(results)
 
-        results, consent_sheet = self.build_schema()
+        results = self.build_schema()
         if results:
             all_results.extend(results)
 
         # this must come after build_schema
         # to ensure the complete schema is referenced
         self.validators: list[BaseValidator] = self.get_validators()
+        self.build_validators()
 
-        if self.schema.output_type == "dataset":
-            results = self.build_dataset_validators(consent_sheet=consent_sheet)
-        else:
-            results = self.build_analysis_validators()
-
+        # this must come after build validators
+        results = self.validate_schema_links()
         if results:
             all_results.extend(results)
 
         return all_results
 
-    def build_analysis_validators(self) -> list[ValidationResult]:
-        results: list[ValidationResult] = []
-        rule = "DynamicSchemaCreation_build_validators"
-
-        for sheet, details in self.sheet_matching.items():
-            if (
-                details.classification == SheetClassification.CLEAN_DATA_SHEET
-                and details.parent_sheet is None
-            ):
-                self.validators.append(
-                    SkipLogicCheck(
-                        schema=self.schema, parent_sheet=sheet, child_sheets=details.children
-                    )
-                )
-
-        if self.sorted_sheets.clean_sheets:
-            self.validators.append(
-                DataTypeCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-
-            self.validators.append(
-                SurveyChoicesCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-            self.validators.append(
-                NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-
-        else:
-            results.append(
-                ValidationResult(
-                    rule=rule,
-                    message=_("dynamic_model.build_validators.no_sheets", sheet="clean_data"),
-                    severity=SeverityLevel.ERROR,
-                )
-            )
-
-        return results
-
-    def build_dataset_validators(self, consent_sheet: str | None) -> list[ValidationResult]:
-        """builds a list of validators matched to use the dynamically created schema."""
-        results: list[ValidationResult] = []
-        rule = "DynamicSchemaCreation_build_validators"
-
-        for sheet, details in self.sheet_matching.items():
-            if details.linked_cleaning_log is not None:
-                cleaning_log_sheet = details.linked_cleaning_log
-            elif len(self.sorted_sheets.cleaning_log_sheets) == 1:
-                cleaning_log_sheet = self.sorted_sheets.cleaning_log_sheets[0]
-            else:
-                cleaning_log_sheet = None
-
-            if details.classification == SheetClassification.CLEAN_DATA_SHEET:
-                if cleaning_log_sheet is not None:
-                    self.validators.append(
-                        CrossSheetIdCheck(
-                            schema=self.schema,
-                            master_sheet=sheet,
-                            child_sheets=[cleaning_log_sheet],
-                        )
-                    )
-                    self.validators.append(
-                        CleaningLogToCleanCheck(
-                            schema=self.schema,
-                            cleaning_log_sheet=cleaning_log_sheet,
-                            clean_data_sheet=sheet,
-                        )
-                    )
-                else:
-                    results.append(
-                        ValidationResult(
-                            rule=rule,
-                            message=_(
-                                "dynamic_model.build_validators.CleaningLogToClean", sheet=sheet
-                            ),
-                            sheet_name=sheet,
-                            severity=SeverityLevel.ERROR,
-                        )
-                    )
-
-                if details.linked_raw_sheet is not None:
-                    self.validators.append(
-                        RawToCleanToLogCheck(
-                            schema=self.schema,
-                            cleaning_log_sheet=cleaning_log_sheet,
-                            clean_data_sheet=sheet,
-                            raw_data_sheet=details.linked_raw_sheet,
-                        )
-                    )
-                else:
-                    results.append(
-                        ValidationResult(
-                            rule=rule,
-                            message=_(
-                                "dynamic_model.build_validators.missing_sheet",
-                                sheet=sheet,
-                                sheet_type="raw",
-                                rule="RawToCleanToLog",
-                            ),
-                            severity=SeverityLevel.ERROR,
-                            sheet_name=sheet,
-                        )
-                    )
-                if details.parent_sheet is not None:
-                    self.validators.append(
-                        CrossSheetIdCheck(
-                            schema=self.schema,
-                            master_sheet=details.parent_sheet,
-                            child_sheets=[sheet],
-                        )
-                    )
-                else:
-                    self.validators.append(
-                        SkipLogicCheck(
-                            schema=self.schema, parent_sheet=sheet, child_sheets=details.children
-                        )
-                    )
-
-            elif details.classification == SheetClassification.RAW_DATA_SHEET:
-                rowsum_sheets: list[str] = []
-                id_check_sheets: list[str] = []
-                clean_sheet = None
-                master_deletion_log = None
-                if details.linked_clean_sheet is not None:
-                    rowsum_sheets.append(details.linked_clean_sheet)
-                    if details.linked_deletion_log is not None:
-                        rowsum_sheets.append(details.linked_deletion_log)
-                    elif (
-                        len(self.sorted_sheets.deletion_log_sheets) == 1
-                        and len(self.sorted_sheets.raw_sheets) > 1
-                    ):
-                        # one deletion log for multiple sheets. likely to produce
-                        # incorrect calculations if child sheets have removed records
-                        # but the parent was not removed.
-                        master_deletion_log = self.sorted_sheets.deletion_log_sheets[0]
-
-                    id_check_sheets.append(details.linked_clean_sheet)
-                    clean_sheet = self.sheet_matching[details.linked_clean_sheet]
-
-                    self.validators.append(
-                        CrossSheetRowSumCheck(
-                            schema=self.schema,
-                            master_sheet=sheet,
-                            child_sheets=rowsum_sheets,
-                            master_deletion_log=master_deletion_log,
-                        )
-                    )
-                else:
-                    results.append(
-                        ValidationResult(
-                            rule=rule,
-                            message=_(
-                                "dynamic_model.build_validators.missing_sheet",
-                                sheet=sheet,
-                                sheet_type="sheets",
-                                rule="CrossSheetRowSumCheck",
-                            ),
-                            severity=SeverityLevel.ERROR,
-                            sheet_name=sheet,
-                        )
-                    )
-
-                if details.parent_sheet is not None:
-                    self.validators.append(
-                        CrossSheetIdCheck(
-                            schema=self.schema,
-                            master_sheet=details.parent_sheet,
-                            child_sheets=[sheet],
-                        )
-                    )
-
-                if clean_sheet is not None:
-                    if details.parent_sheet is None and details.linked_deletion_log is not None:
-                        id_check_sheets.append(details.linked_deletion_log)
-                    if cleaning_log_sheet is not None:
-                        id_check_sheets.append(cleaning_log_sheet)
-
-                    self.validators.append(
-                        CrossSheetIdCheck(
-                            schema=self.schema,
-                            master_sheet=sheet,
-                            child_sheets=id_check_sheets,
-                        )
-                    )
-
-                    if clean_sheet.linked_cleaning_log is not None and details.linked_deletion_log:
-                        self.validators.append(
-                            CrossSheetIdCheck(
-                                schema=self.schema,
-                                master_sheet=clean_sheet.linked_cleaning_log,
-                                child_sheets=[details.linked_deletion_log],
-                                is_in=False,
-                            )
-                        )
-
-                else:
-                    results.append(
-                        ValidationResult(
-                            rule=rule,
-                            message=_(
-                                "dynamic_model.build_validators.missing_sheet",
-                                sheet=sheet,
-                                sheet_type="clean",
-                                rule="CrossSheetIdCheck",
-                            ),
-                            severity=SeverityLevel.ERROR,
-                            sheet_name=sheet,
-                        )
-                    )
-
-        if consent_sheet is not None:
-            consent_linked_clean_sheet = self.sheet_matching[consent_sheet].linked_clean_sheet
-            if consent_linked_clean_sheet is None:
-                results.append(
-                    ValidationResult(
-                        rule=rule,
-                        message=_(
-                            "dynamic_model.build_validators.missing_sheet",
-                            sheet=consent_sheet,
-                            sheet_type="clean",
-                            rule="ConsentCheck",
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        sheet_name=consent_sheet,
-                    )
-                )
-            else:
-                self.validators.append(
-                    ConsentCheck(
-                        schema=self.schema,
-                        raw_data_sheet=consent_sheet,
-                        clean_data_sheet=consent_linked_clean_sheet,
-                    )
-                )
-        else:
-            results.append(
-                ValidationResult(
-                    rule=rule,
-                    message=_("dynamic_model.build_validators.consent"),
-                    severity=SeverityLevel.ERROR,
-                )
-            )
-
-        if self.sorted_sheets.clean_sheets:  # check unique
-            self.validators.append(
-                DataTypeCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-
-            self.validators.append(
-                SurveyChoicesCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-            self.validators.append(
-                NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-        else:
-            results.append(
-                ValidationResult(
-                    rule=rule,
-                    message=_("dynamic_model.build_validators.no_sheets", sheet="clean_data"),
-                    severity=SeverityLevel.ERROR,
-                )
-            )
-
-        if not self.sorted_sheets.raw_sheets:
-            results.append(
-                ValidationResult(
-                    rule=rule,
-                    message=_("dynamic_model.build_validators.no_sheets", sheet="raw_data"),
-                    severity=SeverityLevel.ERROR,
-                )
-            )
-        if not self.sorted_sheets.cleaning_log_sheets:
-            results.append(
-                ValidationResult(
-                    rule=rule,
-                    message=_("dynamic_model.build_validators.no_sheets", sheet="cleaning_log"),
-                    severity=SeverityLevel.ERROR,
-                )
-            )
-
-        if not self.sorted_sheets.deletion_log_sheets:
-            results.append(
-                ValidationResult(
-                    rule=rule,
-                    message=_("dynamic_model.build_validators.no_sheets", sheet="deletion_log"),
-                    severity=SeverityLevel.ERROR,
-                )
-            )
-
-        # if an id column from a child sheet is not found in the only cleaning log sheet
-        if len(self.sorted_sheets.cleaning_log_sheets) == 1:
-            no_matched_log = [
-                {
-                    "sheet": sheet,
-                    "id_column": match_data.id_column,
-                    "issue": _(
-                        "dynamic_model.build_validators.no_matched_log.issue",
-                        sheet=self.sorted_sheets.cleaning_log_sheets[0],
-                    ),
-                }
-                for sheet, match_data in self.sheet_matching.items()
-                if match_data.classification == SheetClassification.CLEAN_DATA_SHEET
-                and match_data.linked_cleaning_log is None
-            ]
-            if no_matched_log:
-                results.append(
-                    ValidationResult(
-                        rule=rule,
-                        message=_(
-                            "dynamic_model.build_validators.no_matched_log",
-                            count=len(no_matched_log),
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        details=pl.DataFrame(no_matched_log).to_dict(as_series=False),
-                    )
-                )
-
-        return results
-
-    def build_schema(self) -> tuple[list[ValidationResult], str | None]:
+    def build_schema(self) -> list[ValidationResult]:
         """Builds a schema based on the matched dataset data."""
-        consent_sheet = None
         loader = BaseExcelLoader()
         results: list[ValidationResult] = []
         cleaning_sheet_base = SchemaSheetMap.model_validate(
@@ -483,8 +141,11 @@ class DynamicDataset(BaseDataset):
                             parent_sheet=details.parent_sheet,
                             parent_linking_column=details.parent_linking_column,
                             classification=details.classification,
+                            linked_log=details.linked_log,
+                            linked_sheet=details.linked_sheet,
                         )
                     )
+
                     # columns always required for parent clean/raw sheets
                     if details.parent_sheet is None:
                         _ = self.schema.add_column_to_sheet(
@@ -523,7 +184,6 @@ class DynamicDataset(BaseDataset):
                     details.classification == SheetClassification.RAW_DATA_SHEET
                     and details.parent_sheet is None
                 ):
-                    consent_sheet = sheet
                     consent_column = SchemaColumnMap.model_validate(
                         self.schema_defaults["definitions"]["consent_column"]
                     )
@@ -554,7 +214,7 @@ class DynamicDataset(BaseDataset):
                 if column_map:
                     self.data.set_column_map_for_loaded_sheet(sheet, column_map)
 
-        return results, consent_sheet
+        return results
 
     def match_data(self) -> list[ValidationResult]:
         """Attempts to identify and match sheets and columns required to build a
@@ -672,13 +332,11 @@ class DynamicDataset(BaseDataset):
         self._match_log(
             self.sorted_sheets.cleaning_log_sheets,
             self.sorted_sheets.clean_sheets,
-            "cleaning",
             min_matching_score,
         )
         self._match_log(
             self.sorted_sheets.deletion_log_sheets,
             self.sorted_sheets.raw_sheets,
-            "deletion",
             min_matching_score,
         )
 
@@ -712,8 +370,8 @@ class DynamicDataset(BaseDataset):
 
             if best_score > min_matching_score:
                 assert best_raw is not None
-                self.sheet_matching[clean_sheet].linked_raw_sheet = best_raw
-                self.sheet_matching[best_raw].linked_clean_sheet = clean_sheet
+                self.sheet_matching[clean_sheet].linked_sheet = best_raw
+                self.sheet_matching[best_raw].linked_sheet = clean_sheet
 
         if self.sorted_sheets.unknown_sheets:
             self.data.unexpected_sheets = self.sorted_sheets.unknown_sheets
@@ -722,49 +380,6 @@ class DynamicDataset(BaseDataset):
                 # they will have their own validation warning in
                 # unexpected sheets validator
                 self.data.remove_loaded_sheet(sheet)
-
-        # check parent counts if loops. should only be one sheet without a parent
-        if len(self.sorted_sheets.clean_sheets) > 1:
-            clean_parent_sheets = [
-                item
-                for item, value in self.sheet_matching.items()
-                if value.classification == SheetClassification.CLEAN_DATA_SHEET
-                and value.parent_sheet is None
-            ]
-            if len(clean_parent_sheets) > 1:
-                results.append(
-                    ValidationResult(
-                        rule=rule,
-                        message=_(
-                            "dynamic_model.match_data.no_parent",
-                            count=len(clean_parent_sheets),
-                            sheet_type="clean_data",
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        details={"Unmatched clean data sheets": clean_parent_sheets},
-                    )
-                )
-
-        if len(self.sorted_sheets.raw_sheets) > 1:
-            raw_parent_sheets = [
-                item
-                for item, value in self.sheet_matching.items()
-                if value.classification == SheetClassification.RAW_DATA_SHEET
-                and value.parent_sheet is None
-            ]
-            if len(raw_parent_sheets) > 1:
-                results.append(
-                    ValidationResult(
-                        rule=rule,
-                        message=_(
-                            "dynamic_model.match_data.no_parent",
-                            count=len(raw_parent_sheets),
-                            sheet_type="raw_data",
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        details={"Unmatched raw data sheets": raw_parent_sheets},
-                    )
-                )
 
         results.append(
             ValidationResult(
@@ -780,10 +395,8 @@ class DynamicDataset(BaseDataset):
                             "parent": m.parent_sheet,
                             "parent_id_column": m.parent_linking_column,
                             "children": m.children,
-                            "linked_cleaning_log": m.linked_cleaning_log,
-                            "linked_raw_sheet": m.linked_raw_sheet,
-                            "linked_clean_sheet": m.linked_clean_sheet,
-                            "linked_deletion_log": m.linked_deletion_log,
+                            "linked_log": m.linked_log,
+                            "linked_sheet": m.linked_sheet,
                             "log_id_column": m.log_id_column,
                         }
                         for key, m in self.sheet_matching.items()
@@ -881,7 +494,6 @@ class DynamicDataset(BaseDataset):
         self,
         log_sheets: list[str],
         match_sheets: list[str],
-        log_type: str,
         min_matching_score: float,
     ):
         """Matches a log sheet to its respective data sheet.
@@ -895,7 +507,6 @@ class DynamicDataset(BaseDataset):
         Args:
             log_sheets (list[str]): A list of log sheets
             match_sheets (list[str]): a list of data sheets
-            log_type (str): either 'deletion' or 'cleaning'
             min_matching_score (float): minimum required matching score for a match
                 to be considered.
         """
@@ -980,10 +591,7 @@ class DynamicDataset(BaseDataset):
                                 log_sheet
                             ].parent_linking_column = best_linking_log_column
 
-                        if log_type == "cleaning":
-                            self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
-                        elif log_type == "deletion":
-                            self.sheet_matching[best_parent].linked_deletion_log = log_sheet
+                        self.sheet_matching[best_parent].linked_log = log_sheet
 
             # multiple cleaning logs with one id column
             if (
@@ -996,18 +604,15 @@ class DynamicDataset(BaseDataset):
                 self.sheet_matching[log_sheet].parent_sheet = best_parent
                 self.sheet_matching[log_sheet].parent_linking_column = best_linking_log_column
 
-                if log_type == "cleaning":
-                    self.sheet_matching[best_parent].linked_cleaning_log = log_sheet
-
-                elif log_type == "deletion":
-                    self.sheet_matching[best_parent].linked_deletion_log = log_sheet
+                self.sheet_matching[best_parent].linked_log = log_sheet
 
     def _match_child_parent(self, sheets: list[str]):
         """Attempt to match child parent sheets based on finding possible
-        foreign keys between the sheets.
+        foreign keys between the sheets. Name matching is done on the
+        columns instead of the sheets as the sheet names are likely to be
+        very different.
 
-        No name matching is done for this process as the names are likely
-        to be very different between child and parent sheets.
+
         """
         for child_sheet in sheets:
             child_match_sheet = self.sheet_matching[child_sheet]
@@ -1040,10 +645,15 @@ class DynamicDataset(BaseDataset):
                                 .unique()
                                 .to_list()
                             )
-                            overlap = get_set_overlap(child_set, parent_match_sheet.id_column_set)
+                            combined_score = self._get_similarity_score(
+                                linking_column,
+                                child_set,
+                                parent_match_sheet.id_column,
+                                parent_match_sheet.id_column_set,
+                            )
 
-                            if overlap > best_score:
-                                best_score = overlap
+                            if combined_score > best_score:
+                                best_score = combined_score
                                 best_parent = parent_sheet
                                 best_fk_column = linking_column
 
@@ -1142,6 +752,11 @@ class DynamicDataset(BaseDataset):
         return unique_columns
 
     def _sort_sheets(self):
+        """
+        This is mirrored in the base class but uses the schema instead. This is
+        retained here as its used at an earlier stage of the dynamic process
+        before the schema has been created.
+        """
 
         self.sorted_sheets = SortedSheets()
 

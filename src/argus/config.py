@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     #     extra="ignore",
     # )
 
-    MIN_FUZZY_MATCH_SCORE: int = 85
+    MIN_FUZZY_MATCH_SCORE: int = 80
     FUZZY_MATCH_STRING_LENGTH_RATIO: float = 0.7
 
     # for some validation rules and dynamic model creation
@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     CLEANING_LOG_SHEET_SEARCH_TERMS: list[str] = ["cleaning_log"]
     DELETION_LOG_SHEET_SEARCH_TERMS: list[str] = ["deletion_log"]
     RAW_DATA_SHEET_SEARCH_TERMS: list[str] = ["raw_data"]
+
+    SURVEY_SHEET_NAME: str = "survey"
+    CHOICES_SHEET_NAME: str = "choices"
 
     # for the NaNCheck validator
     NANCHECK_NUMERIC_VALUES: list[int] = [-999, -99, 99, 999, -88, -888, 88, 888]

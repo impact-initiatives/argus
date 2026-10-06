@@ -55,6 +55,22 @@ def build_excel_data(sheet_details: dict[str, list[tuple[str, list[str | int | f
     )
 
 
+def build_schema_with_attributes(sheet_details: dict[str, dict[str, str]]):
+    sheet_maps: list[SchemaSheetMap] = []
+    for sheet, attributes in sheet_details.items():
+        new_sheet = SchemaSheetMap(standard_name=sheet)
+        for key, value in attributes.items():
+            setattr(new_sheet, key, value)
+        sheet_maps.append(new_sheet)
+
+    return BaseDatasetSchema(
+        programme_type="jmmi",
+        output_type="dataset",
+        loaded_sheets=sheet_maps,
+        unloaded_sheets=[],
+    )
+
+
 def build_schema_with_process(
     sheet_details: dict[str, list[str]],
     process_details: dict[str, list[str | int | float]],
@@ -91,6 +107,6 @@ def build_schema_with_process(
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=sheet_maps,
-        schema_unloaded_sheets=[],
+        loaded_sheets=sheet_maps,
+        unloaded_sheets=[],
     )

@@ -1,26 +1,10 @@
 from pathlib import Path, PosixPath
 from typing import override
 
-from ..common.list_matching import filter_list
-from ..models.base import (
-    SheetClassification,
-)
 from ..models.base_dataset import BaseDataset
-from ..models.dynamic_schema import SortedSheets
 from ..utils.logging import get_logger
 from ..utils.yaml_loader import load_file
-from ..validators.base import BaseValidator, ValidationResult
-from ..validators.common_validators import (
-    CleaningLogToCleanCheck,
-    ConsentCheck,
-    CrossSheetIdCheck,
-    CrossSheetRowSumCheck,
-    DataTypeCheck,
-    NaNDataCheck,
-    RawToCleanToLogCheck,
-    SkipLogicCheck,
-    SurveyChoicesCheck,
-)
+from ..validators.base import BaseValidator, SortedSheets, ValidationResult
 
 logger = get_logger("argus.build_dataset")
 
@@ -82,6 +66,10 @@ class DynamicDefinedDataset(BaseDataset):
         self.validators: list[BaseValidator] = self.get_validators()
         self.build_validators()
 
+        results = self.validate_schema_links()
+        if results:
+            all_results.extend(results)
+
         return all_results
 
     def update_schema(self, sheet_options: dict):
@@ -102,132 +90,3 @@ class DynamicDefinedDataset(BaseDataset):
                     logger.info(
                         f"Sheet '{prefix + sheet_type}' removed from schema as it was not loaded.",
                     )
-
-    def build_validators(self):
-        """
-        Build all the sheet specific validators.
-        This assumes all the relationships are properly defined
-        in the schema.
-        """
-        for sheet in self.schema.schema_loaded_sheets:
-            if (
-                sheet.classification == SheetClassification.CLEANING_LOG_SHEET
-                and sheet.parent_sheet is not None
-            ):
-                # cleaning log in clean
-                self.validators.append(
-                    CrossSheetIdCheck(
-                        schema=self.schema,
-                        master_sheet=sheet.parent_sheet,
-                        child_sheets=[sheet.standard_name],
-                    )
-                )
-
-                self.validators.append(
-                    CleaningLogToCleanCheck(
-                        schema=self.schema,
-                        cleaning_log_sheet=sheet.standard_name,
-                        clean_data_sheet=sheet.parent_sheet,
-                    )
-                )
-
-                parent_clean_sheet = self.schema.get_schema_loaded_sheet(sheet.parent_sheet)
-
-                # clean sheet and its linked raw sheet
-                if parent_clean_sheet is not None and parent_clean_sheet.linked_sheet is not None:
-                    self.validators.append(
-                        RawToCleanToLogCheck(
-                            schema=self.schema,
-                            cleaning_log_sheet=sheet.standard_name,
-                            clean_data_sheet=sheet.parent_sheet,
-                            raw_data_sheet=parent_clean_sheet.linked_sheet,
-                        )
-                    )
-
-            if sheet.classification == SheetClassification.DELETION_LOG_SHEET:
-                if sheet.parent_sheet is not None:
-                    parent_raw_sheet = self.schema.get_schema_loaded_sheet(sheet.parent_sheet)
-                    if parent_raw_sheet is not None and parent_raw_sheet.linked_sheet is not None:
-                        self.validators.append(
-                            CrossSheetRowSumCheck(
-                                schema=self.schema,
-                                master_sheet=parent_raw_sheet.standard_name,
-                                child_sheets=[parent_raw_sheet.linked_sheet, sheet.standard_name],
-                                master_deletion_log=None,
-                            )
-                        )
-                        # clean and deletion log in raw
-                        self.validators.append(
-                            CrossSheetIdCheck(
-                                schema=self.schema,
-                                master_sheet=parent_raw_sheet.standard_name,
-                                child_sheets=[parent_raw_sheet.linked_sheet, sheet.standard_name],
-                            )
-                        )
-
-                        clean_sheet = self.schema.get_schema_loaded_sheet(
-                            parent_raw_sheet.linked_sheet
-                        )
-                        if clean_sheet is not None and clean_sheet.linked_log is not None:
-                            # cleaning log not in deletion log
-                            self.validators.append(
-                                CrossSheetIdCheck(
-                                    schema=self.schema,
-                                    master_sheet=clean_sheet.linked_log,
-                                    child_sheets=[sheet.standard_name],
-                                    is_in=False,
-                                )
-                            )
-
-            elif sheet.classification == SheetClassification.CLEAN_DATA_SHEET:
-                self.sorted_sheets.clean_sheets.append(sheet.standard_name)
-                # child in parent
-                if sheet.parent_sheet is not None:
-                    self.validators.append(
-                        CrossSheetIdCheck(
-                            schema=self.schema,
-                            master_sheet=sheet.parent_sheet,
-                            child_sheets=[sheet.standard_name],
-                        )
-                    )
-                else:
-                    self.validators.append(
-                        SkipLogicCheck(
-                            schema=self.schema,
-                            parent_sheet=sheet.standard_name,
-                            child_sheets=filter_list(
-                                self.sorted_sheets.clean_sheets, [sheet.standard_name]
-                            ),
-                        )
-                    )
-
-            elif sheet.classification == SheetClassification.RAW_DATA_SHEET:
-                # child in parent
-                if sheet.parent_sheet is not None:
-                    self.validators.append(
-                        CrossSheetIdCheck(
-                            schema=self.schema,
-                            master_sheet=sheet.parent_sheet,
-                            child_sheets=[sheet.standard_name],
-                        )
-                    )
-                elif sheet.parent_sheet is None and sheet.linked_sheet is not None:
-                    self.validators.append(
-                        ConsentCheck(
-                            schema=self.schema,
-                            raw_data_sheet=sheet.standard_name,
-                            clean_data_sheet=sheet.linked_sheet,
-                        )
-                    )
-        # TODO: need to check if survey sheet is in schema?
-        if self.sorted_sheets.clean_sheets:
-            self.validators.append(
-                DataTypeCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-
-            self.validators.append(
-                SurveyChoicesCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )
-            self.validators.append(
-                NaNDataCheck(schema=self.schema, check_sheets=self.sorted_sheets.clean_sheets)
-            )

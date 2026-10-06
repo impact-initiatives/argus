@@ -336,7 +336,7 @@ class TestDynamicSchema:
         dataset.data = invalid_excel_data
         results = dataset.process_data(dataset_config_directory=dataset_config_directory)
         assert len(admin_error_counter(results)) == 0
-        assert len(error_counter(results)) == 8
+        assert len(error_counter(results)) == 9
 
         assert (
             len(

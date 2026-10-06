@@ -1,8 +1,11 @@
+from unittest.mock import Mock, patch
+
 import pytest
 
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
+from argus.models.base_dataset import BaseDataset
 from argus.models.base_dataset_schemas import BaseDatasetSchema
-from argus.models.preprocess import validate_schema
+from argus.validators.base import BaseValidator
 from tests.helpers import do_basic_checks
 
 
@@ -12,16 +15,14 @@ def valid_schema():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             )
         ],
-        schema_unloaded_sheets=[
-            SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])
-        ],
+        unloaded_sheets=[SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])],
     )
 
 
@@ -31,7 +32,7 @@ def invalid_schema_duplicate_sheets():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -43,9 +44,7 @@ def invalid_schema_duplicate_sheets():
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
-            SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])
-        ],
+        unloaded_sheets=[SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])],
     )
 
 
@@ -55,7 +54,7 @@ def invalid_schema_duplicate_sheets_alt():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -67,7 +66,7 @@ def invalid_schema_duplicate_sheets_alt():
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 
@@ -77,14 +76,14 @@ def invalid_schema_duplicate_unloaded_sheets():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
+        unloaded_sheets=[
             SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"]),
             SchemaSheetMap(standard_name="analysis", alternate_names=["read_me"]),
         ],
@@ -97,14 +96,14 @@ def invalid_schema_duplicate_loaded_unloaded_sheets():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
+        unloaded_sheets=[
             SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"]),
             SchemaSheetMap(standard_name="raw_data", alternate_names=["raw_data"]),
         ],
@@ -117,18 +116,32 @@ def invalid_schema_duplicate_loaded_unloaded_sheets_alt():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
+        unloaded_sheets=[
             SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"]),
             SchemaSheetMap(standard_name="analysis", alternate_names=["raw_data"]),
         ],
     )
+
+
+def validate_schema(schema: BaseDatasetSchema):
+
+    mock_schema = Mock(spec=BaseDatasetSchema)
+    mock_validator = Mock(spec=[BaseValidator])
+
+    with (
+        patch.object(BaseDataset, "get_schema", return_value=mock_schema),
+        patch.object(BaseDataset, "get_validators", return_value=[mock_validator]),
+    ):
+        dataset = BaseDataset("", "")
+        dataset.schema = schema
+        return dataset.validate_schema_item_names()
 
 
 class TestSchemaSheets:
