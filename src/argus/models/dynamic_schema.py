@@ -332,13 +332,11 @@ class DynamicDataset(BaseDataset):
         self._match_log(
             self.sorted_sheets.cleaning_log_sheets,
             self.sorted_sheets.clean_sheets,
-            "cleaning",
             min_matching_score,
         )
         self._match_log(
             self.sorted_sheets.deletion_log_sheets,
             self.sorted_sheets.raw_sheets,
-            "deletion",
             min_matching_score,
         )
 
@@ -496,7 +494,6 @@ class DynamicDataset(BaseDataset):
         self,
         log_sheets: list[str],
         match_sheets: list[str],
-        log_type: str,
         min_matching_score: float,
     ):
         """Matches a log sheet to its respective data sheet.
@@ -510,7 +507,6 @@ class DynamicDataset(BaseDataset):
         Args:
             log_sheets (list[str]): A list of log sheets
             match_sheets (list[str]): a list of data sheets
-            log_type (str): either 'deletion' or 'cleaning'
             min_matching_score (float): minimum required matching score for a match
                 to be considered.
         """

@@ -270,7 +270,10 @@ msgid "base_dataset.validate_schema.multiple_parents"
 msgstr "'{sheet_type}' sheets matched to {count} different parents. There should only be 1 parent sheet. Parent sheets: {parents}"
 
 msgid "base_dataset.validate_schema.missing_links"
-msgstr "{count} '{sheet_type}' sheets did not link to a '{linked_sheet_type}' sheet so related validation rules could not be run. Check the output for details."
+msgstr "{count} '{sheet_type}' sheets did not link to a '{linked_sheet_type}' sheet so related validation rules could not be created. Check the output for details."
+
+msgid "base_dataset.validate_schema.missing_links.issue"
+msgstr "No linked '{sheet}' sheet"
 
 msgid "jmmi_column_name_validator.items_not_in_dictionary"
 msgstr "{count} columns listed items not in the JMMI goods dictionary. Check your items are named correctly or contact HQ to add new items. Check the output for details."

@@ -228,7 +228,7 @@ class BaseDataset:
         ):
             """check for unlinked/matched sheets"""
             items = [
-                item
+                item.standard_name
                 for item in self.schema.schema_loaded_sheets
                 if item.classification == sheet_classification
                 and getattr(item, property_name) is None
@@ -294,7 +294,7 @@ class BaseDataset:
                     "linked_sheet",
                     "clean_data",
                     "raw_data",
-                    "No linked raw_data sheet",
+                    _("base_dataset.validate_schema.missing_links.issue", sheet="raw_data"),
                     "missing_links",
                 )
 
@@ -305,7 +305,7 @@ class BaseDataset:
                     "linked_log",
                     "clean_data",
                     "cleaning_log",
-                    "No linked cleaning_log sheet",
+                    _("base_dataset.validate_schema.missing_links.issue", sheet="cleaning_log"),
                     "missing_links",
                 )
 
@@ -331,7 +331,7 @@ class BaseDataset:
                     "linked_sheet",
                     "raw_data",
                     "clean_data",
-                    "No linked clean_data sheet",
+                    _("base_dataset.validate_schema.missing_links.issue", sheet="clean_data"),
                     "missing_links",
                 )
 
@@ -342,7 +342,7 @@ class BaseDataset:
                     "linked_log",
                     "raw_data",
                     "deletion_log",
-                    "No linked deletion_log sheet",
+                    _("base_dataset.validate_schema.missing_links.issue", sheet="deletion_log"),
                     "missing_links",
                 )
 
@@ -353,7 +353,7 @@ class BaseDataset:
                 "parent_sheet",
                 "deletion_log",
                 "raw_data",
-                "No linked raw_data sheet",
+                _("base_dataset.validate_schema.missing_links.issue", sheet="raw_data"),
                 "missing_links",
             )
 
@@ -364,7 +364,7 @@ class BaseDataset:
                 "parent_sheet",
                 "cleaning_log",
                 "clean_data",
-                "No linked clean_data sheet",
+                _("base_dataset.validate_schema.missing_links.issue", sheet="clean_data"),
                 "missing_links",
             )
         return results
