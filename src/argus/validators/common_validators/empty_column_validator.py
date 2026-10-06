@@ -40,7 +40,7 @@ class EmptyColumnCheck(BaseValidator):
             ]
         )
 
-        for sheet in self.schema.schema_loaded_sheets:
+        for sheet in self.schema.loaded_sheets:
             if sheet.classification == SheetClassification.RAW_DATA_SHEET:
                 continue
             not_empty_columns = sheet.get_not_empty_columns()

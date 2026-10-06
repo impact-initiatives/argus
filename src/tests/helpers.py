@@ -66,8 +66,8 @@ def build_schema_with_attributes(sheet_details: dict[str, dict[str, str]]):
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=sheet_maps,
-        schema_unloaded_sheets=[],
+        loaded_sheets=sheet_maps,
+        unloaded_sheets=[],
     )
 
 
@@ -107,6 +107,6 @@ def build_schema_with_process(
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=sheet_maps,
-        schema_unloaded_sheets=[],
+        loaded_sheets=sheet_maps,
+        unloaded_sheets=[],
     )

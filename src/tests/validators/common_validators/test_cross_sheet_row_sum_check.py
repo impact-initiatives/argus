@@ -38,7 +38,7 @@ def valid_schema():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -61,7 +61,7 @@ def valid_schema():
                 ],
             ),
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 
@@ -71,7 +71,7 @@ def valid_schema_child():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data_child",
                 alternate_names=["raw_data_child"],
@@ -121,7 +121,7 @@ def valid_schema_child():
                 ],
             ),
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 

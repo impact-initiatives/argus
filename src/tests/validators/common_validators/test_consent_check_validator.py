@@ -40,8 +40,8 @@ def build_schema(
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=sheet_maps,
-        schema_unloaded_sheets=[],
+        loaded_sheets=sheet_maps,
+        unloaded_sheets=[],
     )
 
 

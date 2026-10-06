@@ -17,8 +17,8 @@ def build_schema(sheet_name: str, columns: list[tuple[str, bool]]):
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[SchemaSheetMap(standard_name=sheet_name, columns=column_map)],
-        schema_unloaded_sheets=[],
+        loaded_sheets=[SchemaSheetMap(standard_name=sheet_name, columns=column_map)],
+        unloaded_sheets=[],
     )
 
 

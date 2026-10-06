@@ -19,7 +19,7 @@ def validate_schema(schema: BaseDatasetSchema) -> list[ValidationResult]:
     sheet_names: list[str] = []
     results: list[ValidationResult] = []
 
-    for sheet in schema.schema_loaded_sheets:
+    for sheet in schema.loaded_sheets:
         sheet_names.extend(sheet.combine_sheet_names())
         column_names: list[str] = sheet.combine_column_names(return_unique_list=False)
 
@@ -38,7 +38,7 @@ def validate_schema(schema: BaseDatasetSchema) -> list[ValidationResult]:
                     details={"columns": duplicate_column_names},
                 )
             )
-    for sheet in schema.schema_unloaded_sheets:
+    for sheet in schema.unloaded_sheets:
         sheet_names.extend(sheet.combine_sheet_names())
 
     duplicate_sheet_names = duplicate_list_items(sheet_names)

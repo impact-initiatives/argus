@@ -23,12 +23,12 @@ def build_schema(sheet_name: str, columns: list[str], matching_term: str | None 
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name=sheet_name, columns=column_map, matching_term=matching_term
             )
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 

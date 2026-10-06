@@ -52,7 +52,7 @@ class BaseDataset:
         parent_clean_sheet = None
         self._sort_sheets()
 
-        for sheet in self.schema.schema_loaded_sheets:
+        for sheet in self.schema.loaded_sheets:
             if (
                 sheet.classification == SheetClassification.CLEANING_LOG_SHEET
                 and sheet.parent_sheet is not None
@@ -191,7 +191,7 @@ class BaseDataset:
 
         self.sorted_sheets = SortedSheets()
 
-        for sheet in self.schema.schema_loaded_sheets:
+        for sheet in self.schema.loaded_sheets:
             if sheet.classification == SheetClassification.CLEANING_LOG_SHEET:
                 self.sorted_sheets.cleaning_log_sheets.append(sheet.standard_name)
             if sheet.classification == SheetClassification.DELETION_LOG_SHEET:
@@ -229,7 +229,7 @@ class BaseDataset:
             """check for unlinked/matched sheets"""
             items = [
                 item.standard_name
-                for item in self.schema.schema_loaded_sheets
+                for item in self.schema.loaded_sheets
                 if item.classification == sheet_classification
                 and getattr(item, property_name) is None
             ]
@@ -254,7 +254,7 @@ class BaseDataset:
             """Checks that clean or rat data sheets only have at most one parent"""
             items = [
                 item.parent_sheet
-                for item in self.schema.schema_loaded_sheets
+                for item in self.schema.loaded_sheets
                 if item.classification == sheet_classification and item.parent_sheet is not None
             ]
             unique_items = unique_list(items)

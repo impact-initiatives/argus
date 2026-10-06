@@ -12,14 +12,14 @@ def valid_schema():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             )
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 
@@ -29,7 +29,7 @@ def invalid_schema_duplicate_columns():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -39,7 +39,7 @@ def invalid_schema_duplicate_columns():
                 ],
             )
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 
@@ -49,7 +49,7 @@ def invalid_schema_duplicate_columns_alt():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -59,7 +59,7 @@ def invalid_schema_duplicate_columns_alt():
                 ],
             )
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 

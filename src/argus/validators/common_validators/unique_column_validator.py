@@ -41,7 +41,7 @@ class UniqueColumnCheck(BaseValidator):
             ]
         )
 
-        for sheet in self.schema.schema_loaded_sheets:
+        for sheet in self.schema.loaded_sheets:
             if sheet.classification == SheetClassification.RAW_DATA_SHEET:
                 continue
             unique_columns = sheet.get_unique_columns()

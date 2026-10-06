@@ -12,16 +12,14 @@ def valid_schema():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             )
         ],
-        schema_unloaded_sheets=[
-            SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])
-        ],
+        unloaded_sheets=[SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])],
     )
 
 
@@ -31,7 +29,7 @@ def invalid_schema_duplicate_sheets():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -43,9 +41,7 @@ def invalid_schema_duplicate_sheets():
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
-            SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])
-        ],
+        unloaded_sheets=[SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"])],
     )
 
 
@@ -55,7 +51,7 @@ def invalid_schema_duplicate_sheets_alt():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
@@ -67,7 +63,7 @@ def invalid_schema_duplicate_sheets_alt():
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[],
+        unloaded_sheets=[],
     )
 
 
@@ -77,14 +73,14 @@ def invalid_schema_duplicate_unloaded_sheets():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
+        unloaded_sheets=[
             SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"]),
             SchemaSheetMap(standard_name="analysis", alternate_names=["read_me"]),
         ],
@@ -97,14 +93,14 @@ def invalid_schema_duplicate_loaded_unloaded_sheets():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
+        unloaded_sheets=[
             SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"]),
             SchemaSheetMap(standard_name="raw_data", alternate_names=["raw_data"]),
         ],
@@ -117,14 +113,14 @@ def invalid_schema_duplicate_loaded_unloaded_sheets_alt():
     return BaseDatasetSchema(
         programme_type="jmmi",
         output_type="dataset",
-        schema_loaded_sheets=[
+        loaded_sheets=[
             SchemaSheetMap(
                 standard_name="raw_data",
                 alternate_names=["raw_data"],
                 columns=[SchemaColumnMap(standard_name="uuid", alternate_names=["uuid", "X_uuid"])],
             ),
         ],
-        schema_unloaded_sheets=[
+        unloaded_sheets=[
             SchemaSheetMap(standard_name="read_me", alternate_names=["read_me"]),
             SchemaSheetMap(standard_name="analysis", alternate_names=["raw_data"]),
         ],
