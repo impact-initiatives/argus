@@ -190,7 +190,7 @@ class ResolveDataset:
 
         # Validate with Pydantic
         try:
-            schema_model = BaseDatasetSchema.model_validate(resolved_data)
+            schema_model = BaseDatasetSchema.model_validate(resolved_data, extra="forbid")
             return schema_model
         except ValidationError as e:
             error_str = "\n".join([f"{err['loc']}: {err['msg']}" for err in e.errors()])
