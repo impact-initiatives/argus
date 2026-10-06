@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-from ..common.list_matching import filter_list, unique_list
+from ..common.list_matching import duplicate_list_items, filter_list, unique_list
 from ..config import settings
 from ..loaders.base_excel_loader import ExcelLoaderData
 from ..locales.il8n import _
@@ -203,7 +203,7 @@ class BaseDataset:
             elif sheet.classification == SheetClassification.UNKNOWN:
                 self.sorted_sheets.unknown_sheets.append(sheet.standard_name)
 
-    def validate_schema(self):
+    def validate_schema_links(self):
         """Checks all the sheet linkages in the schema to make
         sure they are all defined properly.
 
@@ -367,4 +367,55 @@ class BaseDataset:
                 _("base_dataset.validate_schema.missing_links.issue", sheet="clean_data"),
                 "missing_links",
             )
+        return results
+
+    def validate_schema_item_names(self) -> list[ValidationResult]:
+        """Checks that a sheet is listed only once in the schema.
+
+        Checks that a column is listed only once per sheet. This check
+        does not include unique columns as they are likely included
+        in mandatory columns and only one unique column can be set
+
+        Returns:
+            List[ValidationResult]: validation errors
+        """
+        sheet_names: list[str] = []
+        results: list[ValidationResult] = []
+
+        for sheet in self.schema.loaded_sheets:
+            sheet_names.extend(sheet.combine_sheet_names())
+            column_names: list[str] = sheet.combine_column_names(return_unique_list=False)
+
+            # check duplicate columns per sheet
+            duplicate_column_names = duplicate_list_items(column_names)
+            if duplicate_column_names:
+                results.append(
+                    ValidationResult(
+                        rule="Duplicate column names in schema sheet",
+                        message=f" Sheet {sheet} for schema {self.schema.programme_type} "
+                        + f"{self.schema.output_type} has mandatory column standard/altername names"
+                        + " listed on more than one column. Column names should be unique per sheet"
+                        + ". Check the output for details.",
+                        severity=SeverityLevel.ADMIN_ERROR,
+                        column_name=", ".join(duplicate_column_names),
+                        details={"columns": duplicate_column_names},
+                    )
+                )
+        for sheet in self.schema.unloaded_sheets:
+            sheet_names.extend(sheet.combine_sheet_names())
+
+        duplicate_sheet_names = duplicate_list_items(sheet_names)
+        if duplicate_sheet_names:
+            results.append(
+                ValidationResult(
+                    rule="Duplicate sheet names in schema.",
+                    message=f"The schema for {self.schema.programme_type} {self.schema.output_type}"
+                    + " contains sheet names that are listed for more than one sheet. Sheet names"
+                    + " and alternate sheet names should be unique to each schema."
+                    + " Check the output for details.",
+                    severity=SeverityLevel.ADMIN_ERROR,
+                    details={"sheets": duplicate_sheet_names},
+                )
+            )
+
         return results

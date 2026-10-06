@@ -13,7 +13,6 @@ from ..locales.il8n import _, i18n
 from ..models.base_dataset_schemas import BaseDatasetSchema
 from ..models.dynamic_defined_schema import DynamicDefinedDataset
 from ..models.dynamic_schema import DynamicDataset
-from ..models.preprocess import validate_schema
 from ..models.resolver import find_dataset_files
 from ..utils.logging import get_logger
 from ..utils.yaml_loader import download_config
@@ -203,7 +202,7 @@ class ValidationPipeline:
                     "schema version": self.argus_schemas_version,
                 },
             )
-            validation_errors = validate_schema(dataset.schema)
+            validation_errors = dataset.validate_schema_item_names()
 
             if validation_errors:
                 all_results.extend(validation_errors)

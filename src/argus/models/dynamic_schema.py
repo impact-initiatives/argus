@@ -91,7 +91,7 @@ class DynamicDataset(BaseDataset):
         self.build_validators()
 
         # this must come after build validators
-        results = self.validate_schema()
+        results = self.validate_schema_links()
         if results:
             all_results.extend(results)
 

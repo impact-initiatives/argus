@@ -66,7 +66,7 @@ class DynamicDefinedDataset(BaseDataset):
         self.validators: list[BaseValidator] = self.get_validators()
         self.build_validators()
 
-        results = self.validate_schema()
+        results = self.validate_schema_links()
         if results:
             all_results.extend(results)
 

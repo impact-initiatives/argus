@@ -19,7 +19,7 @@ def get_dataset(schema: dict[str, dict[str, str]]):
         dataset = BaseDataset("", "")
         dataset.schema = build_schema_with_attributes(schema)
         dataset._sort_sheets()
-        return dataset.validate_schema()
+        return dataset.validate_schema_links()
 
 
 class TestSchemaValidation:
