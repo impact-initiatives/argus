@@ -4,8 +4,6 @@ from typing import Any, override
 
 import polars as pl
 
-from argus.validators.base import SortedSheets
-
 from ..common.list_matching import (
     filter_list,
     get_set_overlap,
@@ -25,7 +23,7 @@ from ..models.base import (
 )
 from ..models.base_dataset import BaseDataset
 from ..utils.yaml_loader import load_file
-from ..validators.base import BaseValidator, SeverityLevel, ValidationResult
+from ..validators.base import BaseValidator, SeverityLevel, SortedSheets, ValidationResult
 from .base_dataset_schemas import BaseDatasetSchema
 
 
@@ -83,7 +81,7 @@ class DynamicDataset(BaseDataset):
         if results:
             all_results.extend(results)
 
-        results, consent_sheet = self.build_schema()
+        results = self.build_schema()
         if results:
             all_results.extend(results)
 
@@ -92,14 +90,15 @@ class DynamicDataset(BaseDataset):
         self.validators: list[BaseValidator] = self.get_validators()
         self.build_validators()
 
+        # this must come after build validators
+        results = self.validate_schema()
         if results:
             all_results.extend(results)
 
         return all_results
 
-    def build_schema(self) -> tuple[list[ValidationResult], str | None]:
+    def build_schema(self) -> list[ValidationResult]:
         """Builds a schema based on the matched dataset data."""
-        consent_sheet = None
         loader = BaseExcelLoader()
         results: list[ValidationResult] = []
         cleaning_sheet_base = SchemaSheetMap.model_validate(
@@ -185,7 +184,6 @@ class DynamicDataset(BaseDataset):
                     details.classification == SheetClassification.RAW_DATA_SHEET
                     and details.parent_sheet is None
                 ):
-                    consent_sheet = sheet
                     consent_column = SchemaColumnMap.model_validate(
                         self.schema_defaults["definitions"]["consent_column"]
                     )
@@ -216,7 +214,7 @@ class DynamicDataset(BaseDataset):
                 if column_map:
                     self.data.set_column_map_for_loaded_sheet(sheet, column_map)
 
-        return results, consent_sheet
+        return results
 
     def match_data(self) -> list[ValidationResult]:
         """Attempts to identify and match sheets and columns required to build a
@@ -384,156 +382,6 @@ class DynamicDataset(BaseDataset):
                 # they will have their own validation warning in
                 # unexpected sheets validator
                 self.data.remove_loaded_sheet(sheet)
-
-        def _check_links(
-            sheet_classification: SheetClassification,
-            property_name: str,
-            sheet_type: str,
-            linked_sheet_type: str,
-            issue: str,
-            issue_key: str,
-            min_items: int = 0,
-        ):
-            """check for unlinked/matched sheets"""
-            items = [
-                item
-                for item, value in self.sheet_matching.items()
-                if value.classification == sheet_classification
-                and getattr(value, property_name) is None
-            ]
-            if len(items) > min_items:
-                results.append(
-                    ValidationResult(
-                        rule=rule,
-                        message=_(
-                            f"dynamic_model.match_data.{issue_key}",
-                            count=len(items),
-                            sheet_type=sheet_type,
-                            linked_sheet_type=linked_sheet_type,
-                        ),
-                        severity=SeverityLevel.ERROR,
-                        details=pl.DataFrame({"sheet": items})
-                        .with_columns(pl.lit(issue).alias("issue"))
-                        .to_dict(as_series=False),
-                    )
-                )
-
-        def _check_parents(sheet_classification: SheetClassification, sheet_type: str):
-            """Checks that clean or rat data sheets only have at most one parent"""
-            items = [
-                value.parent_sheet
-                for value in self.sheet_matching.values()
-                if value.classification == sheet_classification and value.parent_sheet is not None
-            ]
-            unique_items = unique_list(items)
-            if len(unique_items) > 1:
-                results.append(
-                    ValidationResult(
-                        rule=rule,
-                        message=_(
-                            "dynamic_model.match_data.multiple_parents",
-                            count=len(unique_items),
-                            sheet_type=sheet_type,
-                        ),
-                        severity=SeverityLevel.ERROR,
-                    )
-                )
-
-        if self.sorted_sheets.clean_sheets:
-            # should only be one sheet without a parent
-            _check_links(
-                SheetClassification.CLEAN_DATA_SHEET,
-                "parent_sheet",
-                "clean_data",
-                "",
-                "No parent sheet",
-                "no_parent",
-                1,
-            )
-
-            # sheets should only link to one parent
-            _check_parents(SheetClassification.CLEAN_DATA_SHEET, "clean_data")
-
-            if self.sorted_sheets.raw_sheets:
-                # clean sheets should link to a raw sheet
-                _check_links(
-                    SheetClassification.CLEAN_DATA_SHEET,
-                    "linked_sheet",
-                    "clean_data",
-                    "raw_data",
-                    "No linked raw_data sheet",
-                    "missing_links",
-                )
-
-            if self.sorted_sheets.cleaning_log_sheets:
-                # clean sheets should link to a cleaning log sheet
-                _check_links(
-                    SheetClassification.CLEAN_DATA_SHEET,
-                    "linked_log",
-                    "clean_data",
-                    "cleaning_log",
-                    "No linked cleaning_log sheet",
-                    "missing_links",
-                )
-
-        if self.sorted_sheets.raw_sheets:
-            # should only be one sheet without a parent
-            _check_links(
-                SheetClassification.RAW_DATA_SHEET,
-                "parent_sheet",
-                "raw_data",
-                "",
-                "No parent sheet",
-                "no_parent",
-                1,
-            )
-
-            # sheets should only link to one parent
-            _check_parents(SheetClassification.RAW_DATA_SHEET, "raw_data")
-
-            if self.sorted_sheets.clean_sheets:
-                # clean sheets should link to a raw sheet
-                _check_links(
-                    SheetClassification.RAW_DATA_SHEET,
-                    "linked_sheet",
-                    "raw_data",
-                    "clean_data",
-                    "No linked clean_data sheet",
-                    "missing_links",
-                )
-
-            if self.sorted_sheets.deletion_log_sheets:
-                # raw sheets should link to a deletion log sheet
-                _check_links(
-                    SheetClassification.RAW_DATA_SHEET,
-                    "linked_log",
-                    "raw_data",
-                    "deletion_log",
-                    "No linked deletion_log sheet",
-                    "missing_links",
-                )
-
-        if self.sorted_sheets.deletion_log_sheets:
-            # deletion_log sheets should link to a raw data sheet
-            _check_links(
-                SheetClassification.DELETION_LOG_SHEET,
-                "parent_sheet",
-                "deletion_log",
-                "raw_data",
-                "No linked raw_data sheet",
-                "missing_links",
-            )
-
-        if self.sorted_sheets.cleaning_log_sheets:
-            # cleaning_log sheets should link to a clean_data sheet
-            _check_links(
-                SheetClassification.CLEANING_LOG_SHEET,
-                "parent_sheet",
-                "cleaning_log",
-                "clean_data",
-                "No linked clean_data sheet",
-                "missing_links",
-            )
 
         results.append(
             ValidationResult(
@@ -764,20 +612,11 @@ class DynamicDataset(BaseDataset):
 
     def _match_child_parent(self, sheets: list[str]):
         """Attempt to match child parent sheets based on finding possible
-        foreign keys between the sheets.
+        foreign keys between the sheets. Name matching is done on the
+        columns instead of the sheets as the sheet names are likely to be
+        very different.
 
-        No name matching is done for this process as the names are likely
-        to be very different between child and parent sheets.
 
-        Note: if an incorrect id column match is made through _find_linking_column
-        its possible that get_set_overlap will still return a high score as
-        uuids generated by kobo for different columns are not always unique -
-        For example health_person_id might just copy the roster uuid.
-        This could happen because a sheet it not classified correctly (due to
-        its name) or the order of the sheets in the file is not in sequence (
-        parent clean sheet before child clean sheets)
-        There is a reasonable chance that an error will be generated later on
-        related to this though this is not certain.
         """
         for child_sheet in sheets:
             child_match_sheet = self.sheet_matching[child_sheet]
@@ -810,10 +649,15 @@ class DynamicDataset(BaseDataset):
                                 .unique()
                                 .to_list()
                             )
-                            overlap = get_set_overlap(child_set, parent_match_sheet.id_column_set)
+                            combined_score = self._get_similarity_score(
+                                linking_column,
+                                child_set,
+                                parent_match_sheet.id_column,
+                                parent_match_sheet.id_column_set,
+                            )
 
-                            if overlap > best_score:
-                                best_score = overlap
+                            if combined_score > best_score:
+                                best_score = combined_score
                                 best_parent = parent_sheet
                                 best_fk_column = linking_column
 
@@ -912,6 +756,11 @@ class DynamicDataset(BaseDataset):
         return unique_columns
 
     def _sort_sheets(self):
+        """
+        This is mirrored in the base class but uses the schema instead. This is
+        retained here as its used at an earlier stage of the dynamic process
+        before the schema has been created.
+        """
 
         self.sorted_sheets = SortedSheets()
 

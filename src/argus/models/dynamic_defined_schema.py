@@ -66,6 +66,10 @@ class DynamicDefinedDataset(BaseDataset):
         self.validators: list[BaseValidator] = self.get_validators()
         self.build_validators()
 
+        results = self.validate_schema()
+        if results:
+            all_results.extend(results)
+
         return all_results
 
     def update_schema(self, sheet_options: dict):
