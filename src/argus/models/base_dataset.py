@@ -205,9 +205,14 @@ class BaseDataset:
 
     def validate_schema_links(self):
         """Checks all the sheet linkages in the schema to make
-        sure they are all defined properly.
+        sure they are all defined properly. It currently only checks
+        that there is a link when there should be one.
 
         See SchemaSheetMap for the expected structure.
+
+        TODO: it would be possible to expand this further by checking
+        recipricol relationships. E.g: the raw_data linking sheet for a clean_data
+        sheet should list the clean_data sheet as its linking sheet.
 
         Note: build_validators should be called before this is used
         as this step assumes that _sort_sheets has already been run.
@@ -215,7 +220,7 @@ class BaseDataset:
         Returns any unexpected/missing links as errors.
         """
         results: list[ValidationResult] = []
-        rule = "SchemaValidation"
+        rule = "SchemaValidation_SheetLinks"
 
         def _check_links(
             sheet_classification: SheetClassification,
@@ -251,7 +256,7 @@ class BaseDataset:
                 )
 
         def _check_parents(sheet_classification: SheetClassification, sheet_type: str):
-            """Checks that clean or rat data sheets only have at most one parent"""
+            """Checks that clean or raw data sheets only have at most one parent"""
             items = [
                 item.parent_sheet
                 for item in self.schema.loaded_sheets
@@ -279,7 +284,7 @@ class BaseDataset:
                 "parent_sheet",
                 "clean_data",
                 "",
-                "No parent sheet",
+                _("base_dataset.validate_schema.no_parent.issue"),
                 "no_parent",
                 1,
             )
@@ -316,7 +321,7 @@ class BaseDataset:
                 "parent_sheet",
                 "raw_data",
                 "",
-                "No parent sheet",
+                _("base_dataset.validate_schema.no_parent.issue"),
                 "no_parent",
                 1,
             )
@@ -391,7 +396,7 @@ class BaseDataset:
             if duplicate_column_names:
                 results.append(
                     ValidationResult(
-                        rule="Duplicate column names in schema sheet",
+                        rule="SchemaValidation_DuplicateColumnNames",
                         message=f" Sheet {sheet} for schema {self.schema.programme_type} "
                         + f"{self.schema.output_type} has mandatory column standard/altername names"
                         + " listed on more than one column. Column names should be unique per sheet"
@@ -408,7 +413,7 @@ class BaseDataset:
         if duplicate_sheet_names:
             results.append(
                 ValidationResult(
-                    rule="Duplicate sheet names in schema.",
+                    rule="SchemaValidation_DuplicateSheetNames",
                     message=f"The schema for {self.schema.programme_type} {self.schema.output_type}"
                     + " contains sheet names that are listed for more than one sheet. Sheet names"
                     + " and alternate sheet names should be unique to each schema."

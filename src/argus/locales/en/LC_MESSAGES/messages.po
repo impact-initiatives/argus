@@ -266,6 +266,9 @@ msgstr "Excel sheet {sheet} was matched with multiple schema sheets. This will l
 msgid "base_dataset.validate_schema.no_parent"
 msgstr "{count} '{sheet_type}' sheets did not match to a parent. There should only be 1 {sheet_type} sheet without a parent. Check the output for details."
 
+msgid "base_dataset.validate_schema.no_parent.issue"
+msgstr "No parent sheet"
+
 msgid "base_dataset.validate_schema.multiple_parents"
 msgstr "'{sheet_type}' sheets matched to {count} different parents. There should only be 1 parent sheet. Parent sheets: {parents}"
 
