@@ -5,6 +5,7 @@ import pytest
 from argus.models.base import SchemaColumnMap, SchemaSheetMap
 from argus.models.base_dataset_schemas import BaseDatasetSchema
 from src.argus.models.resolver import ResolveDataset
+from src.argus.validators.common_validators.missing_sheets_validator import MissingSheetsCheck
 from src.argus.validators.common_validators.nan_check_validator import NaNDataCheck
 from src.argus.validators.common_validators.survey_choices_validator import SurveyChoicesCheck
 
@@ -206,6 +207,42 @@ class TestDatasetResolver:
         assert result.loaded_sheets[0].standard_name == "clean_data"
         assert result.loaded_sheets[0].alternate_names[0] == "new_name"
 
+    def test_import_list_columns(self, mock_yaml_loader: MagicMock):
+        mock_yaml_loader.return_value = (
+            {
+                "programme_type": "jmmi",
+                "output_type": "dataset",
+                "loaded_sheets": [
+                    {
+                        "standard_name": "clean_data",
+                        "alternate_names": ["also_clean"],
+                        "allow_fuzzy_matching": False,
+                        "columns": [{"$use": "base_columns"}],
+                    }
+                ],
+                "unloaded_sheets": [{"standard_name": "other_data"}],
+            },
+            {
+                "base_columns": [
+                    {
+                        "standard_name": "admin1_code",
+                        "allow_fuzzy_matching": "false",
+                        "allow_empty_values": "false",
+                    },
+                    {
+                        "standard_name": "admin1_label",
+                        "allow_fuzzy_matching": "false",
+                        "allow_empty_values": "false",
+                    },
+                ]
+            },
+        )
+        resolver = ResolveDataset()
+        result = resolver.resolve_schema("some/file.yaml")
+        mock_yaml_loader.assert_called_once_with("some/file.yaml")
+        assert len(result.loaded_sheets) == 1
+        assert len(result.loaded_sheets[0].columns) == 2
+
 
 class TestValidatorResolver:
     def test_valid_validator(self, mock_yaml_loader: MagicMock):
@@ -218,6 +255,25 @@ class TestValidatorResolver:
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
         assert len(result) == 1
         assert isinstance(result[0], NaNDataCheck)
+
+    def test_valid_validator_import_list(self, mock_yaml_loader: MagicMock):
+        mock_yaml_loader.return_value = (
+            {"validators": [{"type": "NaNDataCheck"}, {"$use": "base_validators"}]},
+            {
+                "base_validators": [
+                    {"type": "MissingSheetsCheck"},
+                    {"type": "UnexpectedSheetsCheck"},
+                ]
+            },
+        )
+        schema = build_schema("clean_data", ["uuid"])
+
+        resolver = ResolveDataset()
+        result = resolver.resolve_validators("some/file.yaml", schema)
+
+        mock_yaml_loader.assert_called_once_with("some/file.yaml")
+        assert len(result) == 3
+        assert isinstance(result[1], MissingSheetsCheck)
 
     def test_valid_validator_with_paramaters(self, mock_yaml_loader: MagicMock):
         mock_yaml_loader.return_value = (
@@ -292,5 +348,5 @@ class TestValidatorResolver:
             _ = resolver.resolve_validators("some/file.yaml", schema)
 
         mock_yaml_loader.assert_called_once_with("some/file.yaml")
-        assert "unexpected keyword arguments" in str(e_info.value)
+        assert "Unexpected kwargs" in str(e_info.value)
         assert "check_sheets_invalid" in str(e_info.value)

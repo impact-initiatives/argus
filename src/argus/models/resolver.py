@@ -117,10 +117,34 @@ class ResolveDataset:
                         + f"Available: [{list(definitions.keys())}]"
                     )
 
-                # 1. Load the base definition
+                #  Load the base definition
                 resolved_content = copy.deepcopy(definitions[ref_name])
 
-                # 2. Recursively resolve the loaded content itself
+                # If resolved_content is a list
+                if isinstance(resolved_content, list):
+                    # Apply overrides to each item in the list
+                    overrides = {k: v for k, v in item.items() if k not in internal_keys}
+                    if overrides:
+                        resolved_overrides = self._resolve(
+                            overrides, definitions, f"{path}(overrides)"
+                        )
+                        # Apply override to each list item
+                        result_list = []
+                        for list_item in resolved_content:
+                            if isinstance(list_item, dict):
+                                merged = self._deep_merge(list_item, resolved_overrides)
+                                result_list.append(merged)
+                            else:
+                                result_list.append(list_item)
+                        resolved_content = result_list
+
+                    # Still need to resolve any nested $use in the list items
+                    resolved_content = [
+                        self._resolve(item, definitions, f"{path}(list_item)")
+                        for item in resolved_content
+                    ]
+
+                # Recursively resolve the loaded content itself
                 # Because the loaded content might contain nested $use references
                 resolved_content = self._resolve(
                     resolved_content, definitions, f"{path}(base_{ref_name})"
@@ -214,16 +238,79 @@ class ResolveDataset:
         """
         validators: list[BaseValidator] = []
         ignore_params = ["self", "args", "kwargs"]
-        raw_data, _ = load_file(validator_path)
-        for item in raw_data["validators"]:
+        raw_data, definitions = load_file(validator_path)
+
+        def resolve_validator_list(items: list, defs: dict, path: str = "validators") -> list[dict]:
+            """Recursively resolve $use references in validator lists."""
+            resolved = []
+            for idx, item in enumerate(items):
+                if not isinstance(item, dict):
+                    raise ValueError(f"[{path}[{idx}]] Item is not a dictionary: {item}")
+
+                if "$use" in item:
+                    ref_name = item["$use"]
+                    if ref_name not in defs:
+                        available = ", ".join(defs.keys())
+                        raise ValueError(
+                            f"[{path}[{idx}]] Missing definition '{ref_name}'. "
+                            f"Available: [{available}]"
+                        )
+
+                    ref_content = copy.deepcopy(defs[ref_name])
+
+                    # If reference is a list, recursively resolve its contents
+                    if isinstance(ref_content, list):
+                        resolved_ref = resolve_validator_list(
+                            ref_content, defs, f"{path}(ref_{ref_name})"
+                        )
+                        resolved.extend(resolved_ref)
+                    else:
+                        # Single-item reference wrapped in list for consistency
+                        resolved_ref = resolve_validator_list(
+                            [ref_content], defs, f"{path}(ref_{ref_name})"
+                        )
+                        resolved.extend(resolved_ref)
+                else:
+                    # Regular validator item - recurse to handle nested $use in kwargs if any
+                    resolved_item = {
+                        k: resolve_value(v, defs, f"{path}[{idx}].{k}") for k, v in item.items()
+                    }
+                    resolved.append(resolved_item)
+
+            return resolved
+
+        def resolve_value(val: Any, defs: dict, path: str) -> Any:
+            """Helper to resolve $use in nested values (like kwargs)."""
+            if isinstance(val, dict) and "$use" in val:
+                ref_name = val["$use"]
+                if ref_name not in defs:
+                    raise ValueError(f"[{path}] Missing definition '{ref_name}'")
+                return defs[ref_name]
+            elif isinstance(val, dict):
+                return {k: resolve_value(v, defs, f"{path}.{k}") for k, v in val.items()}
+            elif isinstance(val, list):
+                return [resolve_value(v, defs, f"{path}[i]") for v in val]
+            return val
+
+        # Resolve all $use references first
+        try:
+            resolved_validators = resolve_validator_list(
+                raw_data["validators"], definitions, "root.validators"
+            )
+        except ValueError:
+            raise
+        except Exception as e:
+            raise RuntimeError(f"Error resolving validator references: {e}") from e
+
+        #  Process each resolved validator
+        for item in resolved_validators:
             if not isinstance(item, dict):
-                raise ValueError(f"Item {item} is not a dictionary definition.")
+                raise ValueError(f"Resolved item {item} is not a dictionary definition.")
 
             class_name = item.get("type")
             if not class_name:
-                raise ValueError(f"Item {item} missing 'type' key.")
+                raise ValueError(f"Resolved item {item} missing 'type' key.")
 
-            # Check the requested class allowed
             if class_name not in VALIDATOR_REGISTRY:
                 available = ", ".join(VALIDATOR_REGISTRY.keys())
                 raise ValueError(
@@ -233,25 +320,18 @@ class ResolveDataset:
             ValidatorClass = VALIDATOR_REGISTRY[class_name]
             init_kwargs = dict(item.get("kwargs", {}))
 
-            # signature validation
             sig = inspect.signature(ValidatorClass.__init__)
             valid_params = set(sig.parameters.keys())
             provided_params = set(init_kwargs.keys())
+            valid_params.difference_update(ignore_params)
 
-            # Filter out 'self' which is implicit in signatures but not passed
-            (valid_params.discard(param) for param in ignore_params)
-
-            # Check for extra arguments defined in YAML but not in code
             invalid_args = provided_params - valid_params
             if invalid_args:
                 raise ValueError(
                     f"Validation Error for '{class_name}' (item {item}): "
-                    + f"Received unexpected keyword arguments: {invalid_args}. "
-                    + f"Accepted arguments: {valid_params}"
+                    f"Unexpected kwargs: {invalid_args}. Accepted: {valid_params}"
                 )
 
-            #  dependency injection
-            # If the class signature expects 'schema', inject it.
             if "schema" in valid_params:
                 init_kwargs["schema"] = schema
 
@@ -265,8 +345,7 @@ class ResolveDataset:
             if final_missing:
                 raise ValueError(
                     f"Instantiation Error for '{class_name}' (item {item}): "
-                    + f"Missing required arguments: {final_missing}. "
-                    + "Ensure all required parameters are in the YAML."
+                    f"Missing required arguments: {final_missing}"
                 )
 
             try:
