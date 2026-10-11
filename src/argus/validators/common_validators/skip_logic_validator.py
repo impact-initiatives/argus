@@ -230,8 +230,7 @@ class SkipLogicCheck(BaseValidator):
                     # filter the two dataframes to only contain the minimum required columns
                     data_df = (
                         data_loaded_sheets[sheet]
-                        .data.lazy()
-                        .select(
+                        .data.select(
                             [
                                 check_sheet_id_column.data_column_name,
                                 child_sheet_linking_id_columns.data_column_name,
@@ -239,9 +238,7 @@ class SkipLogicCheck(BaseValidator):
                             ]
                         )
                         .join(
-                            data_loaded_sheets[self.parent_sheet]
-                            .data.lazy()
-                            .select(
+                            data_loaded_sheets[self.parent_sheet].data.select(
                                 [
                                     parent_sheet_id_columns.data_column_name,
                                     *parent_columns_referenced,
@@ -253,16 +250,12 @@ class SkipLogicCheck(BaseValidator):
                     )
                 else:
                     # select minimally required data
-                    data_df = (
-                        data_loaded_sheets[sheet]
-                        .data.lazy()
-                        .select([check_sheet_id_column.data_column_name, *sheet_columns_needed])
+                    data_df = data_loaded_sheets[sheet].data.select(
+                        [check_sheet_id_column.data_column_name, *sheet_columns_needed]
                     )
             else:
-                data_df = (
-                    data_loaded_sheets[sheet]
-                    .data.lazy()
-                    .select([check_sheet_id_column.data_column_name, *sheet_columns_needed])
+                data_df = data_loaded_sheets[sheet].data.select(
+                    [check_sheet_id_column.data_column_name, *sheet_columns_needed]
                 )
 
             expressions: dict[str, pl.Expr] = {}
@@ -281,7 +274,7 @@ class SkipLogicCheck(BaseValidator):
                         row[data_loaded_columns[self.survey_name_column].data_column_name]
                     ] = build_relevance_expression(
                         row[data_loaded_columns[self.survey_relevant_column].data_column_name],
-                        data_df.collect_schema(),
+                        data_df.schema,
                     )
                 except Exception as e:
                     # most likely due to column references in other sheets but
@@ -325,7 +318,6 @@ class SkipLogicCheck(BaseValidator):
                         *(q for q in expressions if q in check_columns),
                     ]
                 )
-                .collect()
                 .unpivot(
                     index=check_sheet_id_column.data_column_name,
                     value_name="shown",
@@ -344,7 +336,6 @@ class SkipLogicCheck(BaseValidator):
                         *(q for q in expressions if q in check_required_columns),
                     ]
                 )
-                .collect()
                 .unpivot(
                     index=check_sheet_id_column.data_column_name,
                     value_name="missing",
