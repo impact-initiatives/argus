@@ -81,10 +81,19 @@ class NaNDataCheck(BaseValidator):
                     (
                         (
                             pl.col(column).is_nan()
-                            | (pl.col(column).is_in(settings.NANCHECK_NUMERIC_VALUES))
+                            | (
+                                pl.col(column)
+                                .cast(pl.Float64, strict=False)
+                                .is_in(settings.NANCHECK_NUMERIC_VALUES)
+                            )
                         )
                         if filtered_df.schema[column].is_float()
-                        else False | (pl.col(column).is_in(settings.NANCHECK_NUMERIC_VALUES))
+                        else False
+                        | (
+                            pl.col(column)
+                            .cast(pl.Float64, strict=False)
+                            .is_in(settings.NANCHECK_NUMERIC_VALUES)
+                        )
                         if filtered_df.schema[column].is_integer()
                         else False | (pl.col(column).is_in(settings.NANCHECK_STRING_VALUES))
                         if filtered_df.schema[column] == pl.String
