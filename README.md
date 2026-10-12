@@ -173,5 +173,20 @@ results = CrossSheetIdCheck(dataset.schema).validate(dataset.data)
 # review results
 ```
 
-### Specifying Schema Versions
+### Using Different Schemas Versions
+There are a few ways to change which schema is being used.
+#### Schemas Versions
 By default, `download_config` downloads the latest release. It is possible to change to other releases by changing the Github api url stored in `DATASET_CONFIG_URL` in `config`. See the [Github Api documentation](https://docs.github.com/en/rest/releases/releases) for details.
+#### Pipeline: Specify Local version 
+When using `ValidationPipeline().run_all()`:
+- Set `DATASET_CONFIG_LOCAL_DIR` in `config.py` to the directory of the relevant schemas directory. 
+ ```python
+ DATASET_CONFIG_LOCAL_DIR: Path = Path("/your/local/directory/argus_schemas")
+ ```
+- Specify `use_local_config=True` in `run_all`
+#### Individual Rules: Specify Local version 
+In the above examples running rules individually:
+- Change `dataset_config_directory` to reference the directory of the relevant schema. 
+```python
+dataset_config_directory = Path("/your/local/directory/argus_schemas")
+```
