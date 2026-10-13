@@ -159,6 +159,9 @@ class SkipLogicCheck(BaseValidator):
             .to_list()
         )
 
+        if not survey_relevant_columns:
+            return results
+
         # survey questions with skip logic marked as required if shown
         survey_relevant_required_columns = (
             survey_relevant_columns_df.filter(
@@ -170,9 +173,6 @@ class SkipLogicCheck(BaseValidator):
             .to_series()
             .to_list()
         )
-
-        if not survey_relevant_columns:
-            return results
 
         # get all columns referenced in the expressions
         referenced_columns = get_all_references(
@@ -276,6 +276,7 @@ class SkipLogicCheck(BaseValidator):
                         row[data_loaded_columns[self.survey_relevant_column].data_column_name],
                         data_df.schema,
                     )
+
                 except Exception as e:
                     # most likely due to column references in other sheets but
                     # will also report errors with the expression builder
@@ -288,7 +289,7 @@ class SkipLogicCheck(BaseValidator):
                             "expression": row[
                                 data_loaded_columns[self.survey_relevant_column].data_column_name
                             ],
-                            "exception": str(e),
+                            "issue": str(e),
                         }
                     )
                     continue

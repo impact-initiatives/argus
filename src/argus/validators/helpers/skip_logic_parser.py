@@ -669,12 +669,13 @@ def _iter_refs(node: Expr) -> Iterator[str]:
         yield node.name if isinstance(node, Ref) else node.var
     elif isinstance(node, Sum):
         yield from node.vars
+    elif isinstance(node, (Or, And, Cmp, Arith, Coalesce)):
+        yield from _iter_refs(node.left)
+        yield from _iter_refs(node.right)
     elif isinstance(node, (Not, Neg)):
         yield from _iter_refs(node.operand)
     elif isinstance(node, NumCast):
         yield from _iter_refs(node.arg)
-    elif isinstance(node, (Not, Neg, NumCast)):
-        yield from _iter_refs(node.operand if not isinstance(node, NumCast) else node.arg)
     elif isinstance(node, Concat):
         for arg in node.args:
             yield from _iter_refs(arg)
@@ -689,7 +690,7 @@ def build_relevance_expression(relevant: str, schema: dict[str, pl.DataType]) ->
     ast = Parser(tokenize(str(relevant))).parse()
     for ref in _iter_refs(ast):
         if ref not in schema:
-            raise KeyError(
+            raise ValueError(
                 f"Skip logic parser: Referenced column {ref!r} not found in data."
                 + " Note: cross dataset references are currently not supported."
             )
