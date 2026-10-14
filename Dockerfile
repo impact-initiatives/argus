@@ -1,5 +1,5 @@
-FROM python:3.12-slim-trixie
-COPY --from=ghcr.io/astral-sh/uv:0.11.4 /uv /uvx /bin/
+FROM python:3.14-slim-trixie
+COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /uvx /bin/
 COPY . /app
 
 ENV UV_NO_DEV=1
