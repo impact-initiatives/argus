@@ -31,11 +31,11 @@ jobs:
         with:
           enable-cache: false
 
-      - name: Build distributions
-        run: uv build
-
       - name: Set Version
         run: uv version ${{ github.event.client_payload.release_tag }}
+
+      - name: Build distributions
+        run: uv build      
 
       - name: Generate PEP 740 attestations
         uses: astral-sh/attest-action@39b6ce43875c196a579e31635b11aa2a2036384a
