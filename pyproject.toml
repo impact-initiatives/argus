@@ -1,5 +1,5 @@
 [project]
-name = "impact-initiatives-argus"
+name = "argus"
 version = "2026.06.21.00"
 description = "A flexible framework that can quickly process and validate standardised and less-standardised datasets."
 readme = "README.md"
