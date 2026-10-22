@@ -24,3 +24,21 @@ jobs:
           tag_name: ${{ github.event.client_payload.release_tag }}
           name:  ${{ github.event.client_payload.release_tag }}
           generate_release_notes: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 
+        with:
+          enable-cache: false
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Set Version
+        run: uv version ${{ github.event.client_payload.release_tag }}
+
+      - name: Generate PEP 740 attestations
+        uses: astral-sh/attest-action@39b6ce43875c196a579e31635b11aa2a2036384a
+
+      - name: Publish to PyPI
+        run: uv publish
+     
