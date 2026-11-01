@@ -34,45 +34,6 @@ wheels = [
 ]
 
 [[package]]
-name = "argus"
-version = "2026.6.21.0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastexcel" },
-    { name = "httpx2" },
-    { name = "polars" },
-    { name = "pydantic-settings" },
-    { name = "pyyaml" },
-    { name = "rapidfuzz" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastexcel", specifier = ">=0.19.0" },
-    { name = "httpx2", specifier = ">=2.16.0" },
-    { name = "polars", specifier = ">=1.44.2" },
-    { name = "pydantic-settings", specifier = ">=2.16.1" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "rapidfuzz", specifier = ">=3.14.6" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=7.2.0" },
-    { name = "pytest", specifier = ">=9.0.3" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "ruff", specifier = ">=0.17.2" },
-]
-
-[[package]]
 name = "asttokens"
 version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -330,6 +291,45 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f5/08/8eea9d4b8302028f3abb2c0813953f7aec26d33b7a8960ed760e65ff29fa/idna-3.20.tar.gz", hash = "sha256:a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44", size = 216463, upload-time = "2026-09-17T14:11:04.752Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl", hash = "sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c", size = 69583, upload-time = "2026-09-17T14:11:03.168Z" },
+]
+
+[[package]]
+name = "impact-initiatives-argus"
+version = "2026.6.21.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastexcel" },
+    { name = "httpx2" },
+    { name = "polars" },
+    { name = "pydantic-settings" },
+    { name = "pyyaml" },
+    { name = "rapidfuzz" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastexcel", specifier = ">=0.19.0" },
+    { name = "httpx2", specifier = ">=2.16.0" },
+    { name = "polars", specifier = ">=1.44.2" },
+    { name = "pydantic-settings", specifier = ">=2.16.1" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "rapidfuzz", specifier = ">=3.14.6" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipykernel", specifier = ">=7.2.0" },
+    { name = "pytest", specifier = ">=9.0.3" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "ruff", specifier = ">=0.17.2" },
 ]
 
 [[package]]
